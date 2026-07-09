@@ -1,0 +1,15 @@
+/target
+Cargo.lock
+
+# Frontend (ui/) build + deps
+ui/node_modules
+# ui/dist is SvelteKit adapter-static output (svelte.config.js pages/assets =
+# 'dist'). The repo ships a tracked placeholder shell (ui/dist/index.html) so a
+# clean checkout builds (rust-embed needs the folder to exist) and serves
+# something at `/`; `npm run build` overwrites it. Ignore the rest, keep the
+# placeholder.
+ui/dist/*
+!ui/dist/index.html
+ui/.svelte-kit
+ui/build
+*.log

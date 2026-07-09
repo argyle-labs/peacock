@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build outputs. `dist/` is the adapter-static output embedded by the peacock
+# plugin (../src/render.rs). Ignore its contents but keep a tracked placeholder
+# shell so a clean checkout compiles (rust-embed needs the folder) and serves
+# something at `/`; `npm run build` overwrites it.
+dist/*
+!dist/index.html
+build/
+.svelte-kit/
+
+# Generated files
+*.tsbuildinfo
+coverage/
+playwright-report/
+
+# openapi-ts: spec is fetched live from the running daemon at codegen time;
+# the dump + error logs are throwaway artifacts.
+openapi.json
+openapi-ts-error-*.log
+
+# Env
+.env.local
+.env.*.local
+
+# Legacy (Next.js remnant)
+.next/
+
+*storybook.log
+storybook-static
