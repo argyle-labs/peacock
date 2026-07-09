@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="peacock">
+  <!-- Tile: rounded square with peacock's own accent border (not the teal default) -->
+  <rect x="4" y="4" width="248" height="248" rx="48" fill="#0B1E3B"/>
+  <rect x="4" y="4" width="248" height="248" rx="48" fill="none" stroke="#2E8B8B" stroke-width="6"/>
+
+  <!-- Peacock body -->
+  <circle cx="128" cy="176" r="20" fill="#12A5A5"/>
+  <path d="M128 158 q-8 -18 0 -40 q8 22 0 40 z" fill="#0E7C7C"/>
+
+  <!-- Fanned tail feathers, three plumes each ending in an eye -->
+  <g stroke-width="8" stroke-linecap="round" fill="none">
+    <path d="M120 168 q-46 -34 -60 -84" stroke="#1FB6C9"/>
+    <path d="M124 166 q-24 -46 -20 -104" stroke="#2FD3B0"/>
+    <path d="M128 165 q0 -52 0 -112" stroke="#3FE0A0"/>
+    <path d="M132 166 q24 -46 20 -104" stroke="#2FD3B0"/>
+    <path d="M136 168 q46 -34 60 -84" stroke="#1FB6C9"/>
+  </g>
+  <!-- Feather eyes -->
+  <g>
+    <circle cx="58"  cy="86"  r="10" fill="#1FB6C9"/><circle cx="58"  cy="86"  r="4" fill="#0B1E3B"/>
+    <circle cx="103" cy="60"  r="10" fill="#2FD3B0"/><circle cx="103" cy="60"  r="4" fill="#0B1E3B"/>
+    <circle cx="128" cy="52"  r="10" fill="#3FE0A0"/><circle cx="128" cy="52"  r="4" fill="#0B1E3B"/>
+    <circle cx="153" cy="60"  r="10" fill="#2FD3B0"/><circle cx="153" cy="60"  r="4" fill="#0B1E3B"/>
+    <circle cx="198" cy="86"  r="10" fill="#1FB6C9"/><circle cx="198" cy="86"  r="4" fill="#0B1E3B"/>
+  </g>
+
+  <!-- Head crest -->
+  <line x1="128" y1="158" x2="128" y2="146" stroke="#0E7C7C" stroke-width="4"/>
+  <circle cx="128" cy="144" r="4" fill="#3FE0A0"/>
+</svg>
