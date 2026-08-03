@@ -1,5 +1,4 @@
 /target
-Cargo.lock
 
 # Frontend (ui/) build + deps
 ui/node_modules
