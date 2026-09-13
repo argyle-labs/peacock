@@ -2,16 +2,81 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>peacock</title>
+    <title>orca</title>
+    <script>
+      // Apply theme + sidebar default state synchronously before any CSS
+      // parses so the first paint matches the user's stored preference and
+      // the layout doesn't flash between SSR/prerender state and hydrated
+      // state. Kept in sync with:
+      //   - src/lib/stores/theme.svelte.ts (palettes / font sizes / keys)
+      //   - src/lib/stores/sidebar.svelte.ts (breakpoint / pin key)
+      (function () {
+        var root = document.documentElement;
+
+        // Suppress transitions until the first paint settles so the initial
+        // layout doesn't animate from any default state. The class is removed
+        // a tick later in the layout's onMount.
+        root.classList.add('no-transitions');
+
+        try {
+          var PALETTES = ['violet', 'ocean', 'ice-age', 'forest', 'sunset', 'rose', 'mono'];
+          var FONT_PX = { sm: 13, md: 15, lg: 17 };
+          var p = localStorage.getItem('orca-palette');
+          var m = localStorage.getItem('orca-mode');
+          var f = localStorage.getItem('orca-font-size');
+          root.setAttribute('data-theme', PALETTES.indexOf(p) >= 0 ? p : 'violet');
+          root.setAttribute('data-mode', m === 'light' || m === 'dark' ? m : 'dark');
+          root.style.fontSize = (FONT_PX[f] || 15) + 'px';
+        } catch (_) {
+          /* localStorage blocked — fall through to CSS defaults */
+        }
+
+        // Sidebar visibility is purely CSS-media-query-driven on load —
+        // desktop = open, mobile = closed. No localStorage persistence: the
+        // viewport always wins on a fresh page load and on resize across the
+        // breakpoint. In-session toggles set data-sidebar at runtime but
+        // don't survive a reload.
+      })();
+    </script>
+    <link href="/_app/immutable/entry/start.DmBsYE__.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BO4kaUbj.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/H2nBChkH.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/app.SwnjNQBt.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/xihTtKlq.js" rel="modulepreload">
+		<link href="/_app/immutable/nodes/0.CfzgsL8m.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DY4ICCVh.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/ChW2ihFJ.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DhuKxICY.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CA0ZQ9vh.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BWTzwfjP.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DTDBLnvF.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DL9qru1O.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Dl7UfNOv.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BpSHmi19.js" rel="modulepreload">
+		
+		<link href="/_app/immutable/assets/0.D--OaqXa.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/CommandPalette.cf2R_aZ3.css" rel="stylesheet">
   </head>
-  <body>
-    <!--
-      Tracked placeholder. SvelteKit's adapter-static overwrites this file
-      (and adds hashed assets) on `npm run build`. It exists only so a clean
-      checkout gives rust-embed a folder to read; the plugin serves this shell
-      until the real UI is built.
-    -->
-    <noscript>peacock requires JavaScript.</noscript>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">
+			<script>
+				{
+					__sveltekit_thqy0l = {
+						base: ""
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/_app/immutable/entry/start.DmBsYE__.js"),
+						import("/_app/immutable/entry/app.SwnjNQBt.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
   </body>
 </html>

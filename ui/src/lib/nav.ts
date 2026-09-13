@@ -21,4 +21,8 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'System',
     items: [{ label: 'Topology', href: '/', icon: '○', enabled: true }],
   },
+  {
+    label: 'Developer',
+    items: [{ label: 'API Reference', href: '/reference', icon: '◇', enabled: true }],
+  },
 ];
