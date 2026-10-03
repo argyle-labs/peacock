@@ -67,3 +67,33 @@
     </div>
   {/snippet}
 </Story>
+
+<Story name="Per-column cells">
+  {#snippet template()}
+    {#snippet hostCell(p: PeerRow)}
+      {p.hostname}
+    {/snippet}
+    {#snippet addrCell(p: PeerRow)}
+      <code style="font-size:0.8rem;">{p.addr}</code>
+    {/snippet}
+    {#snippet healthCell(p: PeerRow)}
+      <Badge color={p.health === 'up' ? 'green' : p.health === 'down' ? 'red' : 'gray'}>
+        {p.health}
+      </Badge>
+    {/snippet}
+    {#snippet versionCell(p: PeerRow)}
+      <code style="font-size:0.8rem;">{p.version}</code>
+    {/snippet}
+    <div style="width:560px;">
+      <DataTable
+        columns={[
+          { label: 'Host', width: '120px', cell: hostCell },
+          { label: 'Address', width: '140px', cell: addrCell },
+          { label: 'Health', cell: healthCell },
+          { label: 'Version', cell: versionCell },
+        ]}
+        rows={peers}
+      />
+    </div>
+  {/snippet}
+</Story>
