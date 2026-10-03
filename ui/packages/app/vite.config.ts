@@ -28,12 +28,17 @@ export default defineConfig({
     fs: { allow: ['..'] },
   },
   optimizeDeps: {
-    // Pre-bundle the hey-api runtime as one cached chunk so the browser fetches
-    // it once on a cold dev start rather than as N un-bundled module requests.
-    include: ['@hey-api/client-fetch'],
-    // sdk.gen.ts is intentionally NOT pre-bundled — it's dynamically imported
-    // via runTool.ts so it lands in its own chunk, off the first-paint path.
-    exclude: ['$lib/client/sdk.gen', '@peacock/ui-kit'],
+    // The generated client is self-contained: openapi-ts emits its own fetch
+    // client under src/lib/client/client + core, and `zod` is its only external
+    // import. An older config pre-bundled '@hey-api/client-fetch', which the
+    // generator no longer emits and which is not installed — vite logged
+    // "Failed to resolve dependency" on every dev start. `exclude` likewise
+    // listed a '$lib/...' alias, which is not a package specifier and so never
+    // did anything.
+    //
+    // @peacock/ui-kit is a workspace sibling consumed as source, so it must not
+    // be pre-bundled or edits to it stop triggering HMR.
+    exclude: ['@peacock/ui-kit'],
   },
   build: {
     rolldownOptions: {
