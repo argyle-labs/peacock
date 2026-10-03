@@ -19,4 +19,9 @@ export interface NavSection {
   items: NavItem[];
 }
 
-export const NAV_SECTIONS: NavSection[] = [];
+export const NAV_SECTIONS: NavSection[] = [
+  {
+    label: 'Fleet',
+    items: [{ label: 'Systems', href: '/systems', icon: '🖧', enabled: true }],
+  },
+];

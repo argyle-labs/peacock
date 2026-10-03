@@ -15,6 +15,10 @@ export function fmtMb(mb: number | null | undefined): string {
   return `${mb} MB`;
 }
 
+export function fmtGb(gb: number): string {
+  return `${gb.toFixed(1)} GB`;
+}
+
 export function fmtUptime(secs: number): string {
   if (secs < 3600) return `${Math.floor(secs / 60)}m`;
   if (secs < 86400) return `${Math.floor(secs / 3600)}h`;
