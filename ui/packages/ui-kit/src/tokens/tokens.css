@@ -1,3 +1,24 @@
+/* ── Color system: two layers, one hard rule ────────────────────────────── *
+ *
+ * Layer 1 — the NAMED RAMP (--color-red, --color-orange, --color-yellow,
+ *   --color-green, --color-teal, --color-cyan, --color-blue, --color-indigo,
+ *   --color-purple, --color-pink, --color-gray). Every one of these exists,
+ *   per palette, per mode (7 palettes × 2 modes = 14 full blocks below). This
+ *   is "all colours exist."
+ *
+ * Layer 2 — SEMANTIC tokens (--color-success, --color-warning, --color-error,
+ *   --color-info, plus --color-accent / --color-accent-dim / text / surface /
+ *   border). These are what a component reaches for BY DEFAULT. Semantics
+ *   alias into the ramp (e.g. --color-success: var(--color-green)) so there
+ *   is one source of truth per palette/mode.
+ *
+ * HARD RULE: a component reaches for a SEMANTIC token by default. A named
+ * colour from the ramp is an ESCAPE HATCH — use it only when the meaning
+ * genuinely is "this specific colour" rather than "this state." This is what
+ * makes the system portable to SwiftUI/Compose and targetable by
+ * plugin-declared widgets: a plugin should ask for "error", not "red".
+ * ───────────────────────────────────────────────────────────────────────── */
+
 /* ── Non-color tokens ───────────────────────────────────────────────────── */
 :root {
   --space-1: 4px;
@@ -81,10 +102,21 @@
   --color-text-faint: #555555;
   --color-accent: #7c6af7;
   --color-accent-dim: #5a4fc4;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #fb923c;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+  --color-purple: #c084fc;
+  --color-pink: #f472b6;
+  --color-gray: #9ca3af;
 }
 
 /* violet light */
@@ -100,10 +132,21 @@
   --color-text-faint: #b0a8d8;
   --color-accent: #5b48f0;
   --color-accent-dim: #3e30c8;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #ea580c;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #0d9488;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-indigo: #4f46e5;
+  --color-purple: #9333ea;
+  --color-pink: #db2777;
+  --color-gray: #52525b;
 }
 
 /* ocean dark */
@@ -119,10 +162,21 @@
   --color-text-faint: #263c50;
   --color-accent: #28a8e0;
   --color-accent-dim: #1878a8;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #fb923c;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+  --color-purple: #a78bfa;
+  --color-pink: #f472b6;
+  --color-gray: #9ca3af;
 }
 
 /* ocean light */
@@ -138,10 +192,21 @@
   --color-text-faint: #8aaabb;
   --color-accent: #0878b8;
   --color-accent-dim: #055888;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #ea580c;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #0d9488;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-indigo: #4f46e5;
+  --color-purple: #7c3aed;
+  --color-pink: #db2777;
+  --color-gray: #52525b;
 }
 
 /* ice-age dark */
@@ -157,10 +222,21 @@
   --color-text-faint: #263648;
   --color-accent: #60a8d8;
   --color-accent-dim: #3c7898;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #fb923c;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+  --color-purple: #b794f4;
+  --color-pink: #f472b6;
+  --color-gray: #9ca3af;
 }
 
 /* ice-age light */
@@ -176,10 +252,21 @@
   --color-text-faint: #88a0b0;
   --color-accent: #2878b8;
   --color-accent-dim: #185888;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #ea580c;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #0d9488;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-indigo: #4f46e5;
+  --color-purple: #8b5cf6;
+  --color-pink: #db2777;
+  --color-gray: #52525b;
 }
 
 /* forest dark */
@@ -195,10 +282,21 @@
   --color-text-faint: #2e4438;
   --color-accent: #4ab86a;
   --color-accent-dim: #2c8048;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #fb923c;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+  --color-purple: #b57edc;
+  --color-pink: #f472b6;
+  --color-gray: #9ca3af;
 }
 
 /* forest light */
@@ -214,10 +312,21 @@
   --color-text-faint: #8aaa90;
   --color-accent: #1f8a4c;
   --color-accent-dim: #156538;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #ea580c;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #0d9488;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-indigo: #4f46e5;
+  --color-purple: #9333ea;
+  --color-pink: #db2777;
+  --color-gray: #52525b;
 }
 
 /* sunset dark */
@@ -233,10 +342,21 @@
   --color-text-faint: #4c382c;
   --color-accent: #f08848;
   --color-accent-dim: #c45a1c;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #fb923c;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+  --color-purple: #c89bf5;
+  --color-pink: #f472b6;
+  --color-gray: #9ca3af;
 }
 
 /* sunset light */
@@ -252,10 +372,21 @@
   --color-text-faint: #b89878;
   --color-accent: #c8501c;
   --color-accent-dim: #9a3a10;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #ea580c;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #0d9488;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-indigo: #4f46e5;
+  --color-purple: #9b3fd1;
+  --color-pink: #db2777;
+  --color-gray: #52525b;
 }
 
 /* rose dark */
@@ -271,10 +402,21 @@
   --color-text-faint: #4a303a;
   --color-accent: #ec5a8a;
   --color-accent-dim: #b8345c;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #fb923c;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #2dd4bf;
+  --color-cyan: #22d3ee;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+  --color-purple: #d896f0;
+  --color-pink: #f472b6;
+  --color-gray: #9ca3af;
 }
 
 /* rose light */
@@ -290,10 +432,21 @@
   --color-text-faint: #b88898;
   --color-accent: #c8306a;
   --color-accent-dim: #9a204c;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #ea580c;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #0d9488;
+  --color-cyan: #0891b2;
+  --color-blue: #2563eb;
+  --color-indigo: #4f46e5;
+  --color-purple: #a0289c;
+  --color-pink: #db2777;
+  --color-gray: #52525b;
 }
 
 /* mono dark */
@@ -309,10 +462,21 @@
   --color-text-faint: #444444;
   --color-accent: #d4d4d4;
   --color-accent-dim: #909090;
-  --color-success: #4ade80;
-  --color-warning: #facc15;
-  --color-error: #f87171;
-  --color-info: #60a5fa;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #f87171;
+  --color-orange: #c8ac94;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-teal: #9cc0bc;
+  --color-cyan: #9cb8c0;
+  --color-blue: #60a5fa;
+  --color-indigo: #a8a0c8;
+  --color-purple: #a89cc8;
+  --color-pink: #c89cb4;
+  --color-gray: #9a9a9a;
 }
 
 /* mono light */
@@ -328,10 +492,21 @@
   --color-text-faint: #a8a8a8;
   --color-accent: #2c2c2c;
   --color-accent-dim: #585858;
-  --color-success: #16a34a;
-  --color-warning: #ca8a04;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
+  --color-success: var(--color-green);
+  --color-warning: var(--color-yellow);
+  --color-error: var(--color-red);
+  --color-info: var(--color-blue);
+  --color-red: #dc2626;
+  --color-orange: #8c7458;
+  --color-yellow: #ca8a04;
+  --color-green: #16a34a;
+  --color-teal: #5c8480;
+  --color-cyan: #587c84;
+  --color-blue: #2563eb;
+  --color-indigo: #605c88;
+  --color-purple: #6b5e8c;
+  --color-pink: #886074;
+  --color-gray: #5c5c5c;
 }
 
 /* ── Suppress transitions during the very first paint ──────────────────── */
@@ -464,7 +639,7 @@ h4 {
   white-space: nowrap;
 }
 .cbtn:hover:not(:disabled) {
-  background: var(--color-surface-3, #2c2c2c);
+  background: color-mix(in srgb, var(--color-surface-2) 85%, var(--color-text) 15%);
   color: var(--color-text);
   border-color: var(--color-border);
 }
@@ -474,21 +649,21 @@ h4 {
 }
 
 .cbtn-primary {
-  background: rgba(124, 106, 247, 0.15);
-  border-color: rgba(124, 106, 247, 0.4);
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
   color: var(--color-accent);
 }
 .cbtn-primary:hover:not(:disabled) {
-  background: rgba(124, 106, 247, 0.25);
+  background: color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 .cbtn-danger {
-  background: rgba(248, 113, 113, 0.1);
-  border-color: rgba(248, 113, 113, 0.35);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
   color: var(--color-error);
 }
 .cbtn-danger:hover:not(:disabled) {
-  background: rgba(248, 113, 113, 0.2);
+  background: color-mix(in srgb, var(--color-error) 20%, transparent);
 }
 
 /* icon-only variant — square, no padding text */

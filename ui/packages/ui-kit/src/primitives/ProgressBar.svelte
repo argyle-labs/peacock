@@ -28,12 +28,12 @@
   }
   .bar {
     height: 100%;
-    background: var(--color-accent, #4f86f7);
+    background: var(--color-accent);
     border-radius: 3px;
     transition: width 0.3s ease;
   }
   .bar.warn {
-    background: #e6a817;
+    background: var(--color-warning);
   }
   .bar.crit {
     background: var(--color-error);

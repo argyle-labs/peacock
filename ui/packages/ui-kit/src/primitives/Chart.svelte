@@ -121,23 +121,23 @@
 
 <style>
   .hist-cell {
-    background: var(--bg-elevated, rgba(255, 255, 255, 0.03));
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     padding: 8px;
-    color: var(--accent, #89b4fa);
+    color: var(--color-accent);
   }
   .hist-label {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
-    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 4px;
   }
   .hist-val {
-    color: var(--text-primary, #fff);
+    color: var(--color-text);
     font-family: ui-monospace, monospace;
     text-transform: none;
     letter-spacing: 0;
@@ -151,7 +151,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 10px;
-    color: var(--text-secondary, rgba(255, 255, 255, 0.45));
+    color: var(--color-text-muted);
     font-family: ui-monospace, monospace;
     margin-top: 2px;
   }

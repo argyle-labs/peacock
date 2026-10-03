@@ -21,6 +21,17 @@
  *   3. Adding a primitive is a deliberate act: it widens the vocabulary every
  *      platform must eventually implement. Prefer composing existing nodes.
  *
+ * ## The colour rule
+ *
+ * Colour tokens are two layers: a full NAMED RAMP (--color-red, --color-blue,
+ * --color-purple, …, one per hue, per palette, per mode) and SEMANTIC tokens
+ * (--color-success, --color-warning, --color-error, --color-info, plus the
+ * accent/text/surface/border tokens) that alias into that ramp. A component
+ * reaches for a SEMANTIC token by default — a named colour is an escape hatch
+ * for when the meaning genuinely is "this specific colour" rather than "this
+ * state." This is what lets the vocabulary compile to SwiftUI/Compose and
+ * lets a plugin-declared widget ask for "error" instead of "red".
+ *
  * Storybook (with addon-a11y) is the contract for what each node looks like and
  * how it behaves. If it is not in a story, it is not in the vocabulary.
  */
