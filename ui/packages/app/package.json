@@ -1,0 +1,33 @@
+{
+  "name": "@peacock/app",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "peacock operator UI \u2014 the SvelteKit SPA orca embeds and serves at /.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest",
+    "test:run": "vitest run --reporter=verbose --project=unit",
+    "test:e2e": "playwright test",
+    "gen": "npm run gen:spec && npm run gen:client",
+    "gen:spec": "node scripts/emit-spec.mjs",
+    "gen:client": "openapi-ts",
+    "gen:check": "openapi-ts && git diff --exit-code -- openapi.json src/lib/client"
+  },
+  "dependencies": {
+    "@peacock/ui-kit": "*",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.65.1",
+    "svelte": "^5.56.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.97.3",
+    "@playwright/test": "^1.60.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "playwright": "^1.61.0"
+  }
+}

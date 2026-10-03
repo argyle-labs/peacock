@@ -1,0 +1,33 @@
+{
+  "name": "@peacock/ui-kit",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "peacock design system: tokens + the closed primitive catalog every operator surface composes from.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens/tokens.css"
+  },
+  "scripts": {
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test:run": "vitest run --reporter=verbose",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "peerDependencies": {
+    "svelte": "^5.56.3"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.2.1",
+    "@storybook/addon-a11y": "^10.4.6",
+    "@storybook/addon-docs": "^10.4.6",
+    "@storybook/addon-svelte-csf": "^5.1.2",
+    "@storybook/addon-vitest": "^10.4.6",
+    "@storybook/svelte-vite": "^10.6.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
+    "eslint-plugin-storybook": "^10.4.6",
+    "storybook": "^10.4.6"
+  }
+}

@@ -1,14 +1,15 @@
 /target
 
-# Frontend (ui/) build + deps
-ui/node_modules
-# ui/dist is SvelteKit adapter-static output (svelte.config.js pages/assets =
-# 'dist'). The repo ships a tracked placeholder shell (ui/dist/index.html) so a
-# clean checkout builds (rust-embed needs the folder to exist) and serves
-# something at `/`; `npm run build` overwrites it. Ignore the rest, keep the
-# placeholder.
+# Frontend. ui/ is an npm workspace root (ui/packages/{ui-kit,app}); its own
+# ui/.gitignore covers node_modules/ and .svelte-kit/ at any depth, so they are
+# not repeated here.
+#
+# ui/dist is the built SPA — @peacock/app's adapter-static output, aimed two
+# levels up by packages/app/svelte.config.js — and it must stay at exactly this
+# path because src/render.rs embeds it with `#[folder = "ui/dist/"]`. The repo
+# ships a tracked placeholder shell (ui/dist/index.html) so a clean checkout
+# compiles (rust-embed needs the folder) and serves something at `/`;
+# `npm run build` overwrites it locally.
 ui/dist/*
 !ui/dist/index.html
-ui/.svelte-kit
-ui/build
 *.log
