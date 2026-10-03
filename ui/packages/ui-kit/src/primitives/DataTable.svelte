@@ -1,6 +1,14 @@
 <script lang="ts" generics="T">
   import type { Snippet } from 'svelte';
 
+  /* Two mutually-exclusive rendering modes:
+     - `row`: a single snippet given the whole row item, rendering all <td>s itself.
+     - `cell` (on a column): a per-column snippet given the row item, rendering that
+       column's <td> content only — DataTable wraps it in <td>.
+     If a column defines `cell`, it is used for that column regardless of whether `row`
+     is also supplied. If NEITHER `row` nor any column `cell` is supplied, the column's
+     raw label is rendered as a fallback (no-op display). Mixing both modes across
+     different columns is not supported — pick one style per table. */
   let {
     columns,
     rows,
@@ -8,10 +16,10 @@
     row: rowSnippet,
     loading = false,
   }: {
-    columns: { label: string; width?: string }[];
+    columns: { label: string; width?: string; cell?: Snippet<[T]> }[];
     rows: T[];
     emptyText?: string;
-    row: Snippet<[T]>;
+    row?: Snippet<[T]>;
     loading?: boolean;
   } = $props();
 </script>
@@ -29,7 +37,17 @@
       <tr><td colspan={columns.length} class="empty">Loading…</td></tr>
     {:else}
       {#each rows as item}
-        <tr>{@render rowSnippet(item)}</tr>
+        {#if rowSnippet}
+          <tr>{@render rowSnippet(item)}</tr>
+        {:else}
+          <tr>
+            {#each columns as col (col.label)}
+              <td
+                >{#if col.cell}{@render col.cell(item)}{/if}</td
+              >
+            {/each}
+          </tr>
+        {/if}
       {:else}
         <tr><td colspan={columns.length} class="empty">{emptyText}</td></tr>
       {/each}
