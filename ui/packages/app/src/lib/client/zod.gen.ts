@@ -547,9 +547,12 @@ export const zDbSweepReport = z.object({
     .int()
     .gte(0)
     .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' }),
-  rowsRemoved: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  rowsRemoved: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   table: z.string(),
 });
 
@@ -579,13 +582,19 @@ export const zDeployOutcome = z.object({
  * CI runner is visible over `--peer` before it wedges.
  */
 export const zDiskHealth = z.object({
-  availGb: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  availGb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   path: z.string(),
-  totalGb: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  totalGb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   usedPct: z.int().gte(0).lte(255),
 });
 
@@ -1424,9 +1433,12 @@ export const zPathChange = z.union([
  * directly so operators see exactly what happened.
  */
 export const zPeerSyncReport = z.object({
-  duration_ms: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  duration_ms: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   error: z.string().nullish(),
   hostname: z.string(),
   merged: z.int().gte(0),
@@ -2478,9 +2490,12 @@ export const zStorageRecoverOutput = z.object({
  */
 export const zStorageReport = z.object({
   db_path: z.string(),
-  db_size_bytes: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  db_size_bytes: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   last_retention_sweep_at: z.coerce
     .bigint()
     .min(BigInt('-9223372036854775808'), {
@@ -2490,9 +2505,12 @@ export const zStorageReport = z.object({
       error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
     })
     .nullish(),
-  logs_dir_bytes: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  logs_dir_bytes: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   logs_dir_path: z.string(),
 });
 
@@ -2710,9 +2728,12 @@ export const zTargetsOutput = z.object({
  */
 export const zTopProcess = z.object({
   cpu_percent: z.number(),
-  mem_mb: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  mem_mb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   name: z.string(),
   pid: z
     .int()
@@ -4176,9 +4197,12 @@ export const zFilesStatResponse = z.object({
   exists: z.boolean(),
   name: z.string(),
   path: z.string(),
-  size: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  size: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   type: zFsNodeKind,
 });
 
@@ -5704,16 +5728,25 @@ export const zStorageDetailBody = z.object({
  * Capacity/usage snapshot for a volume.
  */
 export const zStorageDetailResponse = z.object({
-  available_bytes: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  available_bytes: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
   id: z.string(),
-  total_bytes: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
-  used_bytes: z.coerce.bigint().gte(BigInt(0)).max(BigInt('18446744073709551615'), {
-    error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-  }),
+  total_bytes: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
+  used_bytes: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    }),
 });
 
 /**
