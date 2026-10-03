@@ -8,7 +8,7 @@
 //!
 //! Run standalone (without orca): see README — orca sets `$ORCA_PLUGIN_SOCKET`
 //! and drives the wire protocol; there is no bare `main` HTTP server, because
-//! the frontend is either served by orca (prod, from embedded `ui/build`) or by
+//! the frontend is either served by orca (prod, from embedded `ui/dist`) or by
 //! Vite in dev.
 
 mod render;
@@ -19,7 +19,8 @@ use anyhow::Result;
 use plugin_toolkit::serve::{PluginSpec, serve};
 
 /// Vite dev-server origin peacock's `npm run dev` binds. orca proxies its `/`
-/// route here when the daemon is in dev mode.
+/// route here when the daemon is in dev mode. `ui/` is an npm workspace root,
+/// so `npm run dev` there delegates to `@peacock/app`, which binds this port.
 const DEV_UPSTREAM: &str = "http://127.0.0.1:12001";
 
 /// Env var orca (or a developer) sets to run peacock's Vite dev server and have

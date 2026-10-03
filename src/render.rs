@@ -14,10 +14,12 @@ use base64::engine::general_purpose::STANDARD as B64;
 use contract::web::{WebRequest, WebResponse};
 use derive::orca_tool;
 
-/// The built frontend (brain-site) assets, embedded at compile time.
+/// The built frontend (`@peacock/app`) assets, embedded at compile time.
 ///
-/// `ui/dist` is the SvelteKit adapter-static output (`svelte.config.js` sets
-/// `pages`/`assets` to `dist`). `npm run build` in `ui/` regenerates it. A
+/// `ui/dist` is the SvelteKit adapter-static output — `@peacock/app`'s
+/// `packages/app/svelte.config.js` aims `pages`/`assets` two levels up at
+/// `../../dist` precisely so it lands here. `npm run build` in `ui/` (the npm
+/// workspace root, which delegates to that package) regenerates it. A
 /// clean checkout ships a tracked placeholder `ui/dist/index.html` so rust-embed
 /// always has a folder to read; the real build overwrites it. rust-embed
 /// tolerates an empty folder — the render simply 404s until built.
