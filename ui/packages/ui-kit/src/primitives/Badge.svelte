@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import type { Tone } from '../types';
 
-  type Tone = 'neutral' | 'success' | 'warning' | 'error' | 'info' | 'accent';
   type NamedColor =
     | 'red'
     | 'orange'

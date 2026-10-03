@@ -51,7 +51,13 @@ export { default as Spinner } from './primitives/Spinner.svelte';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 export { default as DataTable } from './primitives/DataTable.svelte';
+export { default as Cell } from './primitives/Cell.svelte';
 export { default as Chart } from './primitives/Chart.svelte';
+
+// ── Types ────────────────────────────────────────────────────────────────────
+export type { Tone, CellSpec, ChartPoint, Row, PathResult } from './types';
+export { resolvePath } from './types';
+export { relTime, fmtUptime } from './utils/format';
 
 // ── Structure & overlays ─────────────────────────────────────────────────────
 export { default as SectionHead } from './primitives/SectionHead.svelte';

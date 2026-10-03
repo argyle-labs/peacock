@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { SectionHead, DataTable, StatusDot, Badge } from '@peacock/ui-kit';
+  import { SectionHead, DataTable, Badge } from '@peacock/ui-kit';
   import { systemList, systemHealth } from '$lib/client/sdk.gen';
   import { unwrap } from '$lib/stores/runTool';
   import { toast } from '$lib/stores/notifications';
   import { createPoller } from '$lib/utils/polling';
-  import { relTime, fmtUptime, fmtGb } from '$lib/utils/format';
+  import { fmtUptime, fmtGb } from '$lib/utils/format';
   import { tableColumns, type Column } from '$lib/pages/descriptor';
+  import { memberSpecs, candidateSpecs, staleSpecs, offerSpecs } from '$lib/pages/systemsCellSpecs';
   import type {
     MeshInstance,
     MeshCandidate,
@@ -93,23 +94,22 @@
 
 <svelte:head><title>systems · orca</title></svelte:head>
 
-{#snippet healthCell(m: MeshInstance)}
-  <StatusDot ok={m.health === 'up' ? true : m.health === 'down' ? false : null} />
-  {m.health}
-{/snippet}
-
 {#snippet systemCell(m: MeshInstance)}
+  <!-- Escape hatch, not a `CellSpec`: composite of three row fields chosen by
+       fallback plus a conditional error line — one cell, two independent
+       pieces of information, with no "pick a fallback chain, then render a
+       second line" kind that wouldn't just be a template engine in disguise. -->
+
   {m.label || m.origin || m.id}
   {#if m.error}
     <br /><span class="dim-error" title={m.error}>⚠ {m.error}</span>
   {/if}
 {/snippet}
 
-{#snippet roleCell(m: MeshInstance)}
-  <Badge tone={m.role === 'local' ? 'accent' : 'neutral'}>{m.role}</Badge>
-{/snippet}
-
 {#snippet daemonCell(m: MeshInstance)}
+  <!-- Escape hatch: a `CellSpec.field` resolves only against the row itself,
+       but this cell's data comes from `health`, a sibling map keyed by id —
+       a join `CellSpec` can't express without becoming a query language. -->
   {@const hr = healthRowFor(m)}
   {#if hr?.error}
     <span title={hr.error}><Badge tone="error">probe error</Badge></span>
@@ -126,68 +126,16 @@
 {/snippet}
 
 {#snippet diskCell(m: MeshInstance)}
+  <!-- Escape hatch: same cross-map join as `daemonCell`, plus "avail / total
+       (pct%)" composes three fields with literal separators — a one-off,
+       not a general `kind` worth adding to a vocabulary every platform
+       must reimplement. -->
   {@const hr = healthRowFor(m)}
   {#if hr?.health?.disk}
     {fmtGb(hr.health.disk.availGb)} / {fmtGb(hr.health.disk.totalGb)} ({hr.health.disk.usedPct}%)
   {:else}
     <span class="dim">—</span>
   {/if}
-{/snippet}
-
-{#snippet versionCell(m: MeshInstance)}
-  {m.version ?? '—'}
-{/snippet}
-
-{#snippet lastSeenCell(m: MeshInstance)}
-  {relTime(m.last_checked ?? null)}
-{/snippet}
-
-{#snippet candidateHostCell(c: MeshCandidate)}
-  {c.hostname}
-{/snippet}
-
-{#snippet candidateAddrCell(c: MeshCandidate)}
-  <span class="mono">{c.addr}:{c.port}</span>
-{/snippet}
-
-{#snippet candidateInviteCell(c: MeshCandidate)}
-  <Badge tone={c.can_invite ? 'success' : 'neutral'}>{c.can_invite ? 'yes' : 'no'}</Badge>
-{/snippet}
-
-{#snippet candidateFpCell(c: MeshCandidate)}
-  <span class="mono">{c.pubkey_fp}</span>
-{/snippet}
-
-{#snippet staleHostCell(s: MeshStaleRow)}
-  {s.hostname}
-{/snippet}
-
-{#snippet staleAddrCell(s: MeshStaleRow)}
-  <span class="mono">{s.addr}:{s.port}</span>
-{/snippet}
-
-{#snippet staleReasonCell(s: MeshStaleRow)}
-  <Badge tone="warning">{s.reason}</Badge>
-{/snippet}
-
-{#snippet staleLastSeenCell(s: MeshStaleRow)}
-  {relTime(s.last_seen_at ?? null)}
-{/snippet}
-
-{#snippet offerHostCell(o: MeshInboundOffer)}
-  {o.peer_hostname}
-{/snippet}
-
-{#snippet offerAddrCell(o: MeshInboundOffer)}
-  <span class="mono">{o.peer_addr}:{o.peer_port}</span>
-{/snippet}
-
-{#snippet offerInviterCell(o: MeshInboundOffer)}
-  <span class="mono">{o.inviter_peer_id ?? '—'}</span>
-{/snippet}
-
-{#snippet offerTtlCell(o: MeshInboundOffer)}
-  {fmtUptime(o.ttl_secs)}
 {/snippet}
 
 <div class="page">
@@ -201,13 +149,13 @@
     <SectionHead title="Members" />
     <DataTable
       columns={tableColumns([
-        { key: 'health', label: 'Health', width: '110px', cell: healthCell },
+        { key: 'health', label: 'Health', width: '110px', spec: memberSpecs.health },
         { key: 'system', label: 'System', cell: systemCell },
-        { key: 'role', label: 'Role', width: '80px', cell: roleCell },
+        { key: 'role', label: 'Role', width: '80px', spec: memberSpecs.role },
         { key: 'daemon', label: 'Daemon', cell: daemonCell },
         { key: 'disk', label: 'Disk', cell: diskCell },
-        { key: 'version', label: 'Version', width: '110px', cell: versionCell },
-        { key: 'lastSeen', label: 'Last seen', width: '100px', cell: lastSeenCell },
+        { key: 'version', label: 'Version', width: '110px', spec: memberSpecs.version },
+        { key: 'lastSeen', label: 'Last seen', width: '100px', spec: memberSpecs.lastSeen },
       ] satisfies Column<MeshInstance>[])}
       rows={members}
       {loading}
@@ -219,10 +167,10 @@
     <SectionHead title="Candidates" />
     <DataTable
       columns={tableColumns([
-        { key: 'hostname', label: 'Hostname', cell: candidateHostCell },
-        { key: 'addr', label: 'Address', cell: candidateAddrCell },
-        { key: 'invite', label: 'Can invite', width: '100px', cell: candidateInviteCell },
-        { key: 'fp', label: 'Pubkey', cell: candidateFpCell },
+        { key: 'hostname', label: 'Hostname', spec: candidateSpecs.hostname },
+        { key: 'addr', label: 'Address', spec: candidateSpecs.addr },
+        { key: 'invite', label: 'Can invite', width: '100px', spec: candidateSpecs.invite },
+        { key: 'fp', label: 'Pubkey', spec: candidateSpecs.fp },
       ] satisfies Column<MeshCandidate>[])}
       rows={candidates}
       {loading}
@@ -234,10 +182,10 @@
     <SectionHead title="Stale" />
     <DataTable
       columns={tableColumns([
-        { key: 'hostname', label: 'Hostname', cell: staleHostCell },
-        { key: 'addr', label: 'Address', cell: staleAddrCell },
-        { key: 'reason', label: 'Reason', width: '150px', cell: staleReasonCell },
-        { key: 'lastSeen', label: 'Last seen', width: '100px', cell: staleLastSeenCell },
+        { key: 'hostname', label: 'Hostname', spec: staleSpecs.hostname },
+        { key: 'addr', label: 'Address', spec: staleSpecs.addr },
+        { key: 'reason', label: 'Reason', width: '150px', spec: staleSpecs.reason },
+        { key: 'lastSeen', label: 'Last seen', width: '100px', spec: staleSpecs.lastSeen },
       ] satisfies Column<MeshStaleRow>[])}
       rows={stale}
       {loading}
@@ -249,10 +197,10 @@
     <SectionHead title="Inbound offers" />
     <DataTable
       columns={tableColumns([
-        { key: 'hostname', label: 'Hostname', cell: offerHostCell },
-        { key: 'addr', label: 'Address', cell: offerAddrCell },
-        { key: 'inviter', label: 'Inviter', cell: offerInviterCell },
-        { key: 'ttl', label: 'Expires in', width: '100px', cell: offerTtlCell },
+        { key: 'hostname', label: 'Hostname', spec: offerSpecs.hostname },
+        { key: 'addr', label: 'Address', spec: offerSpecs.addr },
+        { key: 'inviter', label: 'Inviter', spec: offerSpecs.inviter },
+        { key: 'ttl', label: 'Expires in', width: '100px', spec: offerSpecs.ttl },
       ] satisfies Column<MeshInboundOffer>[])}
       rows={inboundOffers}
       {loading}
@@ -287,10 +235,6 @@
   }
   .dim-error {
     color: var(--color-error);
-    font-size: var(--text-xs);
-  }
-  .mono {
-    font-family: var(--font-mono);
     font-size: var(--text-xs);
   }
 </style>
