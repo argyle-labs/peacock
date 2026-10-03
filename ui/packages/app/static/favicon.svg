@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="orca">
+  <!-- Theme-aware: currentColor is not available to a favicon, so the mark
+       carries its own accent and relies on a transparent ground to sit on
+       either a light or dark browser tab. -->
+  <circle cx="16" cy="16" r="13" fill="none" stroke="#7c6af7" stroke-width="3" />
+  <circle cx="16" cy="16" r="4.5" fill="#7c6af7" />
+</svg>
