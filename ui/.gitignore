@@ -15,9 +15,12 @@ build/
 coverage/
 playwright-report/
 
-# openapi-ts: spec is fetched live from the running daemon at codegen time;
-# the dump + error logs are throwaway artifacts.
-openapi.json
+# openapi-ts: ./openapi.json is COMMITTED on purpose — it is the deterministic
+# codegen input (refresh with `npm run gen:spec`, which wraps `orca openapi
+# emit`). Committing it makes every API change a reviewable diff and lets CI
+# regenerate + diff the client with no orca binary present. Pointing codegen at
+# a live daemon instead is what let the client rot ~3 months behind the API.
+# Only the generator's error logs are throwaway.
 openapi-ts-error-*.log
 
 # Env
