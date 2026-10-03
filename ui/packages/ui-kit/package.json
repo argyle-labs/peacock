@@ -10,7 +10,8 @@
   },
   "scripts": {
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test:run": "vitest run --reporter=verbose",
+    "test:run": "vitest run --reporter=verbose --project=unit",
+    "test:storybook": "vitest run --reporter=verbose --project=storybook",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
