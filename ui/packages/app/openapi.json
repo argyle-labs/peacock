@@ -62,15 +62,15 @@
       },
       "ApiTokenSummary": {
         "properties": {
-          "can_mutate": {
+          "canMutate": {
             "default": false,
             "description": "Data-mutation opt-in (see `TokenCreateArgs::can_mutate`).",
             "type": "boolean"
           },
-          "created_at": {
+          "createdAt": {
             "type": "string"
           },
-          "expires_at": {
+          "expiresAt": {
             "type": [
               "string",
               "null"
@@ -79,7 +79,7 @@
           "id": {
             "type": "string"
           },
-          "last_used_at": {
+          "lastUsedAt": {
             "type": [
               "string",
               "null"
@@ -97,7 +97,7 @@
           "id",
           "name",
           "role",
-          "created_at"
+          "createdAt"
         ],
         "type": "object"
       },
@@ -221,6 +221,10 @@
           "kind": {
             "type": "string"
           },
+          "system": {
+            "description": "The system the failure happened on. Empty = this one. A fleet-wide run\nthat reported a failure without naming its host would be unactionable.",
+            "type": "string"
+          },
           "target": {
             "description": "The target the failure occurred against (`<kind>/<name>`), if known.",
             "type": [
@@ -298,6 +302,10 @@
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
+          },
+          "system": {
+            "description": "The system holding this backup. Empty = this one.\n\n`path` is absolute \"on the host that holds it\", which is unusable\nwithout knowing which host that is. A fleet-wide listing that omitted\nthis would show backups a restore could not be routed to — and the\noperator must never have to name a host to find out.",
+            "type": "string"
           }
         },
         "required": [
@@ -365,68 +373,6 @@
           "cleared"
         ],
         "type": "object"
-      },
-      "Capability": {
-        "description": "Capability strings a backend advertises (domain-interpreted). Carries both the\nrole markers and the concrete verbs; the media crate parses them off\n`BackendDef::capabilities`. Role markers (`DownloadedBy`/`ServedBy`) double as\ncapabilities so a backend's role set is derivable from `capabilities()` alone,\nmirroring how the `web` domain rides existing `BackendDef` axes with no new\nABI field.",
-        "oneOf": [
-          {
-            "enum": [
-              "downloaded_by",
-              "served_by"
-            ],
-            "type": "string"
-          },
-          {
-            "const": "url",
-            "description": "Return reachable base URL(s) for device setup.",
-            "type": "string"
-          },
-          {
-            "const": "credentials",
-            "description": "Return per-user credentials (orca-managed) for device setup.",
-            "type": "string"
-          },
-          {
-            "const": "list",
-            "description": "Enumerate the backend's library for this media type.",
-            "type": "string"
-          },
-          {
-            "const": "search",
-            "description": "Free-text search (acquisition or library lookup).",
-            "type": "string"
-          },
-          {
-            "const": "library_add",
-            "description": "Add an item to the library (queue a download / import a file).",
-            "type": "string"
-          },
-          {
-            "const": "library_remove",
-            "description": "Remove an item from the library.",
-            "type": "string"
-          },
-          {
-            "const": "fix_match",
-            "description": "Re-match / fix an item's metadata identity.",
-            "type": "string"
-          },
-          {
-            "const": "status",
-            "description": "Report acquisition/library status.",
-            "type": "string"
-          },
-          {
-            "const": "units",
-            "description": "Contribute this backend's partial [`MediaUnit`] view (identity +\nvariants + how it serves them) for cross-backend convergence.",
-            "type": "string"
-          },
-          {
-            "const": "rescan",
-            "description": "Re-read ONE item from disk after an acquirer mutated its path. Scoped to\nthe affected item deliberately: a whole-library refresh is minutes of IO\nper PROPER upgrade, and upgrades are routine.",
-            "type": "string"
-          }
-        ]
       },
       "CapabilityListOutput": {
         "description": "Read shape for `system.detail{view=capabilities}`: every provider this host\nhas ever probed or had set by an operator. Empty before the first daemon\nstartup probe runs.",
@@ -519,18 +465,18 @@
           "cn": {
             "type": "string"
           },
-          "days_remaining": {
+          "daysRemaining": {
             "format": "int64",
             "type": "integer"
           },
-          "expires_at": {
+          "expiresAt": {
             "format": "int64",
             "type": "integer"
           },
           "fingerprint": {
             "type": "string"
           },
-          "issued_at": {
+          "issuedAt": {
             "format": "int64",
             "type": "integer"
           }
@@ -538,9 +484,9 @@
         "required": [
           "cn",
           "fingerprint",
-          "issued_at",
-          "expires_at",
-          "days_remaining"
+          "issuedAt",
+          "expiresAt",
+          "daysRemaining"
         ],
         "type": "object"
       },
@@ -598,7 +544,7 @@
             },
             "type": "array"
           },
-          "last_value": {
+          "lastValue": {
             "description": "Most recent raw value (pre-scaling). `None` when the series is empty\nor every sample lacked this metric. Lets the client render a\n\"current value\" label without re-fetching the raw history.",
             "format": "float",
             "type": [
@@ -618,7 +564,7 @@
             "format": "float",
             "type": "number"
           },
-          "x_axis_labels": {
+          "xAxisLabels": {
             "description": "Evenly-spaced relative-time labels for the x axis (e.g.\n`[\"-5m\", \"-3m\", \"-1m\", \"now\"]`). Length 0 when the series has fewer\nthan 2 points.",
             "items": {
               "type": "string"
@@ -629,7 +575,7 @@
         "required": [
           "points",
           "gaps",
-          "x_axis_labels",
+          "xAxisLabels",
           "vmax"
         ],
         "type": "object"
@@ -637,7 +583,7 @@
       "ClaimEndpoint": {
         "description": "A network endpoint a claimed workload listens on. Enables service-identity\ncorrelation: a runtime [`crate::service_identity::ServiceRegistration`] keyed\nby `(host, port)` joins to the claim whose `endpoints` contain that port on a\nmatching host.",
         "properties": {
-          "host_ip": {
+          "hostIp": {
             "description": "Bind address the runtime reported (e.g. `\"0.0.0.0\"`, `\"127.0.0.1\"`).",
             "type": [
               "string",
@@ -655,7 +601,7 @@
             "description": "`\"tcp\"` | `\"udp\"`. Defaults to `\"tcp\"`.",
             "type": "string"
           },
-          "published_port": {
+          "publishedPort": {
             "description": "Host-published port when the runtime maps one (docker `-p`). `None` = not\npublished to the host (reachable only on the workload's own address).",
             "format": "uint16",
             "maximum": 65535,
@@ -721,14 +667,14 @@
             "description": "Provider labels/metadata. Passthrough from the claim.",
             "type": "object"
           },
-          "native_id": {
+          "nativeId": {
             "description": "Provider-native id (proxmox vmid, docker short id, stack name).",
             "type": "string"
           },
           "provider": {
             "type": "string"
           },
-          "provider_instance": {
+          "providerInstance": {
             "type": "string"
           },
           "routes": {
@@ -741,7 +687,7 @@
               }
             ]
           },
-          "runs_on": {
+          "runsOn": {
             "description": "Hostname of the node this entity runs on, when the provider reports it.",
             "type": [
               "string",
@@ -759,14 +705,14 @@
             ],
             "description": "The runtime service identity correlated to this node by `(host, port)`,\nwhen a registration matches one of its endpoints."
           },
-          "service_identity": {
+          "serviceIdentity": {
             "description": "Host-scoped compose-stack correlation key (a DESCRIPTIVE attribute, not\nan id). Passthrough from `TopologyClaim.service_identity`; the key used\nto group this container under a synthesized `stack` node. `None` on a\nstack node itself and on claims the provider can't attribute to a stack.",
             "type": [
               "string",
               "null"
             ]
           },
-          "service_role": {
+          "serviceRole": {
             "description": "Service role after correlation: a matched runtime registration wins over\nthe provider's claim hint.",
             "type": [
               "string",
@@ -786,8 +732,8 @@
           "label",
           "kind",
           "provider",
-          "provider_instance",
-          "native_id"
+          "providerInstance",
+          "nativeId"
         ],
         "type": "object"
       },
@@ -925,13 +871,13 @@
       },
       "ConfigRowOut": {
         "properties": {
-          "host_owner": {
+          "hostOwner": {
             "type": "string"
           },
           "id": {
             "type": "string"
           },
-          "is_replica": {
+          "isReplica": {
             "type": "boolean"
           },
           "json": {
@@ -943,36 +889,36 @@
           "noun": {
             "type": "string"
           },
-          "updated_at": {
+          "updatedAt": {
             "type": "string"
           },
-          "updated_by": {
+          "updatedBy": {
             "type": "string"
           }
         },
         "required": [
           "id",
-          "host_owner",
+          "hostOwner",
           "noun",
           "name",
           "json",
-          "is_replica",
-          "updated_at",
-          "updated_by"
+          "isReplica",
+          "updatedAt",
+          "updatedBy"
         ],
         "type": "object"
       },
       "Container": {
         "description": "Normalized container row — the unit every adapter returns and every\nreconciler consumes.\n\nField selection is the §2.1 minimum needed to decide an action:\n\n- `id` / `name` / `runtime` / `host` — identity and dispatch.\n- `state` / `restart_policy` — auto-start decision.\n- `image` — surfaced for operator context and crashloop classification.\n- `labels` — `orca.skip`, `orca.heal=manual`, `orca.heal.drain=long`\n  gates live here (§2.1 + §2.2 active-write drain).\n- `mounts` — dep-graph input for the mounts reconciler.\n- `ports` — surfaced for inventory aggregation; not used by the §2.1\n  loop directly.\n- `started_at` / `finished_at` — crashloop window math (§2.1 circuit\n  breaker).\n- `restart_count` — same.\n- `exit_code` — distinguishes clean exit from crash for the breaker.\n- `startup` — boot ordering (LXC), feeds the §2.2 forward/reverse\n  restart sequence.",
         "properties": {
-          "exit_code": {
+          "exitCode": {
             "format": "int32",
             "type": [
               "integer",
               "null"
             ]
           },
-          "finished_at": {
+          "finishedAt": {
             "description": "RFC 3339 timestamp the container last exited.",
             "type": [
               "string",
@@ -1034,18 +980,18 @@
             },
             "type": "array"
           },
-          "restart_count": {
+          "restartCount": {
             "format": "uint32",
             "minimum": 0,
             "type": "integer"
           },
-          "restart_policy": {
+          "restartPolicy": {
             "$ref": "#/components/schemas/RestartPolicy"
           },
           "runtime": {
             "$ref": "#/components/schemas/RuntimeKind"
           },
-          "started_at": {
+          "startedAt": {
             "description": "RFC 3339 timestamp the container last entered `Running`.",
             "type": [
               "string",
@@ -1073,11 +1019,11 @@
           "runtime",
           "host",
           "state",
-          "restart_policy",
+          "restartPolicy",
           "labels",
           "mounts",
           "ports",
-          "restart_count"
+          "restartCount"
         ],
         "type": "object"
       },
@@ -1101,7 +1047,7 @@
       "ContainerMount": {
         "description": "One bind mount or volume on a container. The mount source is the key the\nmounts reconciler uses to build the (mount → dependents) edge for the\ndep graph ([[self-healing-reconciler.md]] §2.2).",
         "properties": {
-          "read_only": {
+          "readOnly": {
             "description": "True when the mount is read-only.",
             "type": "boolean"
           },
@@ -1117,20 +1063,20 @@
         "required": [
           "source",
           "target",
-          "read_only"
+          "readOnly"
         ],
         "type": "object"
       },
       "ContainerPort": {
         "description": "One open published port (host:container, protocol).",
         "properties": {
-          "container_port": {
+          "containerPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "host_port": {
+          "hostPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
@@ -1142,8 +1088,8 @@
           }
         },
         "required": [
-          "host_port",
-          "container_port",
+          "hostPort",
+          "containerPort",
           "protocol"
         ],
         "type": "object"
@@ -1296,21 +1242,21 @@
       "Controller": {
         "description": "A single control pathway to a synthesized entity: the provider (and which\ninstance of it) through which the entity can be observed and acted on.",
         "properties": {
-          "native_id": {
+          "nativeId": {
             "description": "Provider-native id under this pathway; may differ across providers for\nthe same logical entity.",
             "type": "string"
           },
           "provider": {
             "type": "string"
           },
-          "provider_instance": {
+          "providerInstance": {
             "type": "string"
           }
         },
         "required": [
           "provider",
-          "provider_instance",
-          "native_id"
+          "providerInstance",
+          "nativeId"
         ],
         "type": "object"
       },
@@ -1337,7 +1283,7 @@
           "running": {
             "type": "boolean"
           },
-          "uptime_seconds": {
+          "uptimeSeconds": {
             "format": "int64",
             "type": [
               "integer",
@@ -1615,7 +1561,7 @@
               }
             ]
           },
-          "settle_secs": {
+          "settleSecs": {
             "default": 15,
             "description": "Seconds to wait after the lazy unmount before the forced one, letting\nin-flight I/O settle.",
             "format": "uint32",
@@ -1689,37 +1635,6 @@
         },
         "type": "object"
       },
-      "EndpointEntry": {
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "host": {
-            "type": "string"
-          },
-          "method": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "routes": {
-            "$ref": "#/components/schemas/Routes"
-          },
-          "runtime": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "host",
-          "runtime",
-          "method",
-          "routes",
-          "enabled"
-        ],
-        "type": "object"
-      },
       "ExportRow": {
         "description": "An export a host serves, tagged with the backend that publishes it. Flat\nprojection of [`plugin_toolkit::storage::ExportEntry`].",
         "properties": {
@@ -1776,7 +1691,7 @@
       "Failover": {
         "description": "Fail-over / fail-back policy between a mount's ordered sources.",
         "properties": {
-          "confirm_ticks": {
+          "confirmTicks": {
             "default": 2,
             "description": "Consecutive confirming ticks a transition must persist before it is acted\non — the blip filter that rides out a briefly-slow server.",
             "format": "uint32",
@@ -1799,7 +1714,7 @@
               }
             ]
           },
-          "return_to_primary": {
+          "returnToPrimary": {
             "default": true,
             "description": "Whether to fail *back* to a higher-priority source once it is live again\n(index 0 = primary wins the next election). When `false`, a mount that\ndegraded to a secondary stays there until it too fails.",
             "type": "boolean"
@@ -2058,7 +1973,7 @@
           "exists": {
             "type": "boolean"
           },
-          "file_count": {
+          "fileCount": {
             "format": "uint32",
             "minimum": 0,
             "type": "integer"
@@ -2075,7 +1990,7 @@
           "path",
           "enabled",
           "exists",
-          "file_count"
+          "fileCount"
         ],
         "type": "object"
       },
@@ -2157,14 +2072,14 @@
       "GpuInfo": {
         "description": "One GPU detected on the host.",
         "properties": {
-          "driver_install_hint": {
+          "driverInstallHint": {
             "description": "Suggested package to install to get full metrics. Distro-specific;\nonly populated when `driver_status = \"no_driver\"` or `\"no_metrics\"`.",
             "type": [
               "string",
               "null"
             ]
           },
-          "driver_status": {
+          "driverStatus": {
             "description": "Driver/tool availability: `\"ok\"` when metrics are live, `\"no_driver\"`\nwhen the GPU was detected via sysfs/PCI but the user-space driver or\nquery tool is absent, `\"no_metrics\"` when the driver is loaded but\ndoesn't expose utilization (e.g. Intel iGPU without `intel_gpu_top`).",
             "type": [
               "string",
@@ -2175,7 +2090,7 @@
             "description": "Display name from driver (e.g. `NVIDIA GeForce RTX 4090`).",
             "type": "string"
           },
-          "temperature_c": {
+          "temperatureC": {
             "description": "GPU temperature in °C.",
             "format": "float",
             "type": [
@@ -2183,7 +2098,7 @@
               "null"
             ]
           },
-          "utilization_percent": {
+          "utilizationPercent": {
             "description": "GPU core utilisation 0–100 %.",
             "format": "float",
             "type": [
@@ -2195,7 +2110,7 @@
             "description": "Source driver: `\"nvidia\"`, `\"amd\"`, `\"intel\"`.",
             "type": "string"
           },
-          "vram_total_mb": {
+          "vramTotalMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -2203,7 +2118,7 @@
               "null"
             ]
           },
-          "vram_used_mb": {
+          "vramUsedMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -2224,21 +2139,21 @@
           "name": {
             "type": "string"
           },
-          "temperature_c": {
+          "temperatureC": {
             "format": "float",
             "type": [
               "number",
               "null"
             ]
           },
-          "utilization_percent": {
+          "utilizationPercent": {
             "format": "float",
             "type": [
               "number",
               "null"
             ]
           },
-          "vram_total_mb": {
+          "vramTotalMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -2246,7 +2161,7 @@
               "null"
             ]
           },
-          "vram_used_mb": {
+          "vramUsedMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -2455,41 +2370,36 @@
         "type": "object"
       },
       "Health": {
-        "description": "Liveness classification for a mountpoint. Shared so the nfs/smb dashboards\nspeak one language.",
+        "description": "Operational health of a thing (container, service, host, …). Populated per\nthe layered precedence rule documented on this module.",
         "oneOf": [
           {
-            "const": "ok",
-            "description": "Path is a live mount and answers I/O within the budget.",
+            "const": "healthy",
+            "description": "Working as intended — the native check or declared probe passes.",
             "type": "string"
           },
           {
-            "const": "stale",
-            "description": "Mount is present but I/O hung past the timeout (unreachable server).",
+            "const": "starting",
+            "description": "Coming up — inside its start-period / warm-up window, not yet Healthy.",
             "type": "string"
           },
           {
-            "const": "missing",
-            "description": "Path does not exist / nothing mounted there.",
+            "const": "degraded",
+            "description": "Working but impaired — some checks fail while it still serves.",
             "type": "string"
           },
           {
-            "const": "timeout",
-            "description": "Probe exceeded its time budget without a definite stale/ok answer.",
-            "type": "string"
-          },
-          {
-            "const": "error",
-            "description": "Probe failed for some other reason.",
-            "type": "string"
-          },
-          {
-            "const": "write_denied",
-            "description": "Mount is live and readable, but a write was denied (EACCES/EPERM/EROFS).\nThe share drifted to a mode/owner that leaves the mounting identity\nwithout write access — reads succeed, so plain [`probe_health`] reports\n`Ok`, yet consumers that write (uploads, renames, lock files) fail. Only\n[`probe_writable`] surfaces this. A remount does NOT fix it (the drift is\nserver-side); the remediation is a server-side chmod/chown, so callers\nmust treat this as *present* — never as stale/missing that triggers a\nremount or failover.",
+            "const": "unhealthy",
+            "description": "Not working — the native check or declared probe fails.",
             "type": "string"
           },
           {
             "const": "unknown",
-            "description": "State is not observed by the daemon answering the read: the placement\nbelongs to another host and that owner could not be reached to report its\nown liveness. Distinct from `Missing` (a definite \"nothing is mounted\"),\nwhich only the owning host can assert. A read never presents a peer's\nhost-local liveness column as truth — an unreached owner is `Unknown`.",
+            "description": "The signal applies but has not yet been determined (no report yet).",
+            "type": "string"
+          },
+          {
+            "const": "not_applicable",
+            "description": "No health signal applies — neither a native check nor a declared probe.",
             "type": "string"
           }
         ]
@@ -2555,7 +2465,7 @@
           "kind": {
             "type": "string"
           },
-          "last_seen_at": {
+          "lastSeenAt": {
             "format": "int64",
             "type": "integer"
           },
@@ -2570,7 +2480,7 @@
           "kind",
           "value",
           "source",
-          "last_seen_at"
+          "lastSeenAt"
         ],
         "type": "object"
       },
@@ -2667,35 +2577,35 @@
       },
       "JobStatus": {
         "properties": {
-          "job_name": {
+          "jobName": {
             "type": "string"
           },
-          "last_run_duration_ms": {
+          "lastRunDurationMs": {
             "format": "int64",
             "type": [
               "integer",
               "null"
             ]
           },
-          "last_run_error": {
+          "lastRunError": {
             "type": [
               "string",
               "null"
             ]
           },
-          "last_run_finished": {
+          "lastRunFinished": {
             "type": [
               "string",
               "null"
             ]
           },
-          "last_run_ok": {
+          "lastRunOk": {
             "type": [
               "boolean",
               "null"
             ]
           },
-          "last_run_started": {
+          "lastRunStarted": {
             "type": [
               "string",
               "null"
@@ -2703,7 +2613,7 @@
           }
         },
         "required": [
-          "job_name"
+          "jobName"
         ],
         "type": "object"
       },
@@ -2722,7 +2632,7 @@
             "description": "Absolute path to the file on that storage.",
             "type": "string"
           },
-          "storage_backend": {
+          "storageBackend": {
             "default": null,
             "description": "Storage-domain provider name backing this path (`nfs` / `smb`), when known.",
             "type": [
@@ -2785,10 +2695,72 @@
         ],
         "type": "object"
       },
+      "MediaCapability": {
+        "description": "Capability strings a backend advertises (domain-interpreted). Carries both the\nrole markers and the concrete verbs; the media crate parses them off\n`BackendDef::capabilities`. Role markers (`DownloadedBy`/`ServedBy`) double as\ncapabilities so a backend's role set is derivable from `capabilities()` alone,\nmirroring how the `web` domain rides existing `BackendDef` axes with no new\nABI field.",
+        "oneOf": [
+          {
+            "enum": [
+              "downloaded_by",
+              "served_by"
+            ],
+            "type": "string"
+          },
+          {
+            "const": "url",
+            "description": "Return reachable base URL(s) for device setup.",
+            "type": "string"
+          },
+          {
+            "const": "credentials",
+            "description": "Return per-user credentials (orca-managed) for device setup.",
+            "type": "string"
+          },
+          {
+            "const": "list",
+            "description": "Enumerate the backend's library for this media type.",
+            "type": "string"
+          },
+          {
+            "const": "search",
+            "description": "Free-text search (acquisition or library lookup).",
+            "type": "string"
+          },
+          {
+            "const": "library_add",
+            "description": "Add an item to the library (queue a download / import a file).",
+            "type": "string"
+          },
+          {
+            "const": "library_remove",
+            "description": "Remove an item from the library.",
+            "type": "string"
+          },
+          {
+            "const": "fix_match",
+            "description": "Re-match / fix an item's metadata identity.",
+            "type": "string"
+          },
+          {
+            "const": "status",
+            "description": "Report acquisition/library status.",
+            "type": "string"
+          },
+          {
+            "const": "units",
+            "description": "Contribute this backend's partial [`MediaUnit`] view (identity +\nvariants + how it serves them) for cross-backend convergence.",
+            "type": "string"
+          },
+          {
+            "const": "rescan",
+            "description": "Re-read ONE item from disk after an acquirer mutated its path. Scoped to\nthe affected item deliberately: a whole-library refresh is minutes of IO\nper PROPER upgrade, and upgrades are routine.",
+            "type": "string"
+          }
+        ]
+      },
       "MediaCredentials": {
         "description": "Per-user credentials for a served-by backend, so a device can be set up. The\npassword is a [`SecretRef`] the secrets domain resolves — the media backend\nnever inlines a plaintext secret. orca owns/propagates the actual value.",
         "properties": {
-          "password_ref": {
+          "passwordRef": {
             "default": null,
             "description": "Reference to the password secret (resolved via the secrets domain), if the\nbackend uses a password. Never a plaintext value on the wire.",
             "type": [
@@ -2820,7 +2792,7 @@
       "MediaIdentity": {
         "description": "What a unit IS — the identity every variant resolves to.",
         "properties": {
-          "external_ids": {
+          "externalIds": {
             "default": [],
             "description": "Canonical external ids — the cross-server/​cross-format merge keys.",
             "items": {
@@ -2859,6 +2831,51 @@
         ],
         "type": "object"
       },
+      "MediaProvider": {
+        "description": "A descriptor row for one registered media backend — the `media.*` list view.",
+        "properties": {
+          "capabilities": {
+            "description": "Verbs advertised.",
+            "items": {
+              "$ref": "#/components/schemas/MediaCapability"
+            },
+            "type": "array"
+          },
+          "endpoint": {
+            "description": "Non-secret base endpoint for display (`http://10.0.0.6:13378`).",
+            "type": "string"
+          },
+          "mediaType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaType"
+              },
+              {
+                "description": "The media type this registration handles."
+              }
+            ]
+          },
+          "name": {
+            "description": "App identity (`audiobookshelf`, `lazylibrarian`, `plex`).",
+            "type": "string"
+          },
+          "roles": {
+            "description": "Roles this backend plays for the type.",
+            "items": {
+              "$ref": "#/components/schemas/MediaRole"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "mediaType",
+          "roles",
+          "capabilities",
+          "endpoint"
+        ],
+        "type": "object"
+      },
       "MediaRole": {
         "description": "The role a backend plays *for a given media type* — the second axis of the\ndomain. A backend may play both (rare, e.g. plex serves and can request).",
         "oneOf": [
@@ -2890,7 +2907,7 @@
       "MediaUnit": {
         "description": "THE convergence object: a canonical piece of media with everything known about\nit — what it is, its variants (resolutions/formats/tracks), where the\nbytes live, and who serves it and how. Assembled by merging each backend's\npartial view (see [`merge_units`]) by [`MediaIdentity`] external ids.",
         "properties": {
-          "downloaded_by": {
+          "downloadedBy": {
             "description": "Acquirer app name(s) that actually contributed a view of THIS unit — the\nper-unit half of the relation, which the media-type registration cannot\nanswer (\"sonarr can acquire tv\" ≠ \"sonarr got this episode\").",
             "items": {
               "type": "string"
@@ -2900,10 +2917,10 @@
           "identity": {
             "$ref": "#/components/schemas/MediaIdentity"
           },
-          "media_type": {
+          "mediaType": {
             "$ref": "#/components/schemas/MediaType"
           },
-          "served_by": {
+          "servedBy": {
             "description": "Server app name(s) that actually hold/serve THIS unit. Narrower than\n`sources`, which also carries method+url and raw file-share sourcing.",
             "items": {
               "type": "string"
@@ -2926,7 +2943,7 @@
           }
         },
         "required": [
-          "media_type",
+          "mediaType",
           "identity"
         ],
         "type": "object"
@@ -2967,35 +2984,35 @@
       },
       "MeshAcceptOutput": {
         "properties": {
-          "inviter_addr": {
+          "inviterAddr": {
             "type": "string"
           },
-          "inviter_hostname": {
+          "inviterHostname": {
             "type": "string"
           },
-          "inviter_peer_id": {
+          "inviterPeerId": {
             "type": "string"
           },
-          "inviter_port": {
+          "inviterPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "mesh_id": {
+          "meshId": {
             "type": "string"
           },
-          "self_secure": {
+          "selfSecure": {
             "type": "boolean"
           }
         },
         "required": [
-          "mesh_id",
-          "inviter_peer_id",
-          "inviter_hostname",
-          "inviter_addr",
-          "inviter_port",
-          "self_secure"
+          "meshId",
+          "inviterPeerId",
+          "inviterHostname",
+          "inviterAddr",
+          "inviterPort",
+          "selfSecure"
         ],
         "type": "object"
       },
@@ -3022,13 +3039,13 @@
           "addr": {
             "type": "string"
           },
-          "can_invite": {
+          "canInvite": {
             "type": "boolean"
           },
           "hostname": {
             "type": "string"
           },
-          "peer_id": {
+          "peerId": {
             "type": [
               "string",
               "null"
@@ -3040,16 +3057,16 @@
             "minimum": 0,
             "type": "integer"
           },
-          "pubkey_fp": {
+          "pubkeyFp": {
             "type": "string"
           }
         },
         "required": [
-          "pubkey_fp",
+          "pubkeyFp",
           "hostname",
           "addr",
           "port",
-          "can_invite"
+          "canInvite"
         ],
         "type": "object"
       },
@@ -3098,25 +3115,25 @@
           "addr": {
             "type": "string"
           },
-          "can_invite": {
+          "canInvite": {
             "type": "boolean"
           },
-          "discovery_state": {
+          "discoveryState": {
             "description": "mDNS-advertised membership: `\"unclaimed\"` or `\"mesh:<mesh_id>\"`. Named\n`discovery_state` (not `state`) so it doesn't collide with the\n`#[serde(tag = \"state\")]` discriminant on [`MeshMember`], which would\notherwise clobber the `\"discovered\"` tag and break state filtering.",
             "type": "string"
           },
-          "first_seen_at": {
+          "firstSeenAt": {
             "format": "int64",
             "type": "integer"
           },
           "hostname": {
             "type": "string"
           },
-          "last_seen_at": {
+          "lastSeenAt": {
             "format": "int64",
             "type": "integer"
           },
-          "peer_id": {
+          "peerId": {
             "type": [
               "string",
               "null"
@@ -3128,25 +3145,25 @@
             "minimum": 0,
             "type": "integer"
           },
-          "pubkey_fp": {
+          "pubkeyFp": {
             "type": "string"
           }
         },
         "required": [
-          "pubkey_fp",
+          "pubkeyFp",
           "hostname",
           "addr",
           "port",
-          "discovery_state",
-          "can_invite",
-          "first_seen_at",
-          "last_seen_at"
+          "discoveryState",
+          "canInvite",
+          "firstSeenAt",
+          "lastSeenAt"
         ],
         "type": "object"
       },
       "MeshForgetNotice": {
         "properties": {
-          "peer_id": {
+          "peerId": {
             "description": "A live member we asked to forget the target.",
             "type": "string"
           },
@@ -3156,7 +3173,7 @@
           }
         },
         "required": [
-          "peer_id",
+          "peerId",
           "result"
         ],
         "type": "object"
@@ -3170,10 +3187,10 @@
             },
             "type": "array"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "rows_removed": {
+          "rowsRemoved": {
             "description": "Rows deleted on THIS host across mesh_peers/mesh_trust/mesh_discovery/offers.",
             "format": "uint32",
             "minimum": 0,
@@ -3181,8 +3198,8 @@
           }
         },
         "required": [
-          "peer_id",
-          "rows_removed",
+          "peerId",
+          "rowsRemoved",
           "notified"
         ],
         "type": "object"
@@ -3240,48 +3257,48 @@
       },
       "MeshInboundOffer": {
         "properties": {
-          "expires_at": {
+          "expiresAt": {
             "format": "int64",
             "type": "integer"
           },
-          "inviter_peer_id": {
+          "inviterPeerId": {
             "type": [
               "string",
               "null"
             ]
           },
-          "offer_id": {
+          "offerId": {
             "type": "string"
           },
-          "peer_addr": {
+          "peerAddr": {
             "type": "string"
           },
-          "peer_hostname": {
+          "peerHostname": {
             "type": "string"
           },
-          "peer_port": {
+          "peerPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "ttl_secs": {
+          "ttlSecs": {
             "format": "int64",
             "type": "integer"
           }
         },
         "required": [
-          "offer_id",
-          "peer_hostname",
-          "peer_addr",
-          "peer_port",
-          "expires_at",
-          "ttl_secs"
+          "offerId",
+          "peerHostname",
+          "peerAddr",
+          "peerPort",
+          "expiresAt",
+          "ttlSecs"
         ],
         "type": "object"
       },
       "MeshInstance": {
-        "description": "Fully-shaped instance row the frontend systems UI renders directly. Mirrors\nthe legacy TS `Instance` shape but every field is snake_case so the typed\nSDK from regen flows through unchanged.",
+        "description": "Fully-shaped instance row the frontend systems UI renders directly, in the\nsame camelCase wire form as the rest of the surface so the typed SDK from\nregen flows through unchanged.",
         "properties": {
           "addresses": {
             "items": {
@@ -3289,7 +3306,7 @@
             },
             "type": "array"
           },
-          "available_versions": {
+          "availableVersions": {
             "description": "Full version list from a `system.update {}` probe. Always empty on\nthis endpoint — the page-level probe overlay populates it client-side.",
             "items": {
               "$ref": "#/components/schemas/VersionEntry"
@@ -3318,7 +3335,7 @@
           "label": {
             "type": "string"
           },
-          "last_checked": {
+          "lastChecked": {
             "description": "Wall-clock millis when this row was assembled.",
             "format": "int64",
             "type": [
@@ -3336,10 +3353,10 @@
             "description": "For the synthetic local row this is emitted as `\"\"` — the frontend\noverwrites it with `window.location.origin` after fetch since the\ndaemon doesn't know how the browser reached it. Remote rows carry the\n`addr:port` of the peer.",
             "type": "string"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "pinned_to": {
+          "pinnedTo": {
             "type": [
               "string",
               "null"
@@ -3351,7 +3368,7 @@
             "minimum": 0,
             "type": "integer"
           },
-          "reachable_addrs": {
+          "reachableAddrs": {
             "description": "LAN addresses reachable by the browser. Computed server-side from\n`addresses` + `system` to replace the JS `reachableAddrs()` helper.",
             "items": {
               "type": "string"
@@ -3394,10 +3411,10 @@
               "null"
             ]
           },
-          "update_available": {
+          "updateAvailable": {
             "type": "boolean"
           },
-          "update_checked_secs": {
+          "updateCheckedSecs": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -3405,7 +3422,7 @@
               "null"
             ]
           },
-          "update_latest": {
+          "updateLatest": {
             "type": [
               "string",
               "null"
@@ -3420,16 +3437,16 @@
         },
         "required": [
           "id",
-          "peer_id",
+          "peerId",
           "label",
           "origin",
           "port",
           "role",
-          "update_available",
+          "updateAvailable",
           "health",
           "addresses",
-          "reachable_addrs",
-          "available_versions"
+          "reachableAddrs",
+          "availableVersions"
         ],
         "type": "object"
       },
@@ -3438,7 +3455,7 @@
           "kind": {
             "type": "string"
           },
-          "kind_label": {
+          "kindLabel": {
             "type": "string"
           },
           "value": {
@@ -3447,7 +3464,7 @@
         },
         "required": [
           "kind",
-          "kind_label",
+          "kindLabel",
           "value"
         ],
         "type": "object"
@@ -3475,7 +3492,7 @@
             },
             "type": "array"
           },
-          "inbound_offers": {
+          "inboundOffers": {
             "items": {
               "$ref": "#/components/schemas/MeshInboundOffer"
             },
@@ -3498,28 +3515,28 @@
           "members",
           "candidates",
           "stale",
-          "inbound_offers"
+          "inboundOffers"
         ],
         "type": "object"
       },
       "MeshLeaveOutput": {
         "properties": {
-          "notify_result": {
+          "notifyResult": {
             "type": "string"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "rows_removed": {
+          "rowsRemoved": {
             "format": "uint32",
             "minimum": 0,
             "type": "integer"
           }
         },
         "required": [
-          "peer_id",
-          "notify_result",
-          "rows_removed"
+          "peerId",
+          "notifyResult",
+          "rowsRemoved"
         ],
         "type": "object"
       },
@@ -3531,7 +3548,7 @@
             },
             "type": "array"
           },
-          "rows_removed": {
+          "rowsRemoved": {
             "description": "Number of peer rows removed from `mesh_peers` (one per paired peer).",
             "format": "uint32",
             "minimum": 0,
@@ -3539,23 +3556,23 @@
           }
         },
         "required": [
-          "rows_removed",
+          "rowsRemoved",
           "peers"
         ],
         "type": "object"
       },
       "MeshLeaveSelfResult": {
         "properties": {
-          "notify_result": {
+          "notifyResult": {
             "type": "string"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           }
         },
         "required": [
-          "peer_id",
-          "notify_result"
+          "peerId",
+          "notifyResult"
         ],
         "type": "object"
       },
@@ -3567,7 +3584,7 @@
             },
             "type": "array"
           },
-          "next_cursor": {
+          "nextCursor": {
             "description": "Opaque cursor for the next page, or absent on the last page.",
             "type": [
               "string",
@@ -3660,37 +3677,37 @@
             "description": "Pairing code minted for this offer; show to the operator so they can\nrun `system.join --action accept` on the joiner side.",
             "type": "string"
           },
-          "expires_at": {
+          "expiresAt": {
             "format": "int64",
             "type": "integer"
           },
-          "joiner_addr": {
+          "joinerAddr": {
             "type": "string"
           },
-          "joiner_hostname": {
+          "joinerHostname": {
             "type": "string"
           },
-          "joiner_port": {
+          "joinerPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "joiner_pubkey_fp": {
+          "joinerPubkeyFp": {
             "type": "string"
           },
-          "offer_id": {
+          "offerId": {
             "type": "string"
           }
         },
         "required": [
           "code",
-          "joiner_hostname",
-          "joiner_addr",
-          "joiner_port",
-          "joiner_pubkey_fp",
-          "offer_id",
-          "expires_at"
+          "joinerHostname",
+          "joinerAddr",
+          "joinerPort",
+          "joinerPubkeyFp",
+          "offerId",
+          "expiresAt"
         ],
         "type": "object"
       },
@@ -3718,11 +3735,11 @@
           "hostname": {
             "type": "string"
           },
-          "last_seen_at": {
+          "lastSeenAt": {
             "format": "int64",
             "type": "integer"
           },
-          "latency_ms": {
+          "latencyMs": {
             "description": "Round-trip latency of the `mesh/ping` probe, milliseconds.",
             "format": "uint32",
             "minimum": 0,
@@ -3736,7 +3753,7 @@
             "description": "True for the synthetic local-host row prepended to `system.list`. Remote\npeers are always false. Lets UIs flag \"this is me\" without string\nmatching the hostname.",
             "type": "boolean"
           },
-          "local_secure": {
+          "localSecure": {
             "type": "boolean"
           },
           "mode": {
@@ -3746,13 +3763,13 @@
               "null"
             ]
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "peer_secure": {
+          "peerSecure": {
             "type": "boolean"
           },
-          "pinned_to": {
+          "pinnedTo": {
             "description": "Peer-reported version pin if set.",
             "type": [
               "string",
@@ -3765,14 +3782,14 @@
             "minimum": 0,
             "type": "integer"
           },
-          "probe_error": {
+          "probeError": {
             "description": "Error string from the probe path (ping / runtime-spec / update-check).\nFirst failure wins so the UI has one line to surface.",
             "type": [
               "string",
               "null"
             ]
           },
-          "pubkey_fp": {
+          "pubkeyFp": {
             "description": "Bootstrap-pubkey fingerprint of this peer, as known to the responder.\nPropagated through roster sync so peers learned via intermediary can\ntransitively pin the fp instead of arriving with `None` — without\nthis, mesh/exec from a roster-synced peer is refused with \"no pinned\nbootstrap key\" forever after.",
             "type": [
               "string",
@@ -3819,14 +3836,14 @@
               "null"
             ]
           },
-          "update_available": {
+          "updateAvailable": {
             "description": "True when an update is available for the peer (and not blocked by\n`pinned_to`).",
             "type": [
               "boolean",
               "null"
             ]
           },
-          "update_checked_secs": {
+          "updateCheckedSecs": {
             "description": "Age in seconds of the last successful `system.update {}` probe against\nthis peer. `None` until the periodic probe has succeeded at least\nonce (or for the synthetic local-host row).",
             "format": "uint64",
             "minimum": 0,
@@ -3835,7 +3852,7 @@
               "null"
             ]
           },
-          "update_latest": {
+          "updateLatest": {
             "description": "Latest release tag visible to the peer on its channel. Pulled from\n`system.update-check`; `None` when the probe failed or timed out.",
             "type": [
               "string",
@@ -3851,74 +3868,74 @@
           }
         },
         "required": [
-          "peer_id",
+          "peerId",
           "hostname",
           "port",
-          "last_seen_at",
-          "local_secure",
-          "peer_secure",
+          "lastSeenAt",
+          "localSecure",
+          "peerSecure",
           "status"
         ],
         "type": "object"
       },
       "MeshPendingOfferDto": {
         "properties": {
-          "created_at": {
+          "createdAt": {
             "format": "int64",
             "type": "integer"
           },
           "direction": {
             "type": "string"
           },
-          "expires_at": {
+          "expiresAt": {
             "format": "int64",
             "type": "integer"
           },
-          "inviter_peer_id": {
+          "inviterPeerId": {
             "type": [
               "string",
               "null"
             ]
           },
-          "mesh_id": {
+          "meshId": {
             "type": [
               "string",
               "null"
             ]
           },
-          "offer_id": {
+          "offerId": {
             "type": "string"
           },
-          "peer_addr": {
+          "peerAddr": {
             "type": "string"
           },
-          "peer_hostname": {
+          "peerHostname": {
             "type": "string"
           },
-          "peer_port": {
+          "peerPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "peer_pubkey_fp": {
+          "peerPubkeyFp": {
             "type": "string"
           },
-          "ttl_secs": {
+          "ttlSecs": {
             "format": "int64",
             "type": "integer"
           }
         },
         "required": [
-          "offer_id",
+          "offerId",
           "direction",
-          "peer_pubkey_fp",
-          "peer_hostname",
-          "peer_addr",
-          "peer_port",
-          "expires_at",
-          "ttl_secs",
-          "created_at"
+          "peerPubkeyFp",
+          "peerHostname",
+          "peerAddr",
+          "peerPort",
+          "expiresAt",
+          "ttlSecs",
+          "createdAt"
         ],
         "type": "object"
       },
@@ -3928,12 +3945,12 @@
             "description": "`true` if a `departed_at` flag was actually cleared. `false` means the\npeer either wasn't departed or doesn't exist locally.",
             "type": "boolean"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           }
         },
         "required": [
-          "peer_id",
+          "peerId",
           "cleared"
         ],
         "type": "object"
@@ -3941,12 +3958,12 @@
       "MeshSettingsOutput": {
         "description": "Result of `system.mesh.update action=settings`.",
         "properties": {
-          "self_secure": {
+          "selfSecure": {
             "type": "boolean"
           }
         },
         "required": [
-          "self_secure"
+          "selfSecure"
         ],
         "type": "object"
       },
@@ -3959,7 +3976,7 @@
             },
             "type": "array"
           },
-          "cluster_membership": {
+          "clusterMembership": {
             "additionalProperties": {
               "type": "string"
             },
@@ -3973,7 +3990,7 @@
             },
             "type": "array"
           },
-          "inbound_offers": {
+          "inboundOffers": {
             "description": "Handshaking offers whose `expires_at` is still in the future.",
             "items": {
               "$ref": "#/components/schemas/MeshInboundOffer"
@@ -3999,9 +4016,9 @@
           "members",
           "candidates",
           "stale",
-          "inbound_offers",
+          "inboundOffers",
           "clusters",
-          "cluster_membership"
+          "clusterMembership"
         ],
         "type": "object"
       },
@@ -4013,14 +4030,14 @@
           "hostname": {
             "type": "string"
           },
-          "last_seen_at": {
+          "lastSeenAt": {
             "format": "int64",
             "type": [
               "integer",
               "null"
             ]
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
           "port": {
@@ -4035,7 +4052,7 @@
           }
         },
         "required": [
-          "peer_id",
+          "peerId",
           "hostname",
           "addr",
           "port",
@@ -4059,29 +4076,29 @@
       },
       "MeshTrustOutput": {
         "properties": {
-          "local_secure": {
+          "localSecure": {
             "type": "boolean"
           },
           "mutual": {
             "description": "True when both sides trust each other. Secure peers can sync\ncredentials; non-mutual peers only retain their own credentials.",
             "type": "boolean"
           },
-          "notify_result": {
+          "notifyResult": {
             "type": "string"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "peer_secure": {
+          "peerSecure": {
             "type": "boolean"
           }
         },
         "required": [
-          "peer_id",
-          "local_secure",
-          "peer_secure",
+          "peerId",
+          "localSecure",
+          "peerSecure",
           "mutual",
-          "notify_result"
+          "notifyResult"
         ],
         "type": "object"
       },
@@ -4162,6 +4179,46 @@
           "apiKeyInDb"
         ],
         "type": "object"
+      },
+      "MountHealth": {
+        "description": "Liveness classification for a mountpoint. Shared so the nfs/smb dashboards\nspeak one language.",
+        "oneOf": [
+          {
+            "const": "ok",
+            "description": "Path is a live mount and answers I/O within the budget.",
+            "type": "string"
+          },
+          {
+            "const": "stale",
+            "description": "Mount is present but I/O hung past the timeout (unreachable server).",
+            "type": "string"
+          },
+          {
+            "const": "missing",
+            "description": "Path does not exist / nothing mounted there.",
+            "type": "string"
+          },
+          {
+            "const": "timeout",
+            "description": "Probe exceeded its time budget without a definite stale/ok answer.",
+            "type": "string"
+          },
+          {
+            "const": "error",
+            "description": "Probe failed for some other reason.",
+            "type": "string"
+          },
+          {
+            "const": "write_denied",
+            "description": "Mount is live and readable, but a write was denied (EACCES/EPERM/EROFS).\nThe share drifted to a mode/owner that leaves the mounting identity\nwithout write access — reads succeed, so plain [`probe_health`] reports\n`Ok`, yet consumers that write (uploads, renames, lock files) fail. Only\n[`probe_writable`] surfaces this. A remount does NOT fix it (the drift is\nserver-side); the remediation is a server-side chmod/chown, so callers\nmust treat this as *present* — never as stale/missing that triggers a\nremount or failover.",
+            "type": "string"
+          },
+          {
+            "const": "unknown",
+            "description": "State is not observed by the daemon answering the read: the placement\nbelongs to another host and that owner could not be reached to report its\nown liveness. Distinct from `Missing` (a definite \"nothing is mounted\"),\nwhich only the owning host can assert. A read never presents a peer's\nhost-local liveness column as truth — an unreached owner is `Unknown`.",
+            "type": "string"
+          }
+        ]
       },
       "MountOutcome": {
         "description": "Result of a mount/unmount operation. `recovered` is set when the backend had\nto run its stale-handle recovery sequence (lazy unmount + remount) to reach\nthe requested state — surfaced so the reconciler can record self-healing.",
@@ -4263,7 +4320,7 @@
           "health": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/Health"
+                "$ref": "#/components/schemas/MountHealth"
               },
               {
                 "description": "Last-known liveness, written by the convergence tick — the STORED value,\nnever a live probe (the read path takes no fan-out)."
@@ -4326,12 +4383,12 @@
             "description": "`viewer` | `collaborator`",
             "type": "string"
           },
-          "user_id": {
+          "userId": {
             "type": "string"
           }
         },
         "required": [
-          "user_id",
+          "userId",
           "role"
         ],
         "type": "object"
@@ -4341,21 +4398,21 @@
           "id": {
             "type": "string"
           },
-          "is_active": {
+          "isActive": {
             "type": "boolean"
           },
           "name": {
             "type": "string"
           },
-          "owner_user_id": {
+          "ownerUserId": {
             "type": "string"
           }
         },
         "required": [
           "id",
           "name",
-          "owner_user_id",
-          "is_active"
+          "ownerUserId",
+          "isActive"
         ],
         "type": "object"
       },
@@ -4403,13 +4460,13 @@
               },
               {
                 "properties": {
-                  "node_type": {
+                  "nodeType": {
                     "const": "peer",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "node_type"
+                  "nodeType"
                 ],
                 "type": "object"
               }
@@ -4422,13 +4479,13 @@
               },
               {
                 "properties": {
-                  "node_type": {
+                  "nodeType": {
                     "const": "claim",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "node_type"
+                  "nodeType"
                 ],
                 "type": "object"
               }
@@ -4636,7 +4693,7 @@
             "minimum": 0,
             "type": "integer"
           },
-          "sample_paths": {
+          "samplePaths": {
             "description": "A few example peer paths, so the choice is auditable.",
             "items": {
               "type": "string"
@@ -4654,7 +4711,7 @@
           "uid",
           "gid",
           "count",
-          "sample_paths"
+          "samplePaths"
         ],
         "type": "object"
       },
@@ -4725,7 +4782,7 @@
       "PeerSyncReport": {
         "description": "Per-peer outcome of a single sync (push or pull). `orca system mesh update --action sync` returns these\ndirectly so operators see exactly what happened.",
         "properties": {
-          "duration_ms": {
+          "durationMs": {
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
@@ -4744,10 +4801,10 @@
             "minimum": 0,
             "type": "integer"
           },
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "skip_reason": {
+          "skipReason": {
             "type": [
               "string",
               "null"
@@ -4759,11 +4816,11 @@
           }
         },
         "required": [
-          "peer_id",
+          "peerId",
           "hostname",
           "status",
           "merged",
-          "duration_ms"
+          "durationMs"
         ],
         "type": "object"
       },
@@ -4797,7 +4854,7 @@
             "minimum": 0,
             "type": "integer"
           },
-          "sample_paths": {
+          "samplePaths": {
             "description": "A few example peer paths that use it, so the choice is auditable.",
             "items": {
               "type": "string"
@@ -4808,7 +4865,7 @@
         "required": [
           "mode",
           "count",
-          "sample_paths"
+          "samplePaths"
         ],
         "type": "object"
       },
@@ -4843,16 +4900,16 @@
       },
       "PkiCertEntry": {
         "properties": {
-          "cert_path": {
+          "certPath": {
             "type": "string"
           },
-          "plugin_id": {
+          "pluginId": {
             "type": "string"
           }
         },
         "required": [
-          "plugin_id",
-          "cert_path"
+          "pluginId",
+          "certPath"
         ],
         "type": "object"
       },
@@ -5104,48 +5161,98 @@
         ],
         "type": "object"
       },
-      "Provider": {
-        "description": "A descriptor row for one registered media backend — the `media.*` list view.",
+      "PrivilegeFinding": {
+        "description": "A finding worth acting on.",
         "properties": {
-          "capabilities": {
-            "description": "Verbs advertised.",
-            "items": {
-              "$ref": "#/components/schemas/Capability"
-            },
-            "type": "array"
-          },
-          "endpoint": {
-            "description": "Non-secret base endpoint for display (`http://10.0.0.6:13378`).",
+          "detail": {
+            "description": "What is wrong, in one sentence.",
             "type": "string"
           },
-          "media_type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MediaType"
-              },
-              {
-                "description": "The media type this registration handles."
-              }
+          "kind": {
+            "description": "Machine-readable class: `dangling_target`, `sole_grant`, `nopasswd_all`,\nor `no_group_grant`.",
+            "type": "string"
+          },
+          "line": {
+            "format": "uint",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
             ]
           },
-          "name": {
-            "description": "App identity (`audiobookshelf`, `lazylibrarian`, `plex`).",
+          "principal": {
             "type": "string"
           },
-          "roles": {
-            "description": "Roles this backend plays for the type.",
-            "items": {
-              "$ref": "#/components/schemas/MediaRole"
-            },
-            "type": "array"
+          "severity": {
+            "description": "`high` | `medium` | `info`.",
+            "type": "string"
+          },
+          "source": {
+            "description": "Where it was found, when tied to a specific rule.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
-          "name",
-          "media_type",
-          "roles",
-          "capabilities",
-          "endpoint"
+          "kind",
+          "severity",
+          "principal",
+          "detail"
+        ],
+        "type": "object"
+      },
+      "PrivilegeRule": {
+        "description": "One parsed privilege rule, from either sudoers or doas.",
+        "properties": {
+          "commands": {
+            "description": "Commands granted. `[\"ALL\"]` means unrestricted.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "isGroup": {
+            "description": "True when `principal` names a group rather than a user.",
+            "type": "boolean"
+          },
+          "line": {
+            "description": "1-indexed line within that file.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "nopasswd": {
+            "description": "Whether the rule skips password entry (`NOPASSWD:` / doas `nopass`).",
+            "type": "boolean"
+          },
+          "principal": {
+            "description": "Who the rule grants to: a username, or `%group` / `:group` for a group.",
+            "type": "string"
+          },
+          "raw": {
+            "description": "Verbatim line, for operator context.",
+            "type": "string"
+          },
+          "source": {
+            "description": "File the rule came from.",
+            "type": "string"
+          },
+          "system": {
+            "description": "`sudoers` or `doas`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "line",
+          "system",
+          "principal",
+          "isGroup",
+          "nopasswd",
+          "commands",
+          "raw"
         ],
         "type": "object"
       },
@@ -5159,6 +5266,10 @@
           },
           "kind": {
             "description": "The `--kind` selector (`host`, `service`, …).",
+            "type": "string"
+          },
+          "system": {
+            "description": "Which system advertises this provider. Empty = this one.\n\nThe surface is the FLEET's, not this host's: a provider is only\nactionable if you know where it lives, and the operator must never\nhave to name a host to find out.",
             "type": "string"
           },
           "title": {
@@ -5177,6 +5288,13 @@
           "providers": {
             "items": {
               "$ref": "#/components/schemas/ProviderInfo"
+            },
+            "type": "array"
+          },
+          "systemErrors": {
+            "description": "Systems that could not be asked. Non-empty means this listing is\nINCOMPLETE — \"no such provider\" means something different when part of\nthe fleet was never reached.",
+            "items": {
+              "type": "string"
             },
             "type": "array"
           }
@@ -5277,7 +5395,7 @@
           {
             "description": "Started after a non-zero exit; breaker armed and returned\n`Proceed`.",
             "properties": {
-              "exit_code": {
+              "exitCode": {
                 "format": "int32",
                 "type": [
                   "integer",
@@ -5331,7 +5449,7 @@
           {
             "description": "Stale mount(s) blocked the start.",
             "properties": {
-              "blocked_sources": {
+              "blockedSources": {
                 "items": {
                   "type": "string"
                 },
@@ -5344,14 +5462,14 @@
             },
             "required": [
               "kind",
-              "blocked_sources"
+              "blockedSources"
             ],
             "type": "object"
           },
           {
             "description": "Breaker returned `Hold` for a tentative start.",
             "properties": {
-              "exit_code": {
+              "exitCode": {
                 "format": "int32",
                 "type": [
                   "integer",
@@ -5523,7 +5641,7 @@
                 "default": {
                   "enabled": true,
                   "mode": "lazy",
-                  "settle_secs": 15
+                  "settleSecs": 15
                 },
                 "description": "Coordinated-drain policy."
               }
@@ -5536,10 +5654,10 @@
               },
               {
                 "default": {
-                  "confirm_ticks": 2,
+                  "confirmTicks": 2,
                   "enabled": true,
                   "probe": "auto",
-                  "return_to_primary": true
+                  "returnToPrimary": true
                 },
                 "description": "Ordered-source fail-over / fail-back policy."
               }
@@ -5847,7 +5965,7 @@
       },
       "RowRef": {
         "properties": {
-          "host_owner": {
+          "hostOwner": {
             "type": "string"
           },
           "name": {
@@ -5858,7 +5976,7 @@
           }
         },
         "required": [
-          "host_owner",
+          "hostOwner",
           "noun",
           "name"
         ],
@@ -5937,11 +6055,11 @@
             "description": "Cron expression as stored.",
             "type": "string"
           },
-          "host_owner": {
+          "hostOwner": {
             "description": "host_owner of the schedule row.",
             "type": "string"
           },
-          "is_replica": {
+          "isReplica": {
             "description": "True if this is a replica from another owner.",
             "type": "boolean"
           },
@@ -5953,7 +6071,7 @@
             "description": "Row name (the `name` column in config_rows).",
             "type": "string"
           },
-          "next_run": {
+          "nextRun": {
             "description": "Next firing time (RFC3339, UTC) if the cron parses, else null.",
             "type": [
               "string",
@@ -5965,18 +6083,18 @@
           "name",
           "job",
           "cron",
-          "host_owner",
-          "is_replica"
+          "hostOwner",
+          "isReplica"
         ],
         "type": "object"
       },
       "SchemaColumn": {
-        "description": "One column entry within `tabs[*].columns[tableName]`. Field names match\nthe HTTP `/api/schema` payload — the frontend reads `fk_target`\nsnake_case directly.",
+        "description": "One column entry within `tabs[*].columns[tableName]`. Field names match\nthe HTTP `/api/schema` payload, camelCase like the rest of the surface\n(`fkTarget`).",
         "properties": {
           "extra": {
             "type": "string"
           },
-          "fk_target": {
+          "fkTarget": {
             "type": [
               "string",
               "null"
@@ -6129,7 +6247,7 @@
             },
             "type": "array"
           },
-          "host_owner": {
+          "hostOwner": {
             "type": "string"
           },
           "name": {
@@ -6140,7 +6258,7 @@
           }
         },
         "required": [
-          "host_owner",
+          "hostOwner",
           "noun",
           "name",
           "errors"
@@ -6220,19 +6338,19 @@
           "name": {
             "type": "string"
           },
-          "ref_path": {
+          "refPath": {
             "description": "Backend-specific reference (e.g. `op://Personal/orca-gh/token`). Empty for inline.",
             "type": "string"
           },
-          "updated_at": {
+          "updatedAt": {
             "type": "string"
           }
         },
         "required": [
           "name",
           "backend",
-          "ref_path",
-          "updated_at"
+          "refPath",
+          "updatedAt"
         ],
         "type": "object"
       },
@@ -6277,7 +6395,7 @@
             ]
           },
           "provider": {
-            "$ref": "#/components/schemas/Provider"
+            "$ref": "#/components/schemas/MediaProvider"
           },
           "url": {
             "anyOf": [
@@ -6376,6 +6494,37 @@
           }
         ]
       },
+      "ServiceInstanceEntry": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "host": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "routes": {
+            "$ref": "#/components/schemas/Routes"
+          },
+          "runtime": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "host",
+          "runtime",
+          "method",
+          "routes",
+          "enabled"
+        ],
+        "type": "object"
+      },
       "ServicePrimitive": {
         "description": "A typed capability a service exposes from the core, declared at\nregistration. \"Primitives from core\" — the generic building blocks core\nowns, never opaque JSON.",
         "oneOf": [
@@ -6458,7 +6607,7 @@
             },
             "type": "array"
           },
-          "default_port": {
+          "defaultPort": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
@@ -6481,7 +6630,7 @@
         "required": [
           "name",
           "runtimes",
-          "default_port",
+          "defaultPort",
           "endpoint",
           "capabilities"
         ],
@@ -6933,7 +7082,7 @@
       "StartupOrdering": {
         "description": "Boot-time ordering declared by the runtime. Proxmox LXC `startup:\norder=N,up=M,down=K` is the motivating shape (§2.1, §2.2 dep ordering);\ndocker has no equivalent and leaves every field `None`. Modeled as typed\nfields rather than a raw string so the reconciler can compare across\nruntimes without re-parsing.",
         "properties": {
-          "down_delay_secs": {
+          "downDelaySecs": {
             "description": "Seconds to wait after issuing shutdown before the host kills the CT.\nProxmox `down=<seconds>`.",
             "format": "uint32",
             "minimum": 0,
@@ -6951,7 +7100,7 @@
               "null"
             ]
           },
-          "up_delay_secs": {
+          "upDelaySecs": {
             "description": "Seconds to wait after starting this CT before the host considers it\nup enough to start the next ordered peer. Proxmox `up=<seconds>`.",
             "format": "uint32",
             "minimum": 0,
@@ -6977,6 +7126,56 @@
           "error"
         ],
         "type": "object"
+      },
+      "StorageCapability": {
+        "description": "A capability a backend supports. Consumers check these before invoking an\noperation so an unsupported call fails fast rather than at the transport.",
+        "oneOf": [
+          {
+            "const": "list",
+            "description": "Enumerate the shares/volumes this backend exposes.",
+            "type": "string"
+          },
+          {
+            "const": "exports",
+            "description": "Enumerate the exports this host *serves* (NFS `/etc/exports`, SMB shares),\nas distinct from what it mounts.",
+            "type": "string"
+          },
+          {
+            "const": "export_write",
+            "description": "Author the exports this host serves — the write side of [`Exports`].\nSeparate from [`Create`]/[`Remove`] (which are share/volume *lifecycle*):\na backend can publish an export for a volume it did not create, and an\nappliance backend can create volumes it cannot re-export.",
+            "type": "string"
+          },
+          {
+            "const": "mount",
+            "description": "Mount a share onto a target path on a host.",
+            "type": "string"
+          },
+          {
+            "const": "unmount",
+            "description": "Unmount a previously-mounted share (incl. lazy/forced recovery).",
+            "type": "string"
+          },
+          {
+            "const": "usage",
+            "description": "Report capacity/usage for a volume.",
+            "type": "string"
+          },
+          {
+            "const": "create",
+            "description": "Create a new share/volume.",
+            "type": "string"
+          },
+          {
+            "const": "remove",
+            "description": "Remove a share/volume.",
+            "type": "string"
+          },
+          {
+            "const": "recover_stale",
+            "description": "Probe for and self-heal stale / vanished mounts (lazy-release + remount).",
+            "type": "string"
+          }
+        ]
       },
       "StorageDetailView": {
         "description": "The facet of a storage resource `storage.detail` reports. `usage` (capacity)\nis the first; more views (e.g. `health`) fold in here as the enum grows.",
@@ -7103,6 +7302,35 @@
         ],
         "type": "object"
       },
+      "StorageProvider": {
+        "description": "A storage provider as registered with orca: a named backend, its kind, and\nthe capabilities it advertises. This is the row `storage.list` surfaces and\nthe topology aggregator turns into nodes/edges.",
+        "properties": {
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/StorageCapability"
+            },
+            "type": "array"
+          },
+          "endpoint": {
+            "description": "Human-readable endpoint, e.g. `nfs://10.0.0.5:/export/pool`,\n`smb://nas/media`, `proxmox:node/local-lvm`. Never contains secrets.",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StorageKind"
+          },
+          "name": {
+            "description": "Unique provider name (matches [`StorageBackend::name`]).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "endpoint",
+          "capabilities"
+        ],
+        "type": "object"
+      },
       "StorageRecoverOutput": {
         "properties": {
           "errors": {
@@ -7142,19 +7370,50 @@
         ],
         "type": "object"
       },
+      "StorageReplicationEntry": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "folder": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "routes": {
+            "$ref": "#/components/schemas/Routes"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "provider",
+          "folder",
+          "routes",
+          "enabled"
+        ],
+        "type": "object"
+      },
       "StorageReport": {
         "description": "Storage footprint snapshot — surfaces orca.db and log-dir sizes so\noperators can spot bloat. Per project_db_size_and_retention: orca.db\nstays small, logs go to files with size+retention.",
         "properties": {
-          "db_path": {
+          "dbPath": {
             "type": "string"
           },
-          "db_size_bytes": {
+          "dbSizeBytes": {
             "description": "Size of `orca.db` (including SQLite WAL/SHM if alongside) in bytes.",
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
           },
-          "last_retention_sweep_at": {
+          "lastRetentionSweepAt": {
             "description": "UNIX epoch seconds of the last retention sweep. `None` until the\nsweep job lands.",
             "format": "int64",
             "type": [
@@ -7162,21 +7421,21 @@
               "null"
             ]
           },
-          "logs_dir_bytes": {
+          "logsDirBytes": {
             "description": "Recursive size of `{home}/.orca/logs/` in bytes.",
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
           },
-          "logs_dir_path": {
+          "logsDirPath": {
             "type": "string"
           }
         },
         "required": [
-          "db_size_bytes",
-          "db_path",
-          "logs_dir_bytes",
-          "logs_dir_path"
+          "dbSizeBytes",
+          "dbPath",
+          "logsDirBytes",
+          "logsDirPath"
         ],
         "type": "object"
       },
@@ -7212,7 +7471,7 @@
             "type": "string"
           },
           "share": {
-            "$ref": "#/components/schemas/EndpointEntry"
+            "$ref": "#/components/schemas/StorageShareEntry"
           },
           "sourceHealthy": {
             "description": "`reboot_source` only: whether the source's nfsd answered again within the\nwait budget before resume.",
@@ -7246,12 +7505,61 @@
             "type": "array"
           },
           "share": {
-            "$ref": "#/components/schemas/EndpointEntry"
+            "$ref": "#/components/schemas/StorageShareEntry"
           }
         },
         "required": [
           "share",
           "applied"
+        ],
+        "type": "object"
+      },
+      "StorageShareEntry": {
+        "properties": {
+          "backend": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "fstype": {
+            "type": "string"
+          },
+          "hasCredential": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "options": {
+            "type": "string"
+          },
+          "optionsRendered": {
+            "type": "string"
+          },
+          "replication": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "routes": {
+            "$ref": "#/components/schemas/Routes"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "backend",
+          "fstype",
+          "options",
+          "optionsRendered",
+          "hasCredential",
+          "routes",
+          "enabled"
         ],
         "type": "object"
       },
@@ -7266,7 +7574,7 @@
           },
           "shares": {
             "items": {
-              "$ref": "#/components/schemas/EndpointEntry"
+              "$ref": "#/components/schemas/StorageShareEntry"
             },
             "type": "array"
           },
@@ -7330,6 +7638,51 @@
         ],
         "type": "object"
       },
+      "SystemChartsView": {
+        "properties": {
+          "cpu": {
+            "$ref": "#/components/schemas/ChartSeries"
+          },
+          "gpus": {
+            "items": {
+              "$ref": "#/components/schemas/GpuSeries"
+            },
+            "type": "array"
+          },
+          "load": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChartSeries"
+              },
+              {
+                "description": "1-min load average normalised to a 0–100% scale. Empty series until\nthe history ring starts retaining a load field — `SystemHistoryPoint`\ndoes not record it today, so the points vector is always empty here."
+              }
+            ]
+          },
+          "mem": {
+            "$ref": "#/components/schemas/ChartSeries"
+          },
+          "samplesCount": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "windowSecs": {
+            "description": "Time span between earliest and latest sample (seconds). Zero when the\nseries has fewer than 2 points.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cpu",
+          "mem",
+          "load",
+          "gpus",
+          "samplesCount",
+          "windowSecs"
+        ],
+        "type": "object"
+      },
       "SystemCreateAction": {
         "description": "The `system.install` action. Only `install` today; the enum keeps the\nsix-verb `create{action=…}` shape and room to grow.",
         "oneOf": [
@@ -7378,14 +7731,14 @@
       "SystemHistoryPoint": {
         "description": "One sample in the per-host rolling history ring. Written every refresh\ntick by the daemon, read back as `SystemInfoReport.history`.",
         "properties": {
-          "cpu_percent": {
+          "cpuPercent": {
             "format": "float",
             "type": [
               "number",
               "null"
             ]
           },
-          "fs_total_gb": {
+          "fsTotalGb": {
             "description": "Capacity of the filesystem hosting `~/.orca`, in GiB. Sampled into the\nring so capacity can be judged by TREND rather than by a current-level\nthreshold — see [`utils::capacity_trend`]. Without a series there is\nnothing to fit, and \"85% and climbing fast\" is indistinguishable from\n\"85% for two years\".",
             "format": "uint64",
             "minimum": 0,
@@ -7394,7 +7747,7 @@
               "null"
             ]
           },
-          "fs_used_gb": {
+          "fsUsedGb": {
             "description": "Used space on that filesystem, in GiB (`total - avail`). Stored as used\nrather than avail so it shares the monotonic-growth orientation of every\nother `*_used_*` field in this struct.",
             "format": "uint64",
             "minimum": 0,
@@ -7409,7 +7762,7 @@
             },
             "type": "array"
           },
-          "mem_total_mb": {
+          "memTotalMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7417,7 +7770,7 @@
               "null"
             ]
           },
-          "mem_used_mb": {
+          "memUsedMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7425,7 +7778,7 @@
               "null"
             ]
           },
-          "process_rss_mb": {
+          "processRssMb": {
             "default": null,
             "description": "RSS of this orca process at sample time, in MiB. Lets the history\nring carry the daemon's own memory footprint alongside host memory\nso a leak in orca is distinguishable from host-wide pressure.",
             "format": "uint64",
@@ -7455,14 +7808,14 @@
               "null"
             ]
           },
-          "boot_time_unix": {
+          "bootTimeUnix": {
             "format": "int64",
             "type": [
               "integer",
               "null"
             ]
           },
-          "capability_labels": {
+          "capabilityLabels": {
             "description": "Parallel-indexed human labels for `detected_capabilities`. Same\nlength and ordering as `detected_capabilities`; empty when that\nvector is empty. Server-owned for the same reason as\n`system_type_label`.",
             "items": {
               "type": "string"
@@ -7483,7 +7836,7 @@
               "null"
             ]
           },
-          "cpu_logical": {
+          "cpuLogical": {
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -7491,13 +7844,13 @@
               "null"
             ]
           },
-          "cpu_model": {
+          "cpuModel": {
             "type": [
               "string",
               "null"
             ]
           },
-          "cpu_physical": {
+          "cpuPhysical": {
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -7505,7 +7858,7 @@
               "null"
             ]
           },
-          "cpu_usage_percent": {
+          "cpuUsagePercent": {
             "description": "Aggregate CPU utilisation 0–100 %. Requires two sysinfo refreshes;\nalways `None` on the very first CLI snapshot.",
             "format": "float",
             "type": [
@@ -7513,7 +7866,7 @@
               "null"
             ]
           },
-          "detected_capabilities": {
+          "detectedCapabilities": {
             "description": "Capabilities the detector observed on this host (e.g. `\"docker\"`,\n`\"vm-host\"`, `\"lxc-host\"`, `\"backup-target\"`, `\"gpu-nvidia\"`).\nEmpty when none were detected. Compared against\n`expected_capabilities(system_type)` (a static table in the\nserver crate) to produce anomaly badges in the UI.",
             "items": {
               "type": "string"
@@ -7527,14 +7880,14 @@
               "null"
             ]
           },
-          "dmi_product": {
+          "dmiProduct": {
             "description": "DMI product name (`Standard PC (i440FX + PIIX, 1996)`, ...). Linux-only.",
             "type": [
               "string",
               "null"
             ]
           },
-          "dmi_vendor": {
+          "dmiVendor": {
             "description": "DMI system vendor (`QEMU`, `Dell Inc.`, `LENOVO`, ...). Linux-only.",
             "type": [
               "string",
@@ -7573,13 +7926,13 @@
             },
             "type": "array"
           },
-          "kernel_version": {
+          "kernelVersion": {
             "type": [
               "string",
               "null"
             ]
           },
-          "load_avg_1": {
+          "loadAvg1": {
             "description": "Unix load averages (1/5/15 min). `None` on Windows.",
             "format": "double",
             "type": [
@@ -7587,21 +7940,21 @@
               "null"
             ]
           },
-          "load_avg_15": {
+          "loadAvg15": {
             "format": "double",
             "type": [
               "number",
               "null"
             ]
           },
-          "load_avg_5": {
+          "loadAvg5": {
             "format": "double",
             "type": [
               "number",
               "null"
             ]
           },
-          "load_percent": {
+          "loadPercent": {
             "description": "1-minute load average normalised against logical CPU count, expressed\nas a percent 0–100. Computed server-side as\n`min(100, load_avg_1 / cpu_logical * 100)`. `None` when either field\nis missing or `cpu_logical == 0` (no load average on Windows).\nNumerator: `load_avg_1`. Denominator: `cpu_logical`.",
             "format": "float",
             "type": [
@@ -7609,7 +7962,7 @@
               "null"
             ]
           },
-          "mem_available_mb": {
+          "memAvailableMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7617,7 +7970,7 @@
               "null"
             ]
           },
-          "mem_percent": {
+          "memPercent": {
             "description": "Memory usage as a percent 0–100. Computed server-side as\n`min(100, mem_used_mb / mem_total_mb * 100)`. `None` when either\nnumerator or denominator is missing, or when `mem_total_mb == 0`.\nNumerator: `mem_used_mb` (total − available). Denominator: `mem_total_mb`.",
             "format": "float",
             "type": [
@@ -7625,7 +7978,7 @@
               "null"
             ]
           },
-          "mem_total_mb": {
+          "memTotalMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7633,7 +7986,7 @@
               "null"
             ]
           },
-          "mem_used_mb": {
+          "memUsedMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7641,14 +7994,14 @@
               "null"
             ]
           },
-          "mesh_listening": {
+          "meshListening": {
             "description": "`true` when this host's mesh accept loop (plugin host, default\nport 12002) currently holds a TCP listener. `false` when the\nbind failed at startup, the host was stopped, or it has not yet\nstarted. Surfaces silent mesh-port bind failures that previously\nrendered a host as \"healthy\" in `system_detail` while it was\ninvisible to peers. See [[project-system-detail-hides-mesh-bind-failure]].",
             "type": [
               "boolean",
               "null"
             ]
           },
-          "mesh_paired_count": {
+          "meshPairedCount": {
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -7656,7 +8009,7 @@
               "null"
             ]
           },
-          "mesh_peer_count": {
+          "meshPeerCount": {
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -7664,7 +8017,7 @@
               "null"
             ]
           },
-          "mesh_port": {
+          "meshPort": {
             "description": "Port the mesh accept loop is configured to bind. Paired with\n`mesh_listening` so operators can see *which* port is (or isn't)\nopen without cross-referencing config.",
             "format": "uint16",
             "maximum": 65535,
@@ -7674,13 +8027,13 @@
               "null"
             ]
           },
-          "orca_dir": {
+          "orcaDir": {
             "type": [
               "string",
               "null"
             ]
           },
-          "orca_fs_avail_gb": {
+          "orcaFsAvailGb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7688,7 +8041,7 @@
               "null"
             ]
           },
-          "orca_fs_total_gb": {
+          "orcaFsTotalGb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7696,45 +8049,45 @@
               "null"
             ]
           },
-          "os_name": {
+          "osName": {
             "type": [
               "string",
               "null"
             ]
           },
-          "os_version": {
+          "osVersion": {
             "type": [
               "string",
               "null"
             ]
           },
-          "parent_kind": {
+          "parentKind": {
             "description": "Kind of parent edge: `\"hypervisor\"` (VM under a host), `\"host\"`\n(container under its docker host), or `None`.",
             "type": [
               "string",
               "null"
             ]
           },
-          "parent_peer_id": {
+          "parentPeerId": {
             "description": "Inferred parent in the physical/virtual/container hierarchy.\nSet by the inference task (mac-match on peers' `claims`), never by\nuser config. `None` until a claim matches one of this host's\ninterface MACs.",
             "type": [
               "string",
               "null"
             ]
           },
-          "primary_ipv4": {
+          "primaryIpv4": {
             "type": [
               "string",
               "null"
             ]
           },
-          "primary_ipv6": {
+          "primaryIpv6": {
             "type": [
               "string",
               "null"
             ]
           },
-          "process_pid": {
+          "processPid": {
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -7742,7 +8095,7 @@
               "null"
             ]
           },
-          "process_rss_mb": {
+          "processRssMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7750,14 +8103,14 @@
               "null"
             ]
           },
-          "process_started_at_unix": {
+          "processStartedAtUnix": {
             "format": "int64",
             "type": [
               "integer",
               "null"
             ]
           },
-          "process_threads": {
+          "processThreads": {
             "format": "uint32",
             "minimum": 0,
             "type": [
@@ -7765,7 +8118,7 @@
               "null"
             ]
           },
-          "process_uptime_secs": {
+          "processUptimeSecs": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7773,14 +8126,14 @@
               "null"
             ]
           },
-          "self_secure": {
+          "selfSecure": {
             "description": "Tier-2 secrets-storage permission (`self_secure`) for this host.\n`true` = this host is authorized to hold encrypted secrets replicated\nfrom other mesh members. Surfaced in the host drawer as a SECURE\ntoggle, independent of cert trust.",
             "type": [
               "boolean",
               "null"
             ]
           },
-          "snapshot_at_unix": {
+          "snapshotAtUnix": {
             "description": "Wall-clock when this snapshot was collected. Cached snapshots may be\nup to ~30s stale; consumers use this to decide whether to trust a\nmetric like load average.",
             "format": "int64",
             "type": [
@@ -7788,7 +8141,7 @@
               "null"
             ]
           },
-          "swap_total_mb": {
+          "swapTotalMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7796,7 +8149,7 @@
               "null"
             ]
           },
-          "swap_used_mb": {
+          "swapUsedMb": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7804,21 +8157,21 @@
               "null"
             ]
           },
-          "system_type": {
+          "systemType": {
             "description": "Canonical system-type tag for this host. Exactly one value per host.\nDrives expected-capability lookup and service-discovery class\nselection. Values: `\"unraid\"`, `\"proxmox-ve\"`,\n`\"proxmox-backup-server\"`, `\"macos\"`, `\"debian\"`, `\"alpine\"`,\n`\"nixos\"`, `\"truenas-scale\"`, `\"truenas-core\"`, `\"linux\"` (fallback).\n`None` only when the detector failed to run.",
             "type": [
               "string",
               "null"
             ]
           },
-          "system_type_label": {
+          "systemTypeLabel": {
             "description": "Human-readable label for `system_type` (e.g. `\"Proxmox VE\"` for\n`\"proxmox-ve\"`). Server-owned so every surface renders identical text\nwithout re-implementing the switch per client. `None` when\n`system_type` is also `None`; unknown tags pass through verbatim.",
             "type": [
               "string",
               "null"
             ]
           },
-          "system_uptime_secs": {
+          "systemUptimeSecs": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -7826,7 +8179,7 @@
               "null"
             ]
           },
-          "top_processes": {
+          "topProcesses": {
             "description": "Top processes by CPU usage at snapshot time. Capped at 10 entries\n(drawer renders them as a click-to-histogram table; widening the\nlist is cheap server-side but wastes wire bytes the UI can't\nusefully render). Empty when sysinfo failed to enumerate.",
             "items": {
               "$ref": "#/components/schemas/TopProcess"
@@ -7845,7 +8198,7 @@
       },
       "SystemKillOutput": {
         "properties": {
-          "killed_patterns": {
+          "killedPatterns": {
             "items": {
               "type": "string"
             },
@@ -7853,7 +8206,7 @@
           }
         },
         "required": [
-          "killed_patterns"
+          "killedPatterns"
         ],
         "type": "object"
       },
@@ -7879,7 +8232,7 @@
             },
             "type": "array"
           },
-          "claude_md": {
+          "claudeMd": {
             "$ref": "#/components/schemas/ClaudeMdStatus"
           },
           "daemon": {
@@ -7899,7 +8252,7 @@
             },
             "type": "array"
           },
-          "display_name": {
+          "displayName": {
             "description": "Operator-visible host name (from the `display_name` addressing\nchannel, falling back to OS `hostname`).",
             "type": "string"
           },
@@ -7907,7 +8260,7 @@
             "description": "\"embedded\" when this binary was built with the `ui` feature on, \"disabled\" otherwise.",
             "type": "string"
           },
-          "machine_id": {
+          "machineId": {
             "description": "Stable machine identifier persisted to `~/.orca/machine_id`.",
             "type": "string"
           },
@@ -7921,7 +8274,7 @@
               "null"
             ]
           },
-          "pinned_to": {
+          "pinnedTo": {
             "description": "Active version pin if any (`orca update --pin`).",
             "type": [
               "string",
@@ -7965,7 +8318,7 @@
         },
         "required": [
           "binary",
-          "claude_md",
+          "claudeMd",
           "vault",
           "agents",
           "pki",
@@ -7976,8 +8329,8 @@
           "topology",
           "storage",
           "diagnostic",
-          "display_name",
-          "machine_id",
+          "displayName",
+          "machineId",
           "channels",
           "daemon"
         ],
@@ -8198,6 +8551,10 @@
             },
             "type": "array"
           },
+          "system": {
+            "description": "The system this target is registered on. Empty = this one.\n\n`fits_here` is computed against THAT system's placement, so a row is\nmeaningless without knowing which host it describes — a PBS target\nfits on a Proxmox node and not on a Mac.",
+            "type": "string"
+          },
           "title": {
             "type": "string"
           }
@@ -8256,14 +8613,21 @@
                 "$ref": "#/components/schemas/Placement"
               },
               {
-                "description": "The detected placement the eligibility was computed against."
+                "description": "THIS system's detected placement. Remote rows carry their own\neligibility in `fits_here`; placement itself is per-host and is not\nmerged, because there is no such thing as the fleet's placement."
               }
             ]
           },
           "registered": {
-            "description": "Every registered target kind, with placement eligibility.",
+            "description": "Every registered target kind across the fleet, with placement\neligibility as computed on its own system.",
             "items": {
               "$ref": "#/components/schemas/TargetInfo"
+            },
+            "type": "array"
+          },
+          "systemErrors": {
+            "description": "Systems that could not be asked — this listing is INCOMPLETE when\nnon-empty.",
+            "items": {
+              "type": "string"
             },
             "type": "array"
           }
@@ -8277,14 +8641,14 @@
       },
       "TelemetrySnapshotRow": {
         "properties": {
-          "peer_id": {
+          "peerId": {
             "type": "string"
           },
-          "received_at_unix": {
+          "receivedAtUnix": {
             "format": "int64",
             "type": "integer"
           },
-          "snapshot_at_unix": {
+          "snapshotAtUnix": {
             "format": "int64",
             "type": "integer"
           },
@@ -8305,9 +8669,9 @@
           }
         },
         "required": [
-          "peer_id",
-          "snapshot_at_unix",
-          "received_at_unix",
+          "peerId",
+          "snapshotAtUnix",
+          "receivedAtUnix",
           "source"
         ],
         "type": "object"
@@ -8315,12 +8679,12 @@
       "TopProcess": {
         "description": "One process in the host's top-N-by-CPU snapshot. Names are basenames\n(e.g. `plex-media-server`), not full argv. Memory is RSS in MiB.",
         "properties": {
-          "cpu_percent": {
+          "cpuPercent": {
             "description": "Aggregate CPU% across all cores (0..=100*N_cores in sysinfo's units;\nthe collector normalises to a 0..=100 single-core scale before\nemitting).",
             "format": "float",
             "type": "number"
           },
-          "mem_mb": {
+          "memMb": {
             "description": "Resident set size in MiB.",
             "format": "uint64",
             "minimum": 0,
@@ -8338,8 +8702,8 @@
         "required": [
           "pid",
           "name",
-          "cpu_percent",
-          "mem_mb"
+          "cpuPercent",
+          "memMb"
         ],
         "type": "object"
       },
@@ -8389,7 +8753,7 @@
             "description": "Provider that emitted this claim (`\"proxmox\"`, `\"docker\"`,\n`\"unraid\"`, ...).",
             "type": "string"
           },
-          "provider_instance": {
+          "providerInstance": {
             "description": "Provider instance id. For docker = `\"local\"`; for proxmox = the\nendpoint name from `db::proxmox`; for secret-keyed providers = the\n`<instance>` segment of `<provider>.<instance>.<field>`.",
             "type": "string"
           },
@@ -8403,21 +8767,21 @@
               }
             ]
           },
-          "runs_on": {
+          "runsOn": {
             "description": "Hostname of the fleet node this child actually runs on, when the\nprovider can determine it. Needed for cluster-shared config sources\n(proxmox pmxcfs is cluster-wide, so every cluster peer reports every\nguest) — the inventory layer parents a non-peer claim node to the\npeer whose hostname matches `runs_on`, falling back to the reporting\npeer when unset. Single-host providers (docker, dockge, standalone)\nleave this `None`; the reporting peer *is* the host.",
             "type": [
               "string",
               "null"
             ]
           },
-          "service_identity": {
+          "serviceIdentity": {
             "description": "Host-scoped compose-stack correlation key. A DESCRIPTIVE ATTRIBUTE that\ngroups the containers of one logical service/stack together — NOT an id\n(respects the pure-uuidv7 identity rule; the stack node's identity is a\nuuidv7 minted via `unit_identity::resolve_or_mint`, keyed BY this string).\n\nCanonical form is produced by [`TopologyClaim::normalize_service_identity`]\nso docker and dockge — which see the same stack from different angles —\nemit byte-identical keys and dedup onto one stack node. Preferred source\nis the compose working-directory path (`/opt/stacks/<project>`); the\nfallback is the bare compose project name. Both are host-scoped by\nprefixing the host so the same stack name on two hosts stays distinct.\n`None` = the provider can't attribute the workload to a stack.",
             "type": [
               "string",
               "null"
             ]
           },
-          "service_role": {
+          "serviceRole": {
             "description": "Optional cheap service-role hint the provider derives from a well-known\nlabel (e.g. `orca.role`). The authoritative role comes from a runtime\n[`crate::service_identity::ServiceRegistration`], which overrides this at\ncorrelation time.",
             "type": [
               "string",
@@ -8441,7 +8805,7 @@
           "id",
           "name",
           "provider",
-          "provider_instance"
+          "providerInstance"
         ],
         "type": "object"
       },
@@ -8482,40 +8846,40 @@
             },
             "type": "array"
           },
-          "parent_kind": {
+          "parentKind": {
             "description": "Kind of parent edge (`hypervisor` / `host`).",
             "type": [
               "string",
               "null"
             ]
           },
-          "parent_peer_id": {
+          "parentPeerId": {
             "description": "Inferred parent peer id (mac-match on claims). Written by the mesh\ninference pass.",
             "type": [
               "string",
               "null"
             ]
           },
-          "primary_ipv4": {
+          "primaryIpv4": {
             "type": [
               "string",
               "null"
             ]
           },
-          "primary_ipv6": {
+          "primaryIpv6": {
             "type": [
               "string",
               "null"
             ]
           },
-          "system_type": {
+          "systemType": {
             "description": "Canonical system-type tag (`proxmox-ve`, `unraid`, `macos`, ...).",
             "type": [
               "string",
               "null"
             ]
           },
-          "system_type_label": {
+          "systemTypeLabel": {
             "description": "Human label for `system_type` (server-owned).",
             "type": [
               "string",
@@ -8586,6 +8950,29 @@
           }
         ]
       },
+      "UnitIdentityEntry": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "routes": {
+            "$ref": "#/components/schemas/Routes"
+          },
+          "uuid": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "uuid",
+          "routes",
+          "enabled"
+        ],
+        "type": "object"
+      },
       "Variant": {
         "description": "One concrete manifestation of a unit: a quality/format variant plus its tracks\nand where it lives. A 4K copy and a 1080p copy are two variants of one unit.",
         "properties": {
@@ -8646,7 +9033,7 @@
             "default": false,
             "type": "boolean"
           },
-          "published_at": {
+          "publishedAt": {
             "default": null,
             "type": [
               "string",
@@ -8663,7 +9050,7 @@
       "WebRouteStatus": {
         "description": "One registered web-route path and who serves it. Surfaces contested paths so\nthe user can see e.g. \"path `/` is served by peacock, contested by otherui\".",
         "properties": {
-          "active_owner": {
+          "activeOwner": {
             "description": "Provider currently serving it (the active owner).",
             "type": "string"
           },
@@ -8681,7 +9068,7 @@
         },
         "required": [
           "path",
-          "active_owner",
+          "activeOwner",
           "contenders"
         ],
         "type": "object"
@@ -8702,7 +9089,7 @@
       "name": ""
     },
     "title": "orca API",
-    "version": "0.2.1-rc.10"
+    "version": "0.2.1-rc.11"
   },
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.0",
@@ -9309,7 +9696,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "expires_at": {
+                    "expiresAt": {
                       "description": "RFC3339 expiry of the on-disk session.",
                       "type": "string"
                     },
@@ -9317,7 +9704,7 @@
                       "description": "\"admin\" | \"read\" — whatever role the user holds in `users`.",
                       "type": "string"
                     },
-                    "user_id": {
+                    "userId": {
                       "type": "string"
                     },
                     "username": {
@@ -9325,10 +9712,10 @@
                     }
                   },
                   "required": [
-                    "user_id",
+                    "userId",
                     "username",
                     "role",
-                    "expires_at"
+                    "expiresAt"
                   ],
                   "title": "LoginOutput",
                   "type": "object"
@@ -9803,12 +10190,12 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "can_mutate": {
+                  "canMutate": {
                     "default": false,
                     "description": "Data-mutation opt-in. Grants a non-admin (`read`) token the ability to\ninvoke `DATA_MUTATION` tools (writes against managed systems) that would\notherwise require admin — without unlocking control-plane admin tools.\nDefault false. Meaningless on an `admin` token (admin already passes).",
                     "type": "boolean"
                   },
-                  "expires_in_days": {
+                  "expiresInDays": {
                     "description": "Days until expiry. `None` = never expires.",
                     "format": "uint32",
                     "minimum": 0,
@@ -10060,7 +10447,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -10251,6 +10638,10 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "localOnly": {
+                    "description": "INTERNAL. Answer for this system only, skipping the mesh fan-out.\n\nNot a CLI flag and not something an operator selects — `#[arg(skip)]`\nkeeps it off the surface entirely, which is the point: `peer` and\n\"which host\" are transport concerns that must stay under the hood.\n\nIt exists because the fan-out dispatches `backup.detail` to each\nsystem, and without it every recipient would fan out in turn — an\nexponential storm across the mesh instead of one round of calls.",
+                    "type": "boolean"
+                  },
                   "view": {
                     "allOf": [
                       {
@@ -10387,6 +10778,10 @@
                       "integer",
                       "null"
                     ]
+                  },
+                  "localOnly": {
+                    "description": "INTERNAL. Answer for this system only. Not an operator-facing flag —\nsee `BackupDetailArgs::local_only`; it terminates the fan-out at one\nhop so one `backup list` does not storm the mesh.",
+                    "type": "boolean"
                   }
                 },
                 "title": "BackupListArgs",
@@ -10415,6 +10810,13 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "systemErrors": {
+                      "description": "Systems that could not be asked. Non-empty means a restore is choosing\nfrom an INCOMPLETE set — the backup you want may exist on a host that\nwas never reached.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
                     },
                     "total": {
                       "description": "Total backups across all pages.",
@@ -10525,6 +10927,10 @@
                     "default": "",
                     "description": "Kind to restore (e.g. `host`).",
                     "type": "string"
+                  },
+                  "localOnly": {
+                    "description": "INTERNAL. Restore on this system only — set by the routing hop once the\nholder has been resolved. Not an operator-facing flag: a restore is\naddressed by BACKUP ID, and finding its host is orca's problem.",
+                    "type": "boolean"
                   }
                 },
                 "title": "BackupRestoreArgs",
@@ -10673,6 +11079,10 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "localOnly": {
+                    "description": "INTERNAL. Run on this system only. Not an operator-facing flag — see\n`BackupDetailArgs::local_only`. It terminates the fan-out at one hop.",
+                    "type": "boolean"
                   }
                 },
                 "title": "BackupRunArgs",
@@ -10699,6 +11109,13 @@
                       "description": "Records produced this run (across every target fanned out to).",
                       "items": {
                         "$ref": "#/components/schemas/BackupRecord"
+                      },
+                      "type": "array"
+                    },
+                    "systemErrors": {
+                      "description": "Systems that could not be asked to run. Distinct from `errors`: those\nare backups that were ATTEMPTED and failed, these were never started\nat all, and an operator must be able to tell those apart.",
+                      "items": {
+                        "type": "string"
                       },
                       "type": "array"
                     },
@@ -11047,7 +11464,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -11275,40 +11692,40 @@
                       },
                       "type": "array"
                     },
-                    "live_config_rows": {
+                    "liveConfigRows": {
                       "description": "Rows read from the live config store.",
                       "format": "uint",
                       "minimum": 0,
                       "type": "integer"
                     },
-                    "repo_rows": {
+                    "repoRows": {
                       "description": "Rows parsed from the checkout.",
                       "format": "uint",
                       "minimum": 0,
                       "type": "integer"
                     },
-                    "schema_invalid": {
+                    "schemaInvalid": {
                       "description": "Repo rows that failed schema validation → excluded from add/change.",
                       "items": {
                         "$ref": "#/components/schemas/SchemaInvalid"
                       },
                       "type": "array"
                     },
-                    "to_add": {
+                    "toAdd": {
                       "description": "In repo, absent from the live store → would be created.",
                       "items": {
                         "$ref": "#/components/schemas/RowRef"
                       },
                       "type": "array"
                     },
-                    "to_change": {
+                    "toChange": {
                       "description": "In both, JSON differs → would be replaced.",
                       "items": {
                         "$ref": "#/components/schemas/RowRef"
                       },
                       "type": "array"
                     },
-                    "to_delete": {
+                    "toDelete": {
                       "description": "Live authoritative rows (owned, non-replica) with no repo counterpart →\nREPORTED as removable. Never executed in this slice.",
                       "items": {
                         "$ref": "#/components/schemas/RowRef"
@@ -11317,13 +11734,13 @@
                     }
                   },
                   "required": [
-                    "to_add",
-                    "to_change",
-                    "to_delete",
-                    "schema_invalid",
+                    "toAdd",
+                    "toChange",
+                    "toDelete",
+                    "schemaInvalid",
                     "hosts",
-                    "repo_rows",
-                    "live_config_rows"
+                    "repoRows",
+                    "liveConfigRows"
                   ],
                   "title": "DiffOutput",
                   "type": "object"
@@ -11607,17 +12024,17 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "daemon_live": {
+                    "daemonLive": {
                       "description": "Whether the daemon is live enough to reconcile (schema registry present).",
                       "type": "boolean"
                     },
-                    "live_config_rows": {
+                    "liveConfigRows": {
                       "description": "Rows currently in the live config store.",
                       "format": "uint",
                       "minimum": 0,
                       "type": "integer"
                     },
-                    "live_unit_ops": {
+                    "liveUnitOps": {
                       "description": "Live plugin-driven unit ops (reflects loaded providers).",
                       "format": "uint",
                       "minimum": 0,
@@ -11627,24 +12044,24 @@
                       "description": "Human-readable liveness verdict.",
                       "type": "string"
                     },
-                    "repo_path": {
+                    "repoPath": {
                       "description": "Resolved checkout root, if one was given.",
                       "type": [
                         "string",
                         "null"
                       ]
                     },
-                    "repo_present": {
+                    "repoPresent": {
                       "description": "Whether `<repo>/config/` exists.",
                       "type": "boolean"
                     },
-                    "repo_rows": {
+                    "repoRows": {
                       "description": "Rows parsed out of the checkout (0 when absent).",
                       "format": "uint",
                       "minimum": 0,
                       "type": "integer"
                     },
-                    "schemas_registered": {
+                    "schemasRegistered": {
                       "description": "Nouns with a registered schema in the live daemon.",
                       "format": "uint",
                       "minimum": 0,
@@ -11652,13 +12069,13 @@
                     }
                   },
                   "required": [
-                    "daemon_live",
+                    "daemonLive",
                     "liveness",
-                    "repo_present",
-                    "repo_rows",
-                    "live_config_rows",
-                    "schemas_registered",
-                    "live_unit_ops"
+                    "repoPresent",
+                    "repoRows",
+                    "liveConfigRows",
+                    "schemasRegistered",
+                    "liveUnitOps"
                   ],
                   "title": "StatusOutput",
                   "type": "object"
@@ -12001,7 +12418,7 @@
                 "schema": {
                   "description": "Result of a one-shot [`RuntimeAdapter::exec`]: the captured streams plus the\ncommand's exit status. `stdout`/`stderr` are best-effort UTF-8 (lossy);\n`exit_code` is `None` only when the runtime couldn't report one (e.g. the\nprocess was still attached when the stream closed).",
                   "properties": {
-                    "exit_code": {
+                    "exitCode": {
                       "description": "Process exit code, when the runtime reported it.",
                       "format": "int64",
                       "type": [
@@ -12020,7 +12437,7 @@
                     "stdout",
                     "stderr"
                   ],
-                  "title": "ExecOutput",
+                  "title": "ContainerExecOutput",
                   "type": "object"
                 }
               }
@@ -13727,7 +14144,7 @@
                 "schema": {
                   "description": "The result of a [`GuestExec::exec`] — blocking from the caller's view.",
                   "properties": {
-                    "exit_code": {
+                    "exitCode": {
                       "description": "Process exit code, when it terminated normally. `None` if it was killed by\na signal (see [`signal`](ExecOutput::signal)) or timed out before exiting.",
                       "format": "int64",
                       "type": [
@@ -13747,7 +14164,7 @@
                       "description": "Captured stderr (UTF-8 lossy), up to the request's output cap.",
                       "type": "string"
                     },
-                    "stderr_truncated": {
+                    "stderrTruncated": {
                       "default": false,
                       "description": "stderr was truncated (by the guest agent or by the output cap).",
                       "type": "boolean"
@@ -13756,12 +14173,12 @@
                       "description": "Captured stdout (UTF-8 lossy), up to the request's output cap.",
                       "type": "string"
                     },
-                    "stdout_truncated": {
+                    "stdoutTruncated": {
                       "default": false,
                       "description": "stdout was truncated (by the guest agent or by the output cap).",
                       "type": "boolean"
                     },
-                    "timed_out": {
+                    "timedOut": {
                       "default": false,
                       "description": "The deadline elapsed before the process exited; output is whatever was\ncaptured up to that point and `exit_code` is `None`.",
                       "type": "boolean"
@@ -13969,6 +14386,136 @@
         ]
       }
     },
+    "/api/v1/identity.privilege.audit": {
+      "post": {
+        "description": "Report every sudo/doas grant on the host this runs on, flagging dangling targets and sole grants. Pure filesystem read: `audit` is a read-shaped verb, so it is neither gated nor a mutation. `role = \"read\"` because the grant list maps out which accounts can become root.",
+        "operationId": "identityPrivilegeAudit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "root": {
+                    "default": null,
+                    "description": "Override the filesystem root to audit. Primarily for tests; defaults to `/`.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "title": "IdentityPrivilegeAuditArgs",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Result of an audit on one host.",
+                  "properties": {
+                    "complete": {
+                      "description": "True when every discovered file was readable.",
+                      "type": "boolean"
+                    },
+                    "findings": {
+                      "description": "Findings, most severe first.",
+                      "items": {
+                        "$ref": "#/components/schemas/PrivilegeFinding"
+                      },
+                      "type": "array"
+                    },
+                    "host": {
+                      "type": "string"
+                    },
+                    "rules": {
+                      "description": "Every rule parsed, in discovery order.",
+                      "items": {
+                        "$ref": "#/components/schemas/PrivilegeRule"
+                      },
+                      "type": "array"
+                    },
+                    "unreadable": {
+                      "description": "Files that exist but could not be read (usually `0440 root:root` while the\ndaemon runs unprivileged). Coverage is PARTIAL whenever this is non-empty.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "host",
+                    "rules",
+                    "findings",
+                    "unreadable",
+                    "complete"
+                  ],
+                  "title": "PrivilegeAudit",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool result"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unknown tool"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool execution failed"
+          }
+        },
+        "summary": "identity.privilege.audit",
+        "tags": [
+          "identity.privilege"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "CLI",
+            "lang": "shell",
+            "source": "orca identity privilege audit '<args-json>'"
+          },
+          {
+            "label": "MCP",
+            "lang": "json",
+            "source": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"identity_privilege_audit\",\n    \"arguments\": {}\n  }\n}"
+          }
+        ]
+      }
+    },
     "/api/v1/media.detail": {
       "post": {
         "description": "The media TYPE as an entity: both halves of the served-by/downloaded-by relation at the registration level — what *can* acquire and what *can* serve it, each server with its reachable URL and, with `--user`, the orca-managed per-user credentials to set up a device. `media detail --media-type audiobooks --user skey` returns skey's username + URL for Audiobookshelf alongside the acquirers that feed it.",
@@ -14008,7 +14555,7 @@
                     "downloadedBy": {
                       "description": "Acquirers registered for this type — capability, not fact. Empty is a\nlegitimate answer (nothing registered yet), never an error.",
                       "items": {
-                        "$ref": "#/components/schemas/Provider"
+                        "$ref": "#/components/schemas/MediaProvider"
                       },
                       "type": "array"
                     },
@@ -14155,7 +14702,7 @@
                     },
                     "providers": {
                       "items": {
-                        "$ref": "#/components/schemas/Provider"
+                        "$ref": "#/components/schemas/MediaProvider"
                       },
                       "type": "array"
                     },
@@ -14672,7 +15219,7 @@
                       },
                       "type": "array"
                     },
-                    "total_models": {
+                    "totalModels": {
                       "description": "Total count of usable models across all reachable backends.",
                       "format": "uint32",
                       "minimum": 0,
@@ -14681,7 +15228,7 @@
                   },
                   "required": [
                     "backends",
-                    "total_models"
+                    "totalModels"
                   ],
                   "title": "BackendsCheckOutput",
                   "type": "object"
@@ -15127,7 +15674,7 @@
                       "null"
                     ]
                   },
-                  "enabled_only": {
+                  "enabledOnly": {
                     "default": false,
                     "description": "Only enabled rows.",
                     "type": "boolean"
@@ -15170,7 +15717,7 @@
                       },
                       "type": "array"
                     },
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -15700,10 +16247,10 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "namespace_id": {
+                    "namespaceId": {
                       "type": "string"
                     },
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -15727,7 +16274,7 @@
                     }
                   },
                   "required": [
-                    "namespace_id",
+                    "namespaceId",
                     "shares"
                   ],
                   "title": "NamespaceSharesReport",
@@ -15843,7 +16390,7 @@
                     "name": {
                       "type": "string"
                     },
-                    "owner_user_id": {
+                    "ownerUserId": {
                       "type": "string"
                     },
                     "root": {
@@ -15853,7 +16400,7 @@
                   "required": [
                     "id",
                     "name",
-                    "owner_user_id",
+                    "ownerUserId",
                     "root",
                     "access"
                   ],
@@ -16072,7 +16619,7 @@
                     "name": {
                       "type": "string"
                     },
-                    "owner_user_id": {
+                    "ownerUserId": {
                       "type": "string"
                     },
                     "root": {
@@ -16082,7 +16629,7 @@
                   "required": [
                     "id",
                     "name",
-                    "owner_user_id",
+                    "ownerUserId",
                     "root",
                     "access"
                   ],
@@ -16195,7 +16742,7 @@
                       },
                       "type": "array"
                     },
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -16873,7 +17420,7 @@
                       }
                     ]
                   },
-                  "plugin_id": {
+                  "pluginId": {
                     "default": null,
                     "description": "(cert) Plugin id to issue for.",
                     "type": [
@@ -17028,7 +17575,7 @@
                       },
                       "type": "array"
                     },
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -17488,7 +18035,7 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "data_key": {
+                  "dataKey": {
                     "description": "Fetch the value of a specific data key.",
                     "type": [
                       "string",
@@ -18252,7 +18799,7 @@
                     "description": "Include prerelease (`-rc`) tags when resolving the newest release.",
                     "type": "boolean"
                   },
-                  "repo_url": {
+                  "repoUrl": {
                     "description": "The plugin repo web URL (catalog `repoUrl`), e.g.\n`https://github.com/argyle-labs/sonarr`.",
                     "type": "string"
                   },
@@ -18270,7 +18817,7 @@
                 },
                 "required": [
                   "name",
-                  "repo_url",
+                  "repoUrl",
                   "target"
                 ],
                 "title": "PluginServeAssetArgs",
@@ -18287,7 +18834,7 @@
                 "schema": {
                   "description": "Result of [`plugin_serve_asset`]. `asset_b64` is base64-STANDARD of the raw\nplugin executable; `sha256` is the hex digest the holder verified (callers\nMUST re-verify after decode before installing).",
                   "properties": {
-                    "asset_b64": {
+                    "assetB64": {
                       "type": "string"
                     },
                     "sha256": {
@@ -18298,7 +18845,7 @@
                     }
                   },
                   "required": [
-                    "asset_b64",
+                    "assetB64",
                     "sha256",
                     "version"
                   ],
@@ -18548,7 +19095,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "duration_ms": {
+                    "durationMs": {
                       "format": "int64",
                       "type": "integer"
                     },
@@ -18568,7 +19115,7 @@
                   "required": [
                     "job",
                     "ok",
-                    "duration_ms"
+                    "durationMs"
                   ],
                   "title": "ScheduleRunOutput",
                   "type": "object"
@@ -18791,7 +19338,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -19269,7 +19816,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -19606,7 +20153,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -19717,7 +20264,7 @@
                   "name": {
                     "type": "string"
                   },
-                  "ref_path": {
+                  "refPath": {
                     "description": "Required for external backends (e.g. `op://Personal/orca-gh/token`). Ignored for inline.",
                     "type": [
                       "string",
@@ -19730,6 +20277,10 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "valueStdin": {
+                    "description": "CLI only: read the value from stdin instead of `--value`, so the secret\nnever lands in `argv` where any local process can read it via `ps`.\nConsumed into `value` in the calling process (see the manual CliOp at\nthe bottom of this file) and never serialized, so REST/MCP — which have\nno stdin — can't be asked to honour it.",
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -20278,7 +20829,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/ServiceInstanceEntry"
                     }
                   },
                   "required": [
@@ -20478,7 +21029,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/ServiceInstanceEntry"
                     }
                   },
                   "required": [
@@ -20590,7 +21141,7 @@
                     "endpoints": {
                       "default": [],
                       "items": {
-                        "$ref": "#/components/schemas/EndpointEntry"
+                        "$ref": "#/components/schemas/ServiceInstanceEntry"
                       },
                       "type": "array"
                     },
@@ -20743,7 +21294,7 @@
                       "type": "array"
                     },
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/ServiceInstanceEntry"
                     }
                   },
                   "required": [
@@ -21458,7 +22009,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "next_cursor": {
+                    "nextCursor": {
                       "description": "Opaque cursor for the next page, or absent on the last page.",
                       "type": [
                         "string",
@@ -21770,7 +22321,7 @@
                 "schema": {
                   "description": "Capacity/usage snapshot for a volume.",
                   "properties": {
-                    "available_bytes": {
+                    "availableBytes": {
                       "format": "uint64",
                       "minimum": 0,
                       "type": "integer"
@@ -21778,12 +22329,12 @@
                     "id": {
                       "type": "string"
                     },
-                    "total_bytes": {
+                    "totalBytes": {
                       "format": "uint64",
                       "minimum": 0,
                       "type": "integer"
                     },
-                    "used_bytes": {
+                    "usedBytes": {
                       "format": "uint64",
                       "minimum": 0,
                       "type": "integer"
@@ -21791,9 +22342,9 @@
                   },
                   "required": [
                     "id",
-                    "total_bytes",
-                    "used_bytes",
-                    "available_bytes"
+                    "totalBytes",
+                    "usedBytes",
+                    "availableBytes"
                   ],
                   "title": "Usage",
                   "type": "object"
@@ -22018,7 +22569,7 @@
                     },
                     "providers": {
                       "items": {
-                        "$ref": "#/components/schemas/Provider"
+                        "$ref": "#/components/schemas/StorageProvider"
                       },
                       "type": "array"
                     },
@@ -22168,7 +22719,7 @@
                     "health": {
                       "allOf": [
                         {
-                          "$ref": "#/components/schemas/Health"
+                          "$ref": "#/components/schemas/MountHealth"
                         },
                         {
                           "description": "Last-known liveness, written by the convergence tick — the STORED value,\nnever a live probe (the read path takes no fan-out)."
@@ -22440,7 +22991,7 @@
                     "health": {
                       "allOf": [
                         {
-                          "$ref": "#/components/schemas/Health"
+                          "$ref": "#/components/schemas/MountHealth"
                         },
                         {
                           "description": "Last-known liveness, written by the convergence tick — the STORED value,\nnever a live probe (the read path takes no fan-out)."
@@ -22894,7 +23445,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/StorageReplicationEntry"
                     }
                   },
                   "required": [
@@ -23097,7 +23648,7 @@
                     "relationship": {
                       "allOf": [
                         {
-                          "$ref": "#/components/schemas/EndpointEntry"
+                          "$ref": "#/components/schemas/StorageReplicationEntry"
                         },
                         {
                           "description": "The relationship config row — provider/folder + member routes."
@@ -23225,7 +23776,7 @@
                     "endpoints": {
                       "default": [],
                       "items": {
-                        "$ref": "#/components/schemas/EndpointEntry"
+                        "$ref": "#/components/schemas/StorageReplicationEntry"
                       },
                       "type": "array"
                     },
@@ -23378,7 +23929,7 @@
                       "type": "array"
                     },
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/StorageReplicationEntry"
                     }
                   },
                   "required": [
@@ -23477,7 +24028,7 @@
                   "options": {
                     "type": "string"
                   },
-                  "options_rendered": {
+                  "optionsRendered": {
                     "type": "string"
                   },
                   "replication": {
@@ -23501,7 +24052,7 @@
                   "backend",
                   "fstype",
                   "options",
-                  "options_rendered"
+                  "optionsRendered"
                 ],
                 "title": "StorageShareCreateArgs",
                 "type": "object"
@@ -23517,7 +24068,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/StorageShareEntry"
                     }
                   },
                   "required": [
@@ -23717,7 +24268,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/StorageShareEntry"
                     }
                   },
                   "required": [
@@ -23913,7 +24464,7 @@
     },
     "/api/v1/storage.share.repair-permissions": {
       "post": {
-        "description": "storage_share_repair_permissions",
+        "description": "Repair a share's permissions. Without `--apply` it detects mode and ownership drift against sibling shares and changes nothing; with `--apply` it writes the confirmed mode/owner onto the path.",
         "operationId": "storageShareRepairPermissions",
         "requestBody": {
           "content": {
@@ -23982,14 +24533,14 @@
                       "description": "Whether a change was applied (`false` for a dry-run detect).",
                       "type": "boolean"
                     },
-                    "applied_mode": {
+                    "appliedMode": {
                       "description": "The octal mode applied (apply mode only).",
                       "type": [
                         "string",
                         "null"
                       ]
                     },
-                    "applied_owner": {
+                    "appliedOwner": {
                       "description": "The `uid:gid` applied (apply mode only).",
                       "type": [
                         "string",
@@ -24014,7 +24565,7 @@
                       ],
                       "description": "The path's current permissions, when readable."
                     },
-                    "owner_candidates": {
+                    "ownerCandidates": {
                       "description": "Candidate OWNERS inferred from sibling shares, ranked by evidence.\nReported alongside `candidates` because a share can have correct modes\nand wrong ownership — the shape of the failure in #620.",
                       "items": {
                         "$ref": "#/components/schemas/OwnerCandidate"
@@ -24329,7 +24880,7 @@
                       "null"
                     ]
                   },
-                  "codesign_identity": {
+                  "codesignIdentity": {
                     "description": "macOS Developer ID Application identity for codesign (binary signing).",
                     "type": [
                       "string",
@@ -24352,26 +24903,26 @@
                     "description": "Maintainer string embedded in deb/rpm package metadata.",
                     "type": "string"
                   },
-                  "out_dir": {
+                  "outDir": {
                     "default": ".",
                     "description": "Write the finished package into this directory.",
                     "type": "string"
                   },
-                  "pkg_sign_identity": {
+                  "pkgSignIdentity": {
                     "description": "macOS Developer ID Installer identity for productsign (.pkg signing).",
                     "type": [
                       "string",
                       "null"
                     ]
                   },
-                  "plg_binary_url": {
+                  "plgBinaryUrl": {
                     "description": "`.plg` only — URL where the binary payload will live. Defaults\nto the github-releases convention for the current arch.",
                     "type": [
                       "string",
                       "null"
                     ]
                   },
-                  "plg_url": {
+                  "plgUrl": {
                     "description": "`.plg` only — URL where the published `.plg` file itself will\nlive (Unraid uses this to check for plugin updates). Defaults to\nthe github-releases convention for this version.",
                     "type": [
                       "string",
@@ -24398,7 +24949,7 @@
                     "format": {
                       "$ref": "#/components/schemas/PackageFormat"
                     },
-                    "out_dir": {
+                    "outDir": {
                       "type": "string"
                     },
                     "version": {
@@ -24409,7 +24960,7 @@
                     "format",
                     "version",
                     "arch",
-                    "out_dir"
+                    "outDir"
                   ],
                   "title": "PackageBuildOutput",
                   "type": "object"
@@ -24505,7 +25056,7 @@
                         }
                       ]
                     },
-                    "ca_previous": {
+                    "caPrevious": {
                       "anyOf": [
                         {
                           "$ref": "#/components/schemas/CertInfo"
@@ -24518,7 +25069,7 @@
                     "founder": {
                       "type": "boolean"
                     },
-                    "leaf_client": {
+                    "leafClient": {
                       "anyOf": [
                         {
                           "$ref": "#/components/schemas/CertInfo"
@@ -24528,7 +25079,7 @@
                         }
                       ]
                     },
-                    "leaf_server": {
+                    "leafServer": {
                       "anyOf": [
                         {
                           "$ref": "#/components/schemas/CertInfo"
@@ -24541,7 +25092,7 @@
                     "member": {
                       "type": "boolean"
                     },
-                    "mesh_ca": {
+                    "meshCa": {
                       "anyOf": [
                         {
                           "$ref": "#/components/schemas/CertInfo"
@@ -24551,7 +25102,7 @@
                         }
                       ]
                     },
-                    "self_secure": {
+                    "selfSecure": {
                       "default": false,
                       "description": "Tier-2 secrets-storage permission. Independent of cert trust — a fully\npaired host can still refuse to be a secrets sink. Left at its default\nby [`mesh_cert_status`]; the caller fills it from the DB policy.",
                       "type": "boolean"
@@ -25163,7 +25714,7 @@
                     "charts": {
                       "anyOf": [
                         {
-                          "$ref": "#/components/schemas/SystemDetailView"
+                          "$ref": "#/components/schemas/SystemChartsView"
                         },
                         {
                           "type": "null"
@@ -25268,14 +25819,14 @@
                       }
                     ]
                   },
-                  "admin_pubkey": {
+                  "adminPubkey": {
                     "description": "SSH pubkey to append to the service user's `authorized_keys`.\nIgnored when `service_user` is unset.",
                     "type": [
                       "string",
                       "null"
                     ]
                   },
-                  "home_dir": {
+                  "homeDir": {
                     "description": "Home directory for the service user (default: `/var/lib/orca`).\nIgnored when `service_user` is unset.",
                     "type": [
                       "string",
@@ -25292,7 +25843,7 @@
                       "null"
                     ]
                   },
-                  "service_user": {
+                  "serviceUser": {
                     "description": "Service user name. When set, also runs the service-user bootstrap\n(`useradd`, group membership, linger, optional SSH key). Linux-only;\nno-op on macOS.",
                     "type": [
                       "string",
@@ -27474,7 +28025,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/UnitIdentityEntry"
                     }
                   },
                   "required": [
@@ -27674,7 +28225,7 @@
                 "schema": {
                   "properties": {
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/UnitIdentityEntry"
                     }
                   },
                   "required": [
@@ -27786,7 +28337,7 @@
                     "endpoints": {
                       "default": [],
                       "items": {
-                        "$ref": "#/components/schemas/EndpointEntry"
+                        "$ref": "#/components/schemas/UnitIdentityEntry"
                       },
                       "type": "array"
                     },
@@ -27925,7 +28476,7 @@
                       "type": "array"
                     },
                     "endpoint": {
-                      "$ref": "#/components/schemas/EndpointEntry"
+                      "$ref": "#/components/schemas/UnitIdentityEntry"
                     }
                   },
                   "required": [
@@ -27996,7 +28547,7 @@
     },
     "/api/v1/web.update": {
       "post": {
-        "description": "[MUTATES STATE when `--path`+`--owner` given] The single web-route ownership tool. Read-only (omit args) it reports every registered path, its active owner, and any contenders. With `--path`+`--owner` it makes that provider the active owner of that exact path and persists the choice; a bad selection is refused non-fatally (the incumbent keeps serving). Mirrors how a contested `/` is resolved: the user picks a different UI plugin here.",
+        "description": "The single web-route ownership tool. Mutates only when `--path` and `--owner` are both given: it makes that provider the active owner of that exact path and persists the choice; a bad selection is refused non-fatally (the incumbent keeps serving). Omit both args and it is a pure read, reporting every registered path, its active owner, and any contenders. Mirrors how a contested `/` is resolved: the user picks a different UI plugin here.",
         "operationId": "webUpdate",
         "requestBody": {
           "content": {
@@ -28166,6 +28717,9 @@
       "name": "guest"
     },
     {
+      "name": "identity.privilege"
+    },
+    {
       "name": "media"
     },
     {
@@ -28299,6 +28853,12 @@
       "name": "Guest",
       "tags": [
         "guest"
+      ]
+    },
+    {
+      "name": "Identity",
+      "tags": [
+        "identity.privilege"
       ]
     },
     {

@@ -45,11 +45,11 @@ export type ApiTokenSummary = {
   /**
    * Data-mutation opt-in (see `TokenCreateArgs::can_mutate`).
    */
-  can_mutate?: boolean;
-  created_at: string;
-  expires_at?: string | null;
+  canMutate?: boolean;
+  createdAt: string;
+  expiresAt?: string | null;
   id: string;
-  last_used_at?: string | null;
+  lastUsedAt?: string | null;
   name: string;
   /**
    * "admin" | "read"
@@ -125,6 +125,11 @@ export type BackupError = {
   instance: string;
   kind: string;
   /**
+   * The system the failure happened on. Empty = this one. A fleet-wide run
+   * that reported a failure without naming its host would be unactionable.
+   */
+  system?: string;
+  /**
    * The target the failure occurred against (`<kind>/<name>`), if known.
    */
   target?: string | null;
@@ -180,6 +185,15 @@ export type BackupRecord = {
    * Total payload size in bytes.
    */
   sizeBytes?: number;
+  /**
+   * The system holding this backup. Empty = this one.
+   *
+   * `path` is absolute "on the host that holds it", which is unusable
+   * without knowing which host that is. A fleet-wide listing that omitted
+   * this would show backups a restore could not be routed to — and the
+   * operator must never have to name a host to find out.
+   */
+  system?: string;
 };
 
 /**
@@ -220,28 +234,6 @@ export type BridgeReport = {
    */
   raised: Array<string>;
 };
-
-/**
- * Capability strings a backend advertises (domain-interpreted). Carries both the
- * role markers and the concrete verbs; the media crate parses them off
- * `BackendDef::capabilities`. Role markers (`DownloadedBy`/`ServedBy`) double as
- * capabilities so a backend's role set is derivable from `capabilities()` alone,
- * mirroring how the `web` domain rides existing `BackendDef` axes with no new
- * ABI field.
- */
-export type Capability =
-  | 'downloaded_by'
-  | 'served_by'
-  | 'url'
-  | 'credentials'
-  | 'list'
-  | 'search'
-  | 'library_add'
-  | 'library_remove'
-  | 'fix_match'
-  | 'status'
-  | 'units'
-  | 'rescan';
 
 /**
  * Read shape for `system.detail{view=capabilities}`: every provider this host
@@ -329,10 +321,10 @@ export type CatalogEntry = {
  */
 export type CertInfo = {
   cn: string;
-  days_remaining: number;
-  expires_at: number;
+  daysRemaining: number;
+  expiresAt: number;
   fingerprint: string;
-  issued_at: number;
+  issuedAt: number;
 };
 
 export type ChangePasswordOk = {
@@ -360,7 +352,7 @@ export type ChartSeries = {
    * or every sample lacked this metric. Lets the client render a
    * "current value" label without re-fetching the raw history.
    */
-  last_value?: number | null;
+  lastValue?: number | null;
   /**
    * Pre-scaled SVG-space points, ordered oldest → newest.
    */
@@ -375,7 +367,7 @@ export type ChartSeries = {
    * `["-5m", "-3m", "-1m", "now"]`). Length 0 when the series has fewer
    * than 2 points.
    */
-  x_axis_labels: Array<string>;
+  xAxisLabels: Array<string>;
 };
 
 /**
@@ -388,7 +380,7 @@ export type ClaimEndpoint = {
   /**
    * Bind address the runtime reported (e.g. `"0.0.0.0"`, `"127.0.0.1"`).
    */
-  host_ip?: string | null;
+  hostIp?: string | null;
   /**
    * Container/guest-internal listening port.
    */
@@ -401,7 +393,7 @@ export type ClaimEndpoint = {
    * Host-published port when the runtime maps one (docker `-p`). `None` = not
    * published to the host (reachable only on the workload's own address).
    */
-  published_port?: number | null;
+  publishedPort?: number | null;
 };
 
 /**
@@ -453,14 +445,14 @@ export type ClaimNode = {
   /**
    * Provider-native id (proxmox vmid, docker short id, stack name).
    */
-  native_id: string;
+  nativeId: string;
   provider: string;
-  provider_instance: string;
+  providerInstance: string;
   routes?: Routes & unknown;
   /**
    * Hostname of the node this entity runs on, when the provider reports it.
    */
-  runs_on?: string | null;
+  runsOn?: string | null;
   /**
    * The runtime service identity correlated to this node by `(host, port)`,
    * when a registration matches one of its endpoints.
@@ -472,12 +464,12 @@ export type ClaimNode = {
    * to group this container under a synthesized `stack` node. `None` on a
    * stack node itself and on claims the provider can't attribute to a stack.
    */
-  service_identity?: string | null;
+  serviceIdentity?: string | null;
   /**
    * Service role after correlation: a matched runtime registration wins over
    * the provider's claim hint.
    */
-  service_role?: string | null;
+  serviceRole?: string | null;
   /**
    * Normalized runtime run-state (`"running"`/`"stopped"`/`"paused"`) when
    * the provider reports it. Passthrough from the claim; drives the
@@ -535,14 +527,14 @@ export type CollisionInfo = {
 };
 
 export type ConfigRowOut = {
-  host_owner: string;
+  hostOwner: string;
   id: string;
-  is_replica: boolean;
+  isReplica: boolean;
   json: string;
   name: string;
   noun: string;
-  updated_at: string;
-  updated_by: string;
+  updatedAt: string;
+  updatedBy: string;
 };
 
 /**
@@ -567,11 +559,11 @@ export type ConfigRowOut = {
  * restart sequence.
  */
 export type Container = {
-  exit_code?: number | null;
+  exitCode?: number | null;
   /**
    * RFC 3339 timestamp the container last exited.
    */
-  finished_at?: string | null;
+  finishedAt?: string | null;
   health?: Health & unknown;
   /**
    * Hostname of the machine running this container. Stamped by the
@@ -587,13 +579,13 @@ export type Container = {
   mounts: Array<ContainerMount>;
   name: string;
   ports: Array<ContainerPort>;
-  restart_count: number;
-  restart_policy: RestartPolicy;
+  restartCount: number;
+  restartPolicy: RestartPolicy;
   runtime: RuntimeKind;
   /**
    * RFC 3339 timestamp the container last entered `Running`.
    */
-  started_at?: string | null;
+  startedAt?: string | null;
   /**
    * Boot-time ordering hints (LXC only today). `None` when the runtime
    * has no ordering primitive (docker).
@@ -622,7 +614,7 @@ export type ContainerMount = {
   /**
    * True when the mount is read-only.
    */
-  read_only: boolean;
+  readOnly: boolean;
   /**
    * Host-side path (docker `Source`, lxc `mp*` host part).
    */
@@ -637,8 +629,8 @@ export type ContainerMount = {
  * One open published port (host:container, protocol).
  */
 export type ContainerPort = {
-  container_port: number;
-  host_port: number;
+  containerPort: number;
+  hostPort: number;
   /**
    * `"tcp"` / `"udp"`. Free-form to admit runtime-specific values without
    * constraining the model prematurely.
@@ -723,9 +715,9 @@ export type Controller = {
    * Provider-native id under this pathway; may differ across providers for
    * the same logical entity.
    */
-  native_id: string;
+  nativeId: string;
   provider: string;
-  provider_instance: string;
+  providerInstance: string;
 };
 
 /**
@@ -740,7 +732,7 @@ export type DaemonRuntimeStatus = {
   pid?: number | null;
   port?: number | null;
   running: boolean;
-  uptime_seconds?: number | null;
+  uptimeSeconds?: number | null;
 };
 
 export type DbCompactReport = {
@@ -859,7 +851,7 @@ export type Drain = {
    * Seconds to wait after the lazy unmount before the forced one, letting
    * in-flight I/O settle.
    */
-  settle_secs?: number;
+  settleSecs?: number;
 };
 
 /**
@@ -905,15 +897,6 @@ export type EndpointArgs = {
   token?: string;
 };
 
-export type EndpointEntry = {
-  enabled: boolean;
-  host: string;
-  method: string;
-  name: string;
-  routes: Routes;
-  runtime: string;
-};
-
 /**
  * An export a host serves, tagged with the backend that publishes it. Flat
  * projection of [`plugin_toolkit::storage::ExportEntry`].
@@ -947,7 +930,7 @@ export type Failover = {
    * Consecutive confirming ticks a transition must persist before it is acted
    * on — the blip filter that rides out a briefly-slow server.
    */
-  confirm_ticks?: number;
+  confirmTicks?: number;
   /**
    * Whether ordered-source fail-over is performed at all. When `false` the
    * mount stays pinned to its primary source and is never re-elected.
@@ -959,7 +942,7 @@ export type Failover = {
    * (index 0 = primary wins the next election). When `false`, a mount that
    * degraded to a secondary stays there until it too fails.
    */
-  return_to_primary?: boolean;
+  returnToPrimary?: boolean;
 };
 
 export type FixView = {
@@ -1095,7 +1078,7 @@ export type FsRootEntry = {
   description?: string | null;
   enabled: boolean;
   exists: boolean;
-  file_count: number;
+  fileCount: number;
   name: string;
   path: string;
 };
@@ -1127,14 +1110,14 @@ export type GpuInfo = {
    * Suggested package to install to get full metrics. Distro-specific;
    * only populated when `driver_status = "no_driver"` or `"no_metrics"`.
    */
-  driver_install_hint?: string | null;
+  driverInstallHint?: string | null;
   /**
    * Driver/tool availability: `"ok"` when metrics are live, `"no_driver"`
    * when the GPU was detected via sysfs/PCI but the user-space driver or
    * query tool is absent, `"no_metrics"` when the driver is loaded but
    * doesn't expose utilization (e.g. Intel iGPU without `intel_gpu_top`).
    */
-  driver_status?: string | null;
+  driverStatus?: string | null;
   /**
    * Display name from driver (e.g. `NVIDIA GeForce RTX 4090`).
    */
@@ -1142,17 +1125,17 @@ export type GpuInfo = {
   /**
    * GPU temperature in °C.
    */
-  temperature_c?: number | null;
+  temperatureC?: number | null;
   /**
    * GPU core utilisation 0–100 %.
    */
-  utilization_percent?: number | null;
+  utilizationPercent?: number | null;
   /**
    * Source driver: `"nvidia"`, `"amd"`, `"intel"`.
    */
   vendor: string;
-  vram_total_mb?: number | null;
-  vram_used_mb?: number | null;
+  vramTotalMb?: number | null;
+  vramUsedMb?: number | null;
 };
 
 /**
@@ -1161,10 +1144,10 @@ export type GpuInfo = {
  */
 export type GpuPoint = {
   name: string;
-  temperature_c?: number | null;
-  utilization_percent?: number | null;
-  vram_total_mb?: number | null;
-  vram_used_mb?: number | null;
+  temperatureC?: number | null;
+  utilizationPercent?: number | null;
+  vramTotalMb?: number | null;
+  vramUsedMb?: number | null;
 };
 
 export type GpuSeries = {
@@ -1218,10 +1201,11 @@ export type GraphqlProxyResult = {
 };
 
 /**
- * Liveness classification for a mountpoint. Shared so the nfs/smb dashboards
- * speak one language.
+ * Operational health of a thing (container, service, host, …). Populated per
+ * the layered precedence rule documented on this module.
  */
-export type Health = 'ok' | 'stale' | 'missing' | 'timeout' | 'error' | 'write_denied' | 'unknown';
+export type Health =
+  'healthy' | 'starting' | 'degraded' | 'unhealthy' | 'unknown' | 'not_applicable';
 
 /**
  * Lean host liveness/health probe returned by `system.health`. Cheap enough to
@@ -1265,7 +1249,7 @@ export type HealthReport = {
 
 export type HostChannel = {
   kind: string;
-  last_seen_at: number;
+  lastSeenAt: number;
   source: string;
   value: string;
 };
@@ -1295,12 +1279,12 @@ export type InventoryNode = {
 };
 
 export type JobStatus = {
-  job_name: string;
-  last_run_duration_ms?: number | null;
-  last_run_error?: string | null;
-  last_run_finished?: string | null;
-  last_run_ok?: boolean | null;
-  last_run_started?: string | null;
+  jobName: string;
+  lastRunDurationMs?: number | null;
+  lastRunError?: string | null;
+  lastRunFinished?: string | null;
+  lastRunOk?: boolean | null;
+  lastRunStarted?: string | null;
 };
 
 /**
@@ -1319,7 +1303,7 @@ export type Location = {
   /**
    * Storage-domain provider name backing this path (`nfs` / `smb`), when known.
    */
-  storage_backend?: string | null;
+  storageBackend?: string | null;
 };
 
 export type LogLine = {
@@ -1345,6 +1329,28 @@ export type MeOk = {
 };
 
 /**
+ * Capability strings a backend advertises (domain-interpreted). Carries both the
+ * role markers and the concrete verbs; the media crate parses them off
+ * `BackendDef::capabilities`. Role markers (`DownloadedBy`/`ServedBy`) double as
+ * capabilities so a backend's role set is derivable from `capabilities()` alone,
+ * mirroring how the `web` domain rides existing `BackendDef` axes with no new
+ * ABI field.
+ */
+export type MediaCapability =
+  | 'downloaded_by'
+  | 'served_by'
+  | 'url'
+  | 'credentials'
+  | 'list'
+  | 'search'
+  | 'library_add'
+  | 'library_remove'
+  | 'fix_match'
+  | 'status'
+  | 'units'
+  | 'rescan';
+
+/**
  * Per-user credentials for a served-by backend, so a device can be set up. The
  * password is a [`SecretRef`] the secrets domain resolves — the media backend
  * never inlines a plaintext secret. orca owns/propagates the actual value.
@@ -1354,7 +1360,7 @@ export type MediaCredentials = {
    * Reference to the password secret (resolved via the secrets domain), if the
    * backend uses a password. Never a plaintext value on the wire.
    */
-  password_ref?: string | null;
+  passwordRef?: string | null;
   url: MediaUrl & unknown;
   /**
    * The username orca manages for this user on this backend.
@@ -1369,13 +1375,36 @@ export type MediaIdentity = {
   /**
    * Canonical external ids — the cross-server/​cross-format merge keys.
    */
-  external_ids?: Array<ExternalId>;
+  externalIds?: Array<ExternalId>;
   /**
    * Series/sequence position, when part of a series.
    */
   series?: SeriesRef | null;
   title: string;
   year?: number | null;
+};
+
+/**
+ * A descriptor row for one registered media backend — the `media.*` list view.
+ */
+export type MediaProvider = {
+  /**
+   * Verbs advertised.
+   */
+  capabilities: Array<MediaCapability>;
+  /**
+   * Non-secret base endpoint for display (`http://10.0.0.6:13378`).
+   */
+  endpoint: string;
+  mediaType: MediaType & unknown;
+  /**
+   * App identity (`audiobookshelf`, `lazylibrarian`, `plex`).
+   */
+  name: string;
+  /**
+   * Roles this backend plays for the type.
+   */
+  roles: Array<MediaRole>;
 };
 
 /**
@@ -1402,14 +1431,14 @@ export type MediaUnit = {
    * per-unit half of the relation, which the media-type registration cannot
    * answer ("sonarr can acquire tv" ≠ "sonarr got this episode").
    */
-  downloaded_by?: Array<string>;
+  downloadedBy?: Array<string>;
   identity: MediaIdentity;
-  media_type: MediaType;
+  mediaType: MediaType;
   /**
    * Server app name(s) that actually hold/serve THIS unit. Narrower than
    * `sources`, which also carries method+url and raw file-share sourcing.
    */
-  served_by?: Array<string>;
+  servedBy?: Array<string>;
   sources?: Array<Source>;
   variants?: Array<Variant>;
 };
@@ -1429,12 +1458,12 @@ export type MediaUrl = {
 };
 
 export type MeshAcceptOutput = {
-  inviter_addr: string;
-  inviter_hostname: string;
-  inviter_peer_id: string;
-  inviter_port: number;
-  mesh_id: string;
-  self_secure: boolean;
+  inviterAddr: string;
+  inviterHostname: string;
+  inviterPeerId: string;
+  inviterPort: number;
+  meshId: string;
+  selfSecure: boolean;
 };
 
 export type MeshCancelOfferOutput = {
@@ -1447,11 +1476,11 @@ export type MeshCancelOfferOutput = {
 
 export type MeshCandidate = {
   addr: string;
-  can_invite: boolean;
+  canInvite: boolean;
   hostname: string;
-  peer_id?: string | null;
+  peerId?: string | null;
   port: number;
-  pubkey_fp: string;
+  pubkeyFp: string;
 };
 
 /**
@@ -1466,27 +1495,27 @@ export type MeshDeleteAction = 'kick' | 'leave' | 'forget';
 
 export type MeshDiscoveryRowDto = {
   addr: string;
-  can_invite: boolean;
+  canInvite: boolean;
   /**
    * mDNS-advertised membership: `"unclaimed"` or `"mesh:<mesh_id>"`. Named
    * `discovery_state` (not `state`) so it doesn't collide with the
    * `#[serde(tag = "state")]` discriminant on [`MeshMember`], which would
    * otherwise clobber the `"discovered"` tag and break state filtering.
    */
-  discovery_state: string;
-  first_seen_at: number;
+  discoveryState: string;
+  firstSeenAt: number;
   hostname: string;
-  last_seen_at: number;
-  peer_id?: string | null;
+  lastSeenAt: number;
+  peerId?: string | null;
   port: number;
-  pubkey_fp: string;
+  pubkeyFp: string;
 };
 
 export type MeshForgetNotice = {
   /**
    * A live member we asked to forget the target.
    */
-  peer_id: string;
+  peerId: string;
   /**
    * `"notified"` or `"warn: <err>"`.
    */
@@ -1498,11 +1527,11 @@ export type MeshForgetOutput = {
    * Per-member fan-out result.
    */
   notified: Array<MeshForgetNotice>;
-  peer_id: string;
+  peerId: string;
   /**
    * Rows deleted on THIS host across mesh_peers/mesh_trust/mesh_discovery/offers.
    */
-  rows_removed: number;
+  rowsRemoved: number;
 };
 
 /**
@@ -1537,19 +1566,19 @@ export type MeshHealthRow = {
 };
 
 export type MeshInboundOffer = {
-  expires_at: number;
-  inviter_peer_id?: string | null;
-  offer_id: string;
-  peer_addr: string;
-  peer_hostname: string;
-  peer_port: number;
-  ttl_secs: number;
+  expiresAt: number;
+  inviterPeerId?: string | null;
+  offerId: string;
+  peerAddr: string;
+  peerHostname: string;
+  peerPort: number;
+  ttlSecs: number;
 };
 
 /**
- * Fully-shaped instance row the frontend systems UI renders directly. Mirrors
- * the legacy TS `Instance` shape but every field is snake_case so the typed
- * SDK from regen flows through unchanged.
+ * Fully-shaped instance row the frontend systems UI renders directly, in the
+ * same camelCase wire form as the rest of the surface so the typed SDK from
+ * regen flows through unchanged.
  */
 export type MeshInstance = {
   addresses: Array<MeshInstanceAddress>;
@@ -1557,7 +1586,7 @@ export type MeshInstance = {
    * Full version list from a `system.update {}` probe. Always empty on
    * this endpoint — the page-level probe overlay populates it client-side.
    */
-  available_versions: Array<VersionEntry>;
+  availableVersions: Array<VersionEntry>;
   channel?: string | null;
   error?: string | null;
   /**
@@ -1569,7 +1598,7 @@ export type MeshInstance = {
   /**
    * Wall-clock millis when this row was assembled.
    */
-  last_checked?: number | null;
+  lastChecked?: number | null;
   mode?: string | null;
   /**
    * For the synthetic local row this is emitted as `""` — the frontend
@@ -1578,14 +1607,14 @@ export type MeshInstance = {
    * `addr:port` of the peer.
    */
   origin: string;
-  peer_id: string;
-  pinned_to?: string | null;
+  peerId: string;
+  pinnedTo?: string | null;
   port: number;
   /**
    * LAN addresses reachable by the browser. Computed server-side from
    * `addresses` + `system` to replace the JS `reachableAddrs()` helper.
    */
-  reachable_addrs: Array<string>;
+  reachableAddrs: Array<string>;
   /**
    * `"local"` for the synthetic self row, `"system"` for every paired peer.
    */
@@ -1594,15 +1623,15 @@ export type MeshInstance = {
   status?: string | null;
   system?: TopologyFacts | null;
   target?: string | null;
-  update_available: boolean;
-  update_checked_secs?: number | null;
-  update_latest?: string | null;
+  updateAvailable: boolean;
+  updateCheckedSecs?: number | null;
+  updateLatest?: string | null;
   version?: string | null;
 };
 
 export type MeshInstanceAddress = {
   kind: string;
-  kind_label: string;
+  kindLabel: string;
   value: string;
 };
 
@@ -1613,15 +1642,15 @@ export type MeshInstanceSecure = {
 
 export type MeshInstancesOutput = {
   candidates: Array<MeshCandidate>;
-  inbound_offers: Array<MeshInboundOffer>;
+  inboundOffers: Array<MeshInboundOffer>;
   members: Array<MeshInstance>;
   stale: Array<MeshStaleRow>;
 };
 
 export type MeshLeaveOutput = {
-  notify_result: string;
-  peer_id: string;
-  rows_removed: number;
+  notifyResult: string;
+  peerId: string;
+  rowsRemoved: number;
 };
 
 export type MeshLeaveSelfOutput = {
@@ -1629,12 +1658,12 @@ export type MeshLeaveSelfOutput = {
   /**
    * Number of peer rows removed from `mesh_peers` (one per paired peer).
    */
-  rows_removed: number;
+  rowsRemoved: number;
 };
 
 export type MeshLeaveSelfResult = {
-  notify_result: string;
-  peer_id: string;
+  notifyResult: string;
+  peerId: string;
 };
 
 export type MeshListOutput = {
@@ -1642,7 +1671,7 @@ export type MeshListOutput = {
   /**
    * Opaque cursor for the next page, or absent on the last page.
    */
-  next_cursor?: string | null;
+  nextCursor?: string | null;
   /**
    * Total rows across all pages.
    */
@@ -1673,12 +1702,12 @@ export type MeshOfferOutput = {
    * run `system.join --action accept` on the joiner side.
    */
   code: string;
-  expires_at: number;
-  joiner_addr: string;
-  joiner_hostname: string;
-  joiner_port: number;
-  joiner_pubkey_fp: string;
-  offer_id: string;
+  expiresAt: number;
+  joinerAddr: string;
+  joinerHostname: string;
+  joinerPort: number;
+  joinerPubkeyFp: string;
+  offerId: string;
 };
 
 export type MeshPeerDto = {
@@ -1691,34 +1720,34 @@ export type MeshPeerDto = {
    */
   frontend?: string | null;
   hostname: string;
-  last_seen_at: number;
+  lastSeenAt: number;
   /**
    * Round-trip latency of the `mesh/ping` probe, milliseconds.
    */
-  latency_ms?: number | null;
+  latencyMs?: number | null;
   /**
    * True for the synthetic local-host row prepended to `system.list`. Remote
    * peers are always false. Lets UIs flag "this is me" without string
    * matching the hostname.
    */
   local?: boolean;
-  local_secure: boolean;
+  localSecure: boolean;
   /**
    * Peer-reported daemon mode: "daemon" | "parked" | "dev".
    */
   mode?: string | null;
-  peer_id: string;
-  peer_secure: boolean;
+  peerId: string;
+  peerSecure: boolean;
   /**
    * Peer-reported version pin if set.
    */
-  pinned_to?: string | null;
+  pinnedTo?: string | null;
   port: number;
   /**
    * Error string from the probe path (ping / runtime-spec / update-check).
    * First failure wins so the UI has one line to surface.
    */
-  probe_error?: string | null;
+  probeError?: string | null;
   /**
    * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
    * Propagated through roster sync so peers learned via intermediary can
@@ -1726,7 +1755,7 @@ export type MeshPeerDto = {
    * this, mesh/exec from a roster-synced peer is refused with "no pinned
    * bootstrap key" forever after.
    */
-  pubkey_fp?: string | null;
+  pubkeyFp?: string | null;
   /**
    * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
    * skipped (e.g. departed peers); `Some(false)` when the dial errored.
@@ -1752,18 +1781,18 @@ export type MeshPeerDto = {
    * True when an update is available for the peer (and not blocked by
    * `pinned_to`).
    */
-  update_available?: boolean | null;
+  updateAvailable?: boolean | null;
   /**
    * Age in seconds of the last successful `system.update {}` probe against
    * this peer. `None` until the periodic probe has succeeded at least
    * once (or for the synthetic local-host row).
    */
-  update_checked_secs?: number | null;
+  updateCheckedSecs?: number | null;
   /**
    * Latest release tag visible to the peer on its channel. Pulled from
    * `system.update-check`; `None` when the probe failed or timed out.
    */
-  update_latest?: string | null;
+  updateLatest?: string | null;
   /**
    * Peer-reported `system.runtime-spec.version`.
    */
@@ -1771,17 +1800,17 @@ export type MeshPeerDto = {
 };
 
 export type MeshPendingOfferDto = {
-  created_at: number;
+  createdAt: number;
   direction: string;
-  expires_at: number;
-  inviter_peer_id?: string | null;
-  mesh_id?: string | null;
-  offer_id: string;
-  peer_addr: string;
-  peer_hostname: string;
-  peer_port: number;
-  peer_pubkey_fp: string;
-  ttl_secs: number;
+  expiresAt: number;
+  inviterPeerId?: string | null;
+  meshId?: string | null;
+  offerId: string;
+  peerAddr: string;
+  peerHostname: string;
+  peerPort: number;
+  peerPubkeyFp: string;
+  ttlSecs: number;
 };
 
 export type MeshRecoverOutput = {
@@ -1790,14 +1819,14 @@ export type MeshRecoverOutput = {
    * peer either wasn't departed or doesn't exist locally.
    */
   cleared: boolean;
-  peer_id: string;
+  peerId: string;
 };
 
 /**
  * Result of `system.mesh.update action=settings`.
  */
 export type MeshSettingsOutput = {
-  self_secure: boolean;
+  selfSecure: boolean;
 };
 
 export type MeshSnapshotOutput = {
@@ -1809,7 +1838,7 @@ export type MeshSnapshotOutput = {
    * `peer_id` → cluster name for every joined peer matched to a cluster
    * via IP-first then hostname. Only matches included.
    */
-  cluster_membership: {
+  clusterMembership: {
     [key: string]: string;
   };
   /**
@@ -1819,7 +1848,7 @@ export type MeshSnapshotOutput = {
   /**
    * Handshaking offers whose `expires_at` is still in the future.
    */
-  inbound_offers: Array<MeshInboundOffer>;
+  inboundOffers: Array<MeshInboundOffer>;
   /**
    * Same shape as `system.list.members` — the UI reuses the existing type.
    */
@@ -1833,8 +1862,8 @@ export type MeshSnapshotOutput = {
 export type MeshStaleRow = {
   addr: string;
   hostname: string;
-  last_seen_at?: number | null;
-  peer_id: string;
+  lastSeenAt?: number | null;
+  peerId: string;
   port: number;
   /**
    * "departed" | "orphan" | "stale self identity".
@@ -1847,15 +1876,15 @@ export type MeshSyncOutput = {
 };
 
 export type MeshTrustOutput = {
-  local_secure: boolean;
+  localSecure: boolean;
   /**
    * True when both sides trust each other. Secure peers can sync
    * credentials; non-mutual peers only retain their own credentials.
    */
   mutual: boolean;
-  notify_result: string;
-  peer_id: string;
-  peer_secure: boolean;
+  notifyResult: string;
+  peerId: string;
+  peerSecure: boolean;
 };
 
 /**
@@ -1878,6 +1907,13 @@ export type ModelRow = {
   modelName: string;
   provider: string;
 };
+
+/**
+ * Liveness classification for a mountpoint. Shared so the nfs/smb dashboards
+ * speak one language.
+ */
+export type MountHealth =
+  'ok' | 'stale' | 'missing' | 'timeout' | 'error' | 'write_denied' | 'unknown';
 
 /**
  * Result of a mount/unmount operation. `recovered` is set when the backend had
@@ -1937,7 +1973,7 @@ export type MountRoute = {
  */
 export type MountView = {
   enabled: boolean;
-  health: Health & unknown;
+  health: MountHealth & unknown;
   host: MountRef;
   id: string;
   /**
@@ -1964,14 +2000,14 @@ export type NamespaceShareEntry = {
    * `viewer` | `collaborator`
    */
   role: string;
-  user_id: string;
+  userId: string;
 };
 
 export type NamespaceSummary = {
   id: string;
-  is_active: boolean;
+  isActive: boolean;
   name: string;
-  owner_user_id: string;
+  ownerUserId: string;
 };
 
 export type NetIfaceDto = {
@@ -1993,10 +2029,10 @@ export type NetIfaceDto = {
  */
 export type NodeSource =
   | (MeshInstance & {
-      node_type: 'peer';
+      nodeType: 'peer';
     })
   | (ClaimNode & {
-      node_type: 'claim';
+      nodeType: 'claim';
     });
 
 export type NotificationView = {
@@ -2091,7 +2127,7 @@ export type OwnerCandidate = {
   /**
    * A few example peer paths, so the choice is auditable.
    */
-  sample_paths: Array<string>;
+  samplePaths: Array<string>;
   /**
    * Owning uid the reference peers carry.
    */
@@ -2111,12 +2147,12 @@ export type PathChange = 'replaced' | 'renamed' | 'deleted' | 'added';
  * directly so operators see exactly what happened.
  */
 export type PeerSyncReport = {
-  duration_ms: number;
+  durationMs: number;
   error?: string | null;
   hostname: string;
   merged: number;
-  peer_id: string;
-  skip_reason?: string | null;
+  peerId: string;
+  skipReason?: string | null;
   /**
    * `in_sync` (0 merged), `merged` (n>0), `skipped`, `error`.
    */
@@ -2145,7 +2181,7 @@ export type PermCandidate = {
   /**
    * A few example peer paths that use it, so the choice is auditable.
    */
-  sample_paths: Array<string>;
+  samplePaths: Array<string>;
 };
 
 /**
@@ -2167,8 +2203,8 @@ export type PermInfo = {
 };
 
 export type PkiCertEntry = {
-  cert_path: string;
-  plugin_id: string;
+  certPath: string;
+  pluginId: string;
 };
 
 export type PkiKind = 'ca' | 'cert';
@@ -2303,26 +2339,66 @@ export type PluginRow = {
 };
 
 /**
- * A descriptor row for one registered media backend — the `media.*` list view.
+ * A finding worth acting on.
  */
-export type Provider = {
+export type PrivilegeFinding = {
   /**
-   * Verbs advertised.
+   * What is wrong, in one sentence.
    */
-  capabilities: Array<Capability>;
+  detail: string;
   /**
-   * Non-secret base endpoint for display (`http://10.0.0.6:13378`).
+   * Machine-readable class: `dangling_target`, `sole_grant`, `nopasswd_all`,
+   * or `no_group_grant`.
    */
-  endpoint: string;
-  media_type: MediaType & unknown;
+  kind: string;
+  line?: number | null;
+  principal: string;
   /**
-   * App identity (`audiobookshelf`, `lazylibrarian`, `plex`).
+   * `high` | `medium` | `info`.
    */
-  name: string;
+  severity: string;
   /**
-   * Roles this backend plays for the type.
+   * Where it was found, when tied to a specific rule.
    */
-  roles: Array<MediaRole>;
+  source?: string | null;
+};
+
+/**
+ * One parsed privilege rule, from either sudoers or doas.
+ */
+export type PrivilegeRule = {
+  /**
+   * Commands granted. `["ALL"]` means unrestricted.
+   */
+  commands: Array<string>;
+  /**
+   * True when `principal` names a group rather than a user.
+   */
+  isGroup: boolean;
+  /**
+   * 1-indexed line within that file.
+   */
+  line: number;
+  /**
+   * Whether the rule skips password entry (`NOPASSWD:` / doas `nopass`).
+   */
+  nopasswd: boolean;
+  /**
+   * Who the rule grants to: a username, or `%group` / `:group` for a group.
+   */
+  principal: string;
+  /**
+   * Verbatim line, for operator context.
+   */
+  raw: string;
+  /**
+   * File the rule came from.
+   */
+  source: string;
+  /**
+   * `sudoers` or `doas`.
+   */
+  system: string;
 };
 
 export type ProviderInfo = {
@@ -2331,11 +2407,25 @@ export type ProviderInfo = {
    * The `--kind` selector (`host`, `service`, …).
    */
   kind: string;
+  /**
+   * Which system advertises this provider. Empty = this one.
+   *
+   * The surface is the FLEET's, not this host's: a provider is only
+   * actionable if you know where it lives, and the operator must never
+   * have to name a host to find out.
+   */
+  system?: string;
   title: string;
 };
 
 export type ProvidersOutput = {
   providers: Array<ProviderInfo>;
+  /**
+   * Systems that could not be asked. Non-empty means this listing is
+   * INCOMPLETE — "no such provider" means something different when part of
+   * the fleet was never reached.
+   */
+  systemErrors?: Array<string>;
 };
 
 /**
@@ -2387,7 +2477,7 @@ export type ReconcileReason =
       kind: 'started_clean';
     }
   | {
-      exit_code?: number | null;
+      exitCode?: number | null;
       kind: 'started_tentative';
     }
   | {
@@ -2399,11 +2489,11 @@ export type ReconcileReason =
       reason: SkipLabelReason;
     }
   | {
-      blocked_sources: Array<string>;
+      blockedSources: Array<string>;
       kind: 'stale_mount';
     }
   | {
-      exit_code?: number | null;
+      exitCode?: number | null;
       kind: 'breaker_held';
     }
   | {
@@ -2678,7 +2768,7 @@ export type Route = {
 export type Routes = Array<Route>;
 
 export type RowRef = {
-  host_owner: string;
+  hostOwner: string;
   name: string;
   noun: string;
 };
@@ -2720,11 +2810,11 @@ export type ScheduleEntry = {
   /**
    * host_owner of the schedule row.
    */
-  host_owner: string;
+  hostOwner: string;
   /**
    * True if this is a replica from another owner.
    */
-  is_replica: boolean;
+  isReplica: boolean;
   /**
    * Canonical tool name to invoke (e.g. `host.backup.run`).
    */
@@ -2736,17 +2826,17 @@ export type ScheduleEntry = {
   /**
    * Next firing time (RFC3339, UTC) if the cron parses, else null.
    */
-  next_run?: string | null;
+  nextRun?: string | null;
 };
 
 /**
  * One column entry within `tabs[*].columns[tableName]`. Field names match
- * the HTTP `/api/schema` payload — the frontend reads `fk_target`
- * snake_case directly.
+ * the HTTP `/api/schema` payload, camelCase like the rest of the surface
+ * (`fkTarget`).
  */
 export type SchemaColumn = {
   extra: string;
-  fk_target?: string | null;
+  fkTarget?: string | null;
   key: string;
   name: string;
   nullable: boolean;
@@ -2789,7 +2879,7 @@ export type SchemaInvalid = {
    * One human-readable message per schema violation.
    */
   errors: Array<string>;
-  host_owner: string;
+  hostOwner: string;
   name: string;
   noun: string;
 };
@@ -2824,8 +2914,8 @@ export type SecretEntry = {
   /**
    * Backend-specific reference (e.g. `op://Personal/orca-gh/token`). Empty for inline.
    */
-  ref_path: string;
-  updated_at: string;
+  refPath: string;
+  updatedAt: string;
 };
 
 /**
@@ -2851,7 +2941,7 @@ export type ServedByEntry = {
    * Non-fatal per-backend resolution error, if url/credentials couldn't resolve.
    */
   error?: string | null;
-  provider: Provider;
+  provider: MediaProvider;
   /**
    * Reachable URL(s), resolved when the backend supports the `url` capability.
    */
@@ -2899,6 +2989,15 @@ export type ServiceInfo = {
   kind: 'none';
 };
 
+export type ServiceInstanceEntry = {
+  enabled: boolean;
+  host: string;
+  method: string;
+  name: string;
+  routes: Routes;
+  runtime: string;
+};
+
 /**
  * A typed capability a service exposes from the core, declared at
  * registration. "Primitives from core" — the generic building blocks core
@@ -2927,7 +3026,7 @@ export type ServicePrimitive =
  */
 export type ServiceProvider = {
   capabilities: Array<ServiceCapability>;
-  default_port: number;
+  defaultPort: number;
   endpoint: string;
   name: string;
   /**
@@ -3156,7 +3255,7 @@ export type StartupOrdering = {
    * Seconds to wait after issuing shutdown before the host kills the CT.
    * Proxmox `down=<seconds>`.
    */
-  down_delay_secs?: number | null;
+  downDelaySecs?: number | null;
   /**
    * Lower-first start order. Proxmox `startup: order=<N>`.
    */
@@ -3165,13 +3264,28 @@ export type StartupOrdering = {
    * Seconds to wait after starting this CT before the host considers it
    * up enough to start the next ordered peer. Proxmox `up=<seconds>`.
    */
-  up_delay_secs?: number | null;
+  upDelaySecs?: number | null;
 };
 
 export type StorageBackendError = {
   error: string;
   provider: string;
 };
+
+/**
+ * A capability a backend supports. Consumers check these before invoking an
+ * operation so an unsupported call fails fast rather than at the transport.
+ */
+export type StorageCapability =
+  | 'list'
+  | 'exports'
+  | 'export_write'
+  | 'mount'
+  | 'unmount'
+  | 'usage'
+  | 'create'
+  | 'remove'
+  | 'recover_stale';
 
 /**
  * The facet of a storage resource `storage.detail` reports. `usage` (capacity)
@@ -3231,6 +3345,25 @@ export type StorageMountOutput = {
   userspaceUnmounted: Array<string>;
 };
 
+/**
+ * A storage provider as registered with orca: a named backend, its kind, and
+ * the capabilities it advertises. This is the row `storage.list` surfaces and
+ * the topology aggregator turns into nodes/edges.
+ */
+export type StorageProvider = {
+  capabilities: Array<StorageCapability>;
+  /**
+   * Human-readable endpoint, e.g. `nfs://10.0.0.5:/export/pool`,
+   * `smb://nas/media`, `proxmox:node/local-lvm`. Never contains secrets.
+   */
+  endpoint: string;
+  kind: StorageKind;
+  /**
+   * Unique provider name (matches [`StorageBackend::name`]).
+   */
+  name: string;
+};
+
 export type StorageRecoverOutput = {
   errors: Array<string>;
   healthy: Array<string>;
@@ -3239,27 +3372,36 @@ export type StorageRecoverOutput = {
   stillStale: Array<string>;
 };
 
+export type StorageReplicationEntry = {
+  enabled: boolean;
+  folder: string;
+  id: string;
+  name: string;
+  provider: string;
+  routes: Routes;
+};
+
 /**
  * Storage footprint snapshot — surfaces orca.db and log-dir sizes so
  * operators can spot bloat. Per project_db_size_and_retention: orca.db
  * stays small, logs go to files with size+retention.
  */
 export type StorageReport = {
-  db_path: string;
+  dbPath: string;
   /**
    * Size of `orca.db` (including SQLite WAL/SHM if alongside) in bytes.
    */
-  db_size_bytes: number;
+  dbSizeBytes: number;
   /**
    * UNIX epoch seconds of the last retention sweep. `None` until the
    * sweep job lands.
    */
-  last_retention_sweep_at?: number | null;
+  lastRetentionSweepAt?: number | null;
   /**
    * Recursive size of `{home}/.orca/logs/` in bytes.
    */
-  logs_dir_bytes: number;
-  logs_dir_path: string;
+  logsDirBytes: number;
+  logsDirPath: string;
 };
 
 /**
@@ -3279,7 +3421,7 @@ export type StorageShareCoordOutput = {
    * The route `value` that was drained / resumed.
    */
   route: string;
-  share: EndpointEntry;
+  share: StorageShareEntry;
   /**
    * `reboot_source` only: whether the source's nfsd answered again within the
    * wait budget before resume.
@@ -3293,7 +3435,20 @@ export type StorageShareCoordOutput = {
 
 export type StorageShareEditOutput = {
   applied: Array<string>;
-  share: EndpointEntry;
+  share: StorageShareEntry;
+};
+
+export type StorageShareEntry = {
+  backend: string;
+  enabled: boolean;
+  fstype: string;
+  hasCredential: boolean;
+  id: string;
+  name: string;
+  options: string;
+  optionsRendered: string;
+  replication?: string | null;
+  routes: Routes;
 };
 
 /**
@@ -3301,7 +3456,7 @@ export type StorageShareEditOutput = {
  */
 export type StorageShareRegisteredList = {
   nextCursor?: string | null;
-  shares: Array<EndpointEntry>;
+  shares: Array<StorageShareEntry>;
   total?: number | null;
 };
 
@@ -3318,6 +3473,19 @@ export type SyncMcpSpecsResult = {
   errors: Array<string>;
   server: string;
   synced: number;
+};
+
+export type SystemChartsView = {
+  cpu: ChartSeries;
+  gpus: Array<GpuSeries>;
+  load: ChartSeries & unknown;
+  mem: ChartSeries;
+  samplesCount: number;
+  /**
+   * Time span between earliest and latest sample (seconds). Zero when the
+   * series has fewer than 2 points.
+   */
+  windowSecs: number;
 };
 
 /**
@@ -3344,7 +3512,7 @@ export type SystemDetailView = 'summary' | 'capabilities' | 'retention';
  * tick by the daemon, read back as `SystemInfoReport.history`.
  */
 export type SystemHistoryPoint = {
-  cpu_percent?: number | null;
+  cpuPercent?: number | null;
   /**
    * Capacity of the filesystem hosting `~/.orca`, in GiB. Sampled into the
    * ring so capacity can be judged by TREND rather than by a current-level
@@ -3352,22 +3520,22 @@ export type SystemHistoryPoint = {
    * nothing to fit, and "85% and climbing fast" is indistinguishable from
    * "85% for two years".
    */
-  fs_total_gb?: number | null;
+  fsTotalGb?: number | null;
   /**
    * Used space on that filesystem, in GiB (`total - avail`). Stored as used
    * rather than avail so it shares the monotonic-growth orientation of every
    * other `*_used_*` field in this struct.
    */
-  fs_used_gb?: number | null;
+  fsUsedGb?: number | null;
   gpus?: Array<GpuPoint>;
-  mem_total_mb?: number | null;
-  mem_used_mb?: number | null;
+  memTotalMb?: number | null;
+  memUsedMb?: number | null;
   /**
    * RSS of this orca process at sample time, in MiB. Lets the history
    * ring carry the daemon's own memory footprint alongside host memory
    * so a leak in orca is distinguishable from host-wide pressure.
    */
-  process_rss_mb?: number | null;
+  processRssMb?: number | null;
   /**
    * Unix seconds at sample time.
    */
@@ -3382,14 +3550,14 @@ export type SystemHistoryPoint = {
  */
 export type SystemInfoReport = {
   arch?: string | null;
-  boot_time_unix?: number | null;
+  bootTimeUnix?: number | null;
   /**
    * Parallel-indexed human labels for `detected_capabilities`. Same
    * length and ordering as `detected_capabilities`; empty when that
    * vector is empty. Server-owned for the same reason as
    * `system_type_label`.
    */
-  capability_labels?: Array<string>;
+  capabilityLabels?: Array<string>;
   /**
    * Things this host claims to host (VMs it runs, containers under its
    * docker socket, LXCs, etc.). Populated by colocated provider plugins
@@ -3408,14 +3576,14 @@ export type SystemInfoReport = {
    * `None` for standalone hosts. NEVER set by user config.
    */
   cluster?: string | null;
-  cpu_logical?: number | null;
-  cpu_model?: string | null;
-  cpu_physical?: number | null;
+  cpuLogical?: number | null;
+  cpuModel?: string | null;
+  cpuPhysical?: number | null;
   /**
    * Aggregate CPU utilisation 0–100 %. Requires two sysinfo refreshes;
    * always `None` on the very first CLI snapshot.
    */
-  cpu_usage_percent?: number | null;
+  cpuUsagePercent?: number | null;
   /**
    * Capabilities the detector observed on this host (e.g. `"docker"`,
    * `"vm-host"`, `"lxc-host"`, `"backup-target"`, `"gpu-nvidia"`).
@@ -3423,7 +3591,7 @@ export type SystemInfoReport = {
    * `expected_capabilities(system_type)` (a static table in the
    * server crate) to produce anomaly badges in the UI.
    */
-  detected_capabilities?: Array<string>;
+  detectedCapabilities?: Array<string>;
   /**
    * Linux distro long name (`Ubuntu 24.04.2 LTS`). `None` on macOS.
    */
@@ -3431,11 +3599,11 @@ export type SystemInfoReport = {
   /**
    * DMI product name (`Standard PC (i440FX + PIIX, 1996)`, ...). Linux-only.
    */
-  dmi_product?: string | null;
+  dmiProduct?: string | null;
   /**
    * DMI system vendor (`QEMU`, `Dell Inc.`, `LENOVO`, ...). Linux-only.
    */
-  dmi_vendor?: string | null;
+  dmiVendor?: string | null;
   fqdn?: string | null;
   /**
    * GPUs detected on this host (NVIDIA via nvidia-smi; AMD via sysfs).
@@ -3450,13 +3618,13 @@ export type SystemInfoReport = {
   history?: Array<SystemHistoryPoint>;
   hostname?: string | null;
   interfaces?: Array<NetIfaceDto>;
-  kernel_version?: string | null;
+  kernelVersion?: string | null;
   /**
    * Unix load averages (1/5/15 min). `None` on Windows.
    */
-  load_avg_1?: number | null;
-  load_avg_15?: number | null;
-  load_avg_5?: number | null;
+  loadAvg1?: number | null;
+  loadAvg15?: number | null;
+  loadAvg5?: number | null;
   /**
    * 1-minute load average normalised against logical CPU count, expressed
    * as a percent 0–100. Computed server-side as
@@ -3464,17 +3632,17 @@ export type SystemInfoReport = {
    * is missing or `cpu_logical == 0` (no load average on Windows).
    * Numerator: `load_avg_1`. Denominator: `cpu_logical`.
    */
-  load_percent?: number | null;
-  mem_available_mb?: number | null;
+  loadPercent?: number | null;
+  memAvailableMb?: number | null;
   /**
    * Memory usage as a percent 0–100. Computed server-side as
    * `min(100, mem_used_mb / mem_total_mb * 100)`. `None` when either
    * numerator or denominator is missing, or when `mem_total_mb == 0`.
    * Numerator: `mem_used_mb` (total − available). Denominator: `mem_total_mb`.
    */
-  mem_percent?: number | null;
-  mem_total_mb?: number | null;
-  mem_used_mb?: number | null;
+  memPercent?: number | null;
+  memTotalMb?: number | null;
+  memUsedMb?: number | null;
   /**
    * `true` when this host's mesh accept loop (plugin host, default
    * port 12002) currently holds a TCP listener. `false` when the
@@ -3483,54 +3651,54 @@ export type SystemInfoReport = {
    * rendered a host as "healthy" in `system_detail` while it was
    * invisible to peers. See [[project-system-detail-hides-mesh-bind-failure]].
    */
-  mesh_listening?: boolean | null;
-  mesh_paired_count?: number | null;
-  mesh_peer_count?: number | null;
+  meshListening?: boolean | null;
+  meshPairedCount?: number | null;
+  meshPeerCount?: number | null;
   /**
    * Port the mesh accept loop is configured to bind. Paired with
    * `mesh_listening` so operators can see *which* port is (or isn't)
    * open without cross-referencing config.
    */
-  mesh_port?: number | null;
-  orca_dir?: string | null;
-  orca_fs_avail_gb?: number | null;
-  orca_fs_total_gb?: number | null;
-  os_name?: string | null;
-  os_version?: string | null;
+  meshPort?: number | null;
+  orcaDir?: string | null;
+  orcaFsAvailGb?: number | null;
+  orcaFsTotalGb?: number | null;
+  osName?: string | null;
+  osVersion?: string | null;
   /**
    * Kind of parent edge: `"hypervisor"` (VM under a host), `"host"`
    * (container under its docker host), or `None`.
    */
-  parent_kind?: string | null;
+  parentKind?: string | null;
   /**
    * Inferred parent in the physical/virtual/container hierarchy.
    * Set by the inference task (mac-match on peers' `claims`), never by
    * user config. `None` until a claim matches one of this host's
    * interface MACs.
    */
-  parent_peer_id?: string | null;
-  primary_ipv4?: string | null;
-  primary_ipv6?: string | null;
-  process_pid?: number | null;
-  process_rss_mb?: number | null;
-  process_started_at_unix?: number | null;
-  process_threads?: number | null;
-  process_uptime_secs?: number | null;
+  parentPeerId?: string | null;
+  primaryIpv4?: string | null;
+  primaryIpv6?: string | null;
+  processPid?: number | null;
+  processRssMb?: number | null;
+  processStartedAtUnix?: number | null;
+  processThreads?: number | null;
+  processUptimeSecs?: number | null;
   /**
    * Tier-2 secrets-storage permission (`self_secure`) for this host.
    * `true` = this host is authorized to hold encrypted secrets replicated
    * from other mesh members. Surfaced in the host drawer as a SECURE
    * toggle, independent of cert trust.
    */
-  self_secure?: boolean | null;
+  selfSecure?: boolean | null;
   /**
    * Wall-clock when this snapshot was collected. Cached snapshots may be
    * up to ~30s stale; consumers use this to decide whether to trust a
    * metric like load average.
    */
-  snapshot_at_unix?: number | null;
-  swap_total_mb?: number | null;
-  swap_used_mb?: number | null;
+  snapshotAtUnix?: number | null;
+  swapTotalMb?: number | null;
+  swapUsedMb?: number | null;
   /**
    * Canonical system-type tag for this host. Exactly one value per host.
    * Drives expected-capability lookup and service-discovery class
@@ -3539,22 +3707,22 @@ export type SystemInfoReport = {
    * `"nixos"`, `"truenas-scale"`, `"truenas-core"`, `"linux"` (fallback).
    * `None` only when the detector failed to run.
    */
-  system_type?: string | null;
+  systemType?: string | null;
   /**
    * Human-readable label for `system_type` (e.g. `"Proxmox VE"` for
    * `"proxmox-ve"`). Server-owned so every surface renders identical text
    * without re-implementing the switch per client. `None` when
    * `system_type` is also `None`; unknown tags pass through verbatim.
    */
-  system_type_label?: string | null;
-  system_uptime_secs?: number | null;
+  systemTypeLabel?: string | null;
+  systemUptimeSecs?: number | null;
   /**
    * Top processes by CPU usage at snapshot time. Capped at 10 entries
    * (drawer renders them as a click-to-histogram table; widening the
    * list is cheap server-side but wastes wire bytes the UI can't
    * usefully render). Empty when sysinfo failed to enumerate.
    */
-  top_processes?: Array<TopProcess>;
+  topProcesses?: Array<TopProcess>;
   /**
    * Hypervisor / container kind: `kvm`, `qemu`, `vmware`, `lxc`,
    * `docker`, `none`, etc. Linux-only — read from `/sys/class/dmi/id/`
@@ -3564,7 +3732,7 @@ export type SystemInfoReport = {
 };
 
 export type SystemKillOutput = {
-  killed_patterns: Array<string>;
+  killedPatterns: Array<string>;
 };
 
 export type SystemStatusReport = {
@@ -3581,7 +3749,7 @@ export type SystemStatusReport = {
    * overrides, etc.). Was `system.host.detail.channels`.
    */
   channels: Array<HostChannel>;
-  claude_md: ClaudeMdStatus;
+  claudeMd: ClaudeMdStatus;
   daemon: DaemonRuntimeStatus & unknown;
   /**
    * Doctor entries (ok/warn/error) covering vault, agents, logs dir,
@@ -3593,7 +3761,7 @@ export type SystemStatusReport = {
    * Operator-visible host name (from the `display_name` addressing
    * channel, falling back to OS `hostname`).
    */
-  display_name: string;
+  displayName: string;
   /**
    * "embedded" when this binary was built with the `ui` feature on, "disabled" otherwise.
    */
@@ -3601,7 +3769,7 @@ export type SystemStatusReport = {
   /**
    * Stable machine identifier persisted to `~/.orca/machine_id`.
    */
-  machine_id: string;
+  machineId: string;
   mcp: McpStatus;
   /**
    * Daemon operating mode: "daemon" | "parked" | "dev". `None` when the
@@ -3611,7 +3779,7 @@ export type SystemStatusReport = {
   /**
    * Active version pin if any (`orca update --pin`).
    */
-  pinned_to?: string | null;
+  pinnedTo?: string | null;
   pki: PkiStatus;
   storage: StorageReport & unknown;
   /**
@@ -3737,6 +3905,14 @@ export type TargetInfo = {
    * buckets). Empty if the kind advertises none.
    */
   locations: Array<TargetLocation>;
+  /**
+   * The system this target is registered on. Empty = this one.
+   *
+   * `fits_here` is computed against THAT system's placement, so a row is
+   * meaningless without knowing which host it describes — a PBS target
+   * fits on a Proxmox node and not on a Mac.
+   */
+  system?: string;
   title: string;
 };
 
@@ -3783,15 +3959,21 @@ export type TargetsOutput = {
   configured: Array<BackupTargetRef>;
   placement: Placement & unknown;
   /**
-   * Every registered target kind, with placement eligibility.
+   * Every registered target kind across the fleet, with placement
+   * eligibility as computed on its own system.
    */
   registered: Array<TargetInfo>;
+  /**
+   * Systems that could not be asked — this listing is INCOMPLETE when
+   * non-empty.
+   */
+  systemErrors?: Array<string>;
 };
 
 export type TelemetrySnapshotRow = {
-  peer_id: string;
-  received_at_unix: number;
-  snapshot_at_unix: number;
+  peerId: string;
+  receivedAtUnix: number;
+  snapshotAtUnix: number;
   /**
    * Always `"local"` — telemetry is local-only. Kept on the wire for
    * backward compatibility with existing consumers.
@@ -3814,11 +3996,11 @@ export type TopProcess = {
    * the collector normalises to a 0..=100 single-core scale before
    * emitting).
    */
-  cpu_percent: number;
+  cpuPercent: number;
   /**
    * Resident set size in MiB.
    */
-  mem_mb: number;
+  memMb: number;
   name: string;
   pid: number;
 };
@@ -3871,7 +4053,7 @@ export type TopologyClaim = {
    * endpoint name from `db::proxmox`; for secret-keyed providers = the
    * `<instance>` segment of `<provider>.<instance>.<field>`.
    */
-  provider_instance: string;
+  providerInstance: string;
   routes?: Routes & unknown;
   /**
    * Hostname of the fleet node this child actually runs on, when the
@@ -3882,7 +4064,7 @@ export type TopologyClaim = {
    * peer when unset. Single-host providers (docker, dockge, standalone)
    * leave this `None`; the reporting peer *is* the host.
    */
-  runs_on?: string | null;
+  runsOn?: string | null;
   /**
    * Host-scoped compose-stack correlation key. A DESCRIPTIVE ATTRIBUTE that
    * groups the containers of one logical service/stack together — NOT an id
@@ -3897,14 +4079,14 @@ export type TopologyClaim = {
    * prefixing the host so the same stack name on two hosts stays distinct.
    * `None` = the provider can't attribute the workload to a stack.
    */
-  service_identity?: string | null;
+  serviceIdentity?: string | null;
   /**
    * Optional cheap service-role hint the provider derives from a well-known
    * label (e.g. `orca.role`). The authoritative role comes from a runtime
    * [`crate::service_identity::ServiceRegistration`], which overrides this at
    * correlation time.
    */
-  service_role?: string | null;
+  serviceRole?: string | null;
   /**
    * Normalized runtime run-state, when the provider can observe it. Cross-
    * provider vocabulary — providers map their native status onto it:
@@ -3957,22 +4139,22 @@ export type TopologyFacts = {
   /**
    * Kind of parent edge (`hypervisor` / `host`).
    */
-  parent_kind?: string | null;
+  parentKind?: string | null;
   /**
    * Inferred parent peer id (mac-match on claims). Written by the mesh
    * inference pass.
    */
-  parent_peer_id?: string | null;
-  primary_ipv4?: string | null;
-  primary_ipv6?: string | null;
+  parentPeerId?: string | null;
+  primaryIpv4?: string | null;
+  primaryIpv6?: string | null;
   /**
    * Canonical system-type tag (`proxmox-ve`, `unraid`, `macos`, ...).
    */
-  system_type?: string | null;
+  systemType?: string | null;
   /**
    * Human label for `system_type` (server-owned).
    */
-  system_type_label?: string | null;
+  systemTypeLabel?: string | null;
   /**
    * Hypervisor / container kind (`kvm`, `lxc`, `docker`, `none`, ...).
    */
@@ -4002,6 +4184,13 @@ export type Track = {
  * Kind of a media track within a variant.
  */
 export type TrackKind = 'video' | 'audio' | 'subtitle';
+
+export type UnitIdentityEntry = {
+  enabled: boolean;
+  name: string;
+  routes: Routes;
+  uuid: string;
+};
 
 /**
  * One concrete manifestation of a unit: a quality/format variant plus its tracks
@@ -4039,7 +4228,7 @@ export type VaultStatus = {
  */
 export type VersionEntry = {
   prerelease?: boolean;
-  published_at?: string | null;
+  publishedAt?: string | null;
   tag?: string;
 };
 
@@ -4051,7 +4240,7 @@ export type WebRouteStatus = {
   /**
    * Provider currently serving it (the active owner).
    */
-  active_owner: string;
+  activeOwner: string;
   /**
    * Other providers that also claimed this exact path, set aside non-fatally
    * until the user chooses. Empty when the path is uncontested.
@@ -4068,7 +4257,7 @@ export type MeshListOutputWritable = {
   /**
    * Opaque cursor for the next page, or absent on the last page.
    */
-  next_cursor?: string | null;
+  nextCursor?: string | null;
   /**
    * Total rows across all pages.
    */
@@ -4113,34 +4302,34 @@ export type MeshPeerDtoWritable = {
    */
   frontend?: string | null;
   hostname: string;
-  last_seen_at: number;
+  lastSeenAt: number;
   /**
    * Round-trip latency of the `mesh/ping` probe, milliseconds.
    */
-  latency_ms?: number | null;
+  latencyMs?: number | null;
   /**
    * True for the synthetic local-host row prepended to `system.list`. Remote
    * peers are always false. Lets UIs flag "this is me" without string
    * matching the hostname.
    */
   local?: boolean;
-  local_secure: boolean;
+  localSecure: boolean;
   /**
    * Peer-reported daemon mode: "daemon" | "parked" | "dev".
    */
   mode?: string | null;
-  peer_id: string;
-  peer_secure: boolean;
+  peerId: string;
+  peerSecure: boolean;
   /**
    * Peer-reported version pin if set.
    */
-  pinned_to?: string | null;
+  pinnedTo?: string | null;
   port: number;
   /**
    * Error string from the probe path (ping / runtime-spec / update-check).
    * First failure wins so the UI has one line to surface.
    */
-  probe_error?: string | null;
+  probeError?: string | null;
   /**
    * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
    * Propagated through roster sync so peers learned via intermediary can
@@ -4148,7 +4337,7 @@ export type MeshPeerDtoWritable = {
    * this, mesh/exec from a roster-synced peer is refused with "no pinned
    * bootstrap key" forever after.
    */
-  pubkey_fp?: string | null;
+  pubkeyFp?: string | null;
   /**
    * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
    * skipped (e.g. departed peers); `Some(false)` when the dial errored.
@@ -4174,18 +4363,18 @@ export type MeshPeerDtoWritable = {
    * True when an update is available for the peer (and not blocked by
    * `pinned_to`).
    */
-  update_available?: boolean | null;
+  updateAvailable?: boolean | null;
   /**
    * Age in seconds of the last successful `system.update {}` probe against
    * this peer. `None` until the periodic probe has succeeded at least
    * once (or for the synthetic local-host row).
    */
-  update_checked_secs?: number | null;
+  updateCheckedSecs?: number | null;
   /**
    * Latest release tag visible to the peer on its channel. Pulled from
    * `system.update-check`; `None` when the probe failed or timed out.
    */
-  update_latest?: string | null;
+  updateLatest?: string | null;
   /**
    * Peer-reported `system.runtime-spec.version`.
    */
@@ -4201,7 +4390,7 @@ export type MeshSnapshotOutputWritable = {
    * `peer_id` → cluster name for every joined peer matched to a cluster
    * via IP-first then hostname. Only matches included.
    */
-  cluster_membership: {
+  clusterMembership: {
     [key: string]: string;
   };
   /**
@@ -4211,7 +4400,7 @@ export type MeshSnapshotOutputWritable = {
   /**
    * Handshaking offers whose `expires_at` is still in the future.
    */
-  inbound_offers: Array<MeshInboundOffer>;
+  inboundOffers: Array<MeshInboundOffer>;
   /**
    * Same shape as `system.list.members` — the UI reuses the existing type.
    */
@@ -4575,12 +4764,12 @@ export type AuthLoginResponses = {
     /**
      * RFC3339 expiry of the on-disk session.
      */
-    expires_at: string;
+    expiresAt: string;
     /**
      * "admin" | "read" — whatever role the user holds in `users`.
      */
     role: string;
-    user_id: string;
+    userId: string;
     username: string;
   };
 };
@@ -4782,11 +4971,11 @@ export type AuthTokenCreateData = {
      * otherwise require admin — without unlocking control-plane admin tools.
      * Default false. Meaningless on an `admin` token (admin already passes).
      */
-    can_mutate?: boolean;
+    canMutate?: boolean;
     /**
      * Days until expiry. `None` = never expires.
      */
-    expires_in_days?: number | null;
+    expiresInDays?: number | null;
     /**
      * Human-readable label (e.g. "ci-runner", "scott-laptop"). Must be unique on this host.
      */
@@ -4925,7 +5114,7 @@ export type AuthTokenListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     tokens: Array<ApiTokenSummary>;
     /**
      * Total rows across all pages.
@@ -4986,6 +5175,18 @@ export type BackupDetailData = {
    * BackupDetailArgs
    */
   body: {
+    /**
+     * INTERNAL. Answer for this system only, skipping the mesh fan-out.
+     *
+     * Not a CLI flag and not something an operator selects — `#[arg(skip)]`
+     * keeps it off the surface entirely, which is the point: `peer` and
+     * "which host" are transport concerns that must stay under the hood.
+     *
+     * It exists because the fan-out dispatches `backup.detail` to each
+     * system, and without it every recipient would fan out in turn — an
+     * exponential storm across the mesh instead of one round of calls.
+     */
+    localOnly?: boolean;
     view?: BackupDetailView & unknown;
   };
   path?: never;
@@ -5042,6 +5243,12 @@ export type BackupListData = {
      * Max items to return this page (clamped to [1, 200]; default 50).
      */
     limit?: number | null;
+    /**
+     * INTERNAL. Answer for this system only. Not an operator-facing flag —
+     * see `BackupDetailArgs::local_only`; it terminates the fan-out at one
+     * hop so one `backup list` does not storm the mesh.
+     */
+    localOnly?: boolean;
   };
   path?: never;
   query?: never;
@@ -5081,6 +5288,12 @@ export type BackupListResponses = {
      */
     nextCursor?: string | null;
     /**
+     * Systems that could not be asked. Non-empty means a restore is choosing
+     * from an INCOMPLETE set — the backup you want may exist on a host that
+     * was never reached.
+     */
+    systemErrors?: Array<string>;
+    /**
      * Total backups across all pages.
      */
     total?: number | null;
@@ -5112,6 +5325,12 @@ export type BackupRestoreData = {
      * Kind to restore (e.g. `host`).
      */
     kind?: string;
+    /**
+     * INTERNAL. Restore on this system only — set by the routing hop once the
+     * holder has been resolved. Not an operator-facing flag: a restore is
+     * addressed by BACKUP ID, and finding its host is orca's problem.
+     */
+    localOnly?: boolean;
   };
   path?: never;
   query?: never;
@@ -5174,6 +5393,11 @@ export type BackupRunData = {
      * Kind to back up (e.g. `host`).
      */
     kind?: string | null;
+    /**
+     * INTERNAL. Run on this system only. Not an operator-facing flag — see
+     * `BackupDetailArgs::local_only`. It terminates the fan-out at one hop.
+     */
+    localOnly?: boolean;
   };
   path?: never;
   query?: never;
@@ -5212,6 +5436,12 @@ export type BackupRunResponses = {
      * Records produced this run (across every target fanned out to).
      */
     produced: Array<BackupRecord>;
+    /**
+     * Systems that could not be asked to run. Distinct from `errors`: those
+     * are backups that were ATTEMPTED and failed, these were never started
+     * at all, and an operator must be able to tell those apart.
+     */
+    systemErrors?: Array<string>;
     /**
      * Targets this run wrote to (`<kind>/<name>`).
      */
@@ -5371,7 +5601,7 @@ export type ConfigListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     rows: Array<ConfigRowOut>;
     /**
      * Total rows across all pages.
@@ -5477,28 +5707,28 @@ export type ConfigSourceDiffResponses = {
     /**
      * Rows read from the live config store.
      */
-    live_config_rows: number;
+    liveConfigRows: number;
     /**
      * Rows parsed from the checkout.
      */
-    repo_rows: number;
+    repoRows: number;
     /**
      * Repo rows that failed schema validation → excluded from add/change.
      */
-    schema_invalid: Array<SchemaInvalid>;
+    schemaInvalid: Array<SchemaInvalid>;
     /**
      * In repo, absent from the live store → would be created.
      */
-    to_add: Array<RowRef>;
+    toAdd: Array<RowRef>;
     /**
      * In both, JSON differs → would be replaced.
      */
-    to_change: Array<RowRef>;
+    toChange: Array<RowRef>;
     /**
      * Live authoritative rows (owned, non-replica) with no repo counterpart →
      * REPORTED as removable. Never executed in this slice.
      */
-    to_delete: Array<RowRef>;
+    toDelete: Array<RowRef>;
   };
 };
 
@@ -5634,15 +5864,15 @@ export type ConfigSourceStatusResponses = {
     /**
      * Whether the daemon is live enough to reconcile (schema registry present).
      */
-    daemon_live: boolean;
+    daemonLive: boolean;
     /**
      * Rows currently in the live config store.
      */
-    live_config_rows: number;
+    liveConfigRows: number;
     /**
      * Live plugin-driven unit ops (reflects loaded providers).
      */
-    live_unit_ops: number;
+    liveUnitOps: number;
     /**
      * Human-readable liveness verdict.
      */
@@ -5650,19 +5880,19 @@ export type ConfigSourceStatusResponses = {
     /**
      * Resolved checkout root, if one was given.
      */
-    repo_path?: string | null;
+    repoPath?: string | null;
     /**
      * Whether `<repo>/config/` exists.
      */
-    repo_present: boolean;
+    repoPresent: boolean;
     /**
      * Rows parsed out of the checkout (0 when absent).
      */
-    repo_rows: number;
+    repoRows: number;
     /**
      * Nouns with a registered schema in the live daemon.
      */
-    schemas_registered: number;
+    schemasRegistered: number;
   };
 };
 
@@ -5820,7 +6050,7 @@ export type ContainerCreateError = ContainerCreateErrors[keyof ContainerCreateEr
 
 export type ContainerCreateResponses = {
   /**
-   * ExecOutput
+   * ContainerExecOutput
    *
    * Result of a one-shot [`RuntimeAdapter::exec`]: the captured streams plus the
    * command's exit status. `stdout`/`stderr` are best-effort UTF-8 (lossy);
@@ -5831,7 +6061,7 @@ export type ContainerCreateResponses = {
     /**
      * Process exit code, when the runtime reported it.
      */
-    exit_code?: number | null;
+    exitCode?: number | null;
     stderr: string;
     stdout: string;
   };
@@ -6637,7 +6867,7 @@ export type GuestExecResponses = {
      * Process exit code, when it terminated normally. `None` if it was killed by
      * a signal (see [`signal`](ExecOutput::signal)) or timed out before exiting.
      */
-    exit_code?: number | null;
+    exitCode?: number | null;
     /**
      * Signal/exception number, when the process was abnormally terminated.
      */
@@ -6649,7 +6879,7 @@ export type GuestExecResponses = {
     /**
      * stderr was truncated (by the guest agent or by the output cap).
      */
-    stderr_truncated?: boolean;
+    stderrTruncated?: boolean;
     /**
      * Captured stdout (UTF-8 lossy), up to the request's output cap.
      */
@@ -6657,12 +6887,12 @@ export type GuestExecResponses = {
     /**
      * stdout was truncated (by the guest agent or by the output cap).
      */
-    stdout_truncated?: boolean;
+    stdoutTruncated?: boolean;
     /**
      * The deadline elapsed before the process exited; output is whatever was
      * captured up to that point and `exit_code` is `None`.
      */
-    timed_out?: boolean;
+    timedOut?: boolean;
   };
 };
 
@@ -6743,6 +6973,70 @@ export type GuestWriteFileResponses = {
 
 export type GuestWriteFileResponse = GuestWriteFileResponses[keyof GuestWriteFileResponses];
 
+export type IdentityPrivilegeAuditData = {
+  /**
+   * IdentityPrivilegeAuditArgs
+   */
+  body: {
+    /**
+     * Override the filesystem root to audit. Primarily for tests; defaults to `/`.
+     */
+    root?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/identity.privilege.audit';
+};
+
+export type IdentityPrivilegeAuditErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type IdentityPrivilegeAuditError =
+  IdentityPrivilegeAuditErrors[keyof IdentityPrivilegeAuditErrors];
+
+export type IdentityPrivilegeAuditResponses = {
+  /**
+   * PrivilegeAudit
+   *
+   * Result of an audit on one host.
+   */
+  200: {
+    /**
+     * True when every discovered file was readable.
+     */
+    complete: boolean;
+    /**
+     * Findings, most severe first.
+     */
+    findings: Array<PrivilegeFinding>;
+    host: string;
+    /**
+     * Every rule parsed, in discovery order.
+     */
+    rules: Array<PrivilegeRule>;
+    /**
+     * Files that exist but could not be read (usually `0440 root:root` while the
+     * daemon runs unprivileged). Coverage is PARTIAL whenever this is non-empty.
+     */
+    unreadable: Array<string>;
+  };
+};
+
+export type IdentityPrivilegeAuditResponse =
+  IdentityPrivilegeAuditResponses[keyof IdentityPrivilegeAuditResponses];
+
 export type MediaDetailData = {
   /**
    * MediaDetailArgs
@@ -6791,7 +7085,7 @@ export type MediaDetailResponses = {
      * Acquirers registered for this type — capability, not fact. Empty is a
      * legitimate answer (nothing registered yet), never an error.
      */
-    downloadedBy: Array<Provider>;
+    downloadedBy: Array<MediaProvider>;
     mediaType: string;
     /**
      * Servers registered for this type. Multi-provider is normal (tv is served
@@ -6855,7 +7149,7 @@ export type MediaListResponses = {
    */
   200: {
     nextCursor?: string | null;
-    providers: Array<Provider>;
+    providers: Array<MediaProvider>;
     total?: number | null;
   };
 };
@@ -7098,7 +7392,7 @@ export type ModelBackendsCheckResponses = {
     /**
      * Total count of usable models across all reachable backends.
      */
-    total_models: number;
+    totalModels: number;
   };
 };
 
@@ -7281,7 +7575,7 @@ export type ModelListData = {
     /**
      * Only enabled rows.
      */
-    enabled_only?: boolean;
+    enabledOnly?: boolean;
     /**
      * Max items to return this page (clamped to [1, 200]; default 50).
      */
@@ -7324,7 +7618,7 @@ export type ModelListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     /**
      * Total rows across all pages.
      */
@@ -7546,11 +7840,11 @@ export type NamespaceAccessListResponses = {
    * Tool result
    */
   200: {
-    namespace_id: string;
+    namespaceId: string;
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     shares: Array<NamespaceShareEntry>;
     /**
      * Total rows across all pages.
@@ -7606,7 +7900,7 @@ export type NamespaceCreateResponses = {
     description?: string | null;
     id: string;
     name: string;
-    owner_user_id: string;
+    ownerUserId: string;
     root: string;
   };
 };
@@ -7706,7 +8000,7 @@ export type NamespaceDetailResponses = {
     description?: string | null;
     id: string;
     name: string;
-    owner_user_id: string;
+    ownerUserId: string;
     root: string;
   };
 };
@@ -7760,7 +8054,7 @@ export type NamespaceListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     /**
      * Total rows across all pages.
      */
@@ -8035,7 +8329,7 @@ export type PkiCreateData = {
     /**
      * (cert) Plugin id to issue for.
      */
-    plugin_id?: string | null;
+    pluginId?: string | null;
   };
   path?: never;
   query?: never;
@@ -8128,7 +8422,7 @@ export type PkiListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     /**
      * Total rows across all pages.
      */
@@ -8314,7 +8608,7 @@ export type PluginDataDetailData = {
     /**
      * Fetch the value of a specific data key.
      */
-    data_key?: string | null;
+    dataKey?: string | null;
     id: string;
   };
   path?: never;
@@ -8676,7 +8970,7 @@ export type PluginServeAssetData = {
      * The plugin repo web URL (catalog `repoUrl`), e.g.
      * `https://github.com/argyle-labs/sonarr`.
      */
-    repo_url: string;
+    repoUrl: string;
     /**
      * Rust target triple of the REQUESTER (e.g. `x86_64-unknown-linux-musl`).
      * The holder may be a different arch, so the caller MUST specify the asset
@@ -8719,7 +9013,7 @@ export type PluginServeAssetResponses = {
    * MUST re-verify after decode before installing).
    */
   200: {
-    asset_b64: string;
+    assetB64: string;
     sha256: string;
     version: string;
   };
@@ -8854,7 +9148,7 @@ export type ScheduleCreateResponses = {
    * Tool result
    */
   200: {
-    duration_ms: number;
+    durationMs: number;
     error?: string | null;
     job: string;
     ok: boolean;
@@ -8959,7 +9253,7 @@ export type ScheduleListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     schedules: Array<ScheduleEntry>;
     /**
      * Total schedules across all pages.
@@ -9153,7 +9447,7 @@ export type SchemaListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     schemas: Array<SchemaDbEntry>;
     /**
      * Total rows across all pages.
@@ -9297,7 +9591,7 @@ export type SecretsListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     secrets: Array<SecretEntry>;
     /**
      * Total rows across all pages.
@@ -9322,11 +9616,19 @@ export type SecretsUpsertData = {
     /**
      * Required for external backends (e.g. `op://Personal/orca-gh/token`). Ignored for inline.
      */
-    ref_path?: string | null;
+    refPath?: string | null;
     /**
      * Required for `inline`. Ignored for external backends (which use `ref_path`).
      */
     value?: string | null;
+    /**
+     * CLI only: read the value from stdin instead of `--value`, so the secret
+     * never lands in `argv` where any local process can read it via `ps`.
+     * Consumed into `value` in the calling process (see the manual CliOp at
+     * the bottom of this file) and never serialized, so REST/MCP — which have
+     * no stdin — can't be asked to honour it.
+     */
+    valueStdin?: boolean;
   };
   path?: never;
   query?: never;
@@ -9584,7 +9886,7 @@ export type ServiceInstanceCreateResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: ServiceInstanceEntry;
   };
 };
 
@@ -9673,7 +9975,7 @@ export type ServiceInstanceDetailResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: ServiceInstanceEntry;
   };
 };
 
@@ -9723,7 +10025,7 @@ export type ServiceInstanceListResponses = {
    * Tool result
    */
   200: {
-    endpoints?: Array<EndpointEntry>;
+    endpoints?: Array<ServiceInstanceEntry>;
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
@@ -9785,7 +10087,7 @@ export type ServiceInstanceUpdateResponses = {
    */
   200: {
     applied: Array<string>;
-    endpoint: EndpointEntry;
+    endpoint: ServiceInstanceEntry;
   };
 };
 
@@ -10084,7 +10386,7 @@ export type SpecListResponses = {
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
-    next_cursor?: string | null;
+    nextCursor?: string | null;
     specs: Array<SpecMetaRow>;
     /**
      * Total rows across all pages.
@@ -10215,10 +10517,10 @@ export type StorageDetailResponses = {
    * Capacity/usage snapshot for a volume.
    */
   200: {
-    available_bytes: number;
+    availableBytes: number;
     id: string;
-    total_bytes: number;
-    used_bytes: number;
+    totalBytes: number;
+    usedBytes: number;
   };
 };
 
@@ -10322,7 +10624,7 @@ export type StorageListResponses = {
      * Opaque cursor for the next page, or absent on the last page.
      */
     nextCursor?: string | null;
-    providers: Array<Provider>;
+    providers: Array<StorageProvider>;
     /**
      * Total providers across all pages.
      */
@@ -10403,7 +10705,7 @@ export type StorageMountCreateResponses = {
    */
   200: {
     enabled: boolean;
-    health: Health & unknown;
+    health: MountHealth & unknown;
     host: MountRef;
     id: string;
     /**
@@ -10525,7 +10827,7 @@ export type StorageMountDetailResponses = {
    */
   200: {
     enabled: boolean;
-    health: Health & unknown;
+    health: MountHealth & unknown;
     host: MountRef;
     id: string;
     /**
@@ -10730,7 +11032,7 @@ export type StorageReplicationCreateResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: StorageReplicationEntry;
   };
 };
 
@@ -10822,7 +11124,7 @@ export type StorageReplicationDetailResponses = {
    * Tool result
    */
   200: {
-    relationship: EndpointEntry & unknown;
+    relationship: StorageReplicationEntry & unknown;
     /**
      * Observed sync health, resolved on read. `None` = unknown (no provider
      * registered, or the relationship's provider has no adapter loaded).
@@ -10878,7 +11180,7 @@ export type StorageReplicationListResponses = {
    * Tool result
    */
   200: {
-    endpoints?: Array<EndpointEntry>;
+    endpoints?: Array<StorageReplicationEntry>;
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
@@ -10940,7 +11242,7 @@ export type StorageReplicationUpdateResponses = {
    */
   200: {
     applied: Array<string>;
-    endpoint: EndpointEntry;
+    endpoint: StorageReplicationEntry;
   };
 };
 
@@ -10958,7 +11260,7 @@ export type StorageShareCreateData = {
     id: string;
     name: string;
     options: string;
-    options_rendered: string;
+    optionsRendered: string;
     replication?: string | null;
     /**
      * Reachable path(s), tried in order. Repeatable: `--route kind=url`
@@ -10995,7 +11297,7 @@ export type StorageShareCreateResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: StorageShareEntry;
   };
 };
 
@@ -11082,7 +11384,7 @@ export type StorageShareDetailResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: StorageShareEntry;
   };
 };
 
@@ -11225,11 +11527,11 @@ export type StorageShareRepairPermissionsResponses = {
     /**
      * The octal mode applied (apply mode only).
      */
-    applied_mode?: string | null;
+    appliedMode?: string | null;
     /**
      * The `uid:gid` applied (apply mode only).
      */
-    applied_owner?: string | null;
+    appliedOwner?: string | null;
     /**
      * Candidate modes inferred from sibling shares, ranked by evidence. Present
      * in dry-run; a caller picks one and re-invokes with `apply` + that `mode`.
@@ -11244,7 +11546,7 @@ export type StorageShareRepairPermissionsResponses = {
      * Reported alongside `candidates` because a share can have correct modes
      * and wrong ownership — the shape of the failure in #620.
      */
-    owner_candidates?: Array<OwnerCandidate>;
+    ownerCandidates?: Array<OwnerCandidate>;
     path: string;
     /**
      * Human-readable notes / errors.
@@ -11363,7 +11665,7 @@ export type SystemBuildData = {
     /**
      * macOS Developer ID Application identity for codesign (binary signing).
      */
-    codesign_identity?: string | null;
+    codesignIdentity?: string | null;
     /**
      * Package format: deb / rpm / apk / pkgbuild / pkg / homebrew. Auto-detected when omitted.
      */
@@ -11375,22 +11677,22 @@ export type SystemBuildData = {
     /**
      * Write the finished package into this directory.
      */
-    out_dir?: string;
+    outDir?: string;
     /**
      * macOS Developer ID Installer identity for productsign (.pkg signing).
      */
-    pkg_sign_identity?: string | null;
+    pkgSignIdentity?: string | null;
     /**
      * `.plg` only — URL where the binary payload will live. Defaults
      * to the github-releases convention for the current arch.
      */
-    plg_binary_url?: string | null;
+    plgBinaryUrl?: string | null;
     /**
      * `.plg` only — URL where the published `.plg` file itself will
      * live (Unraid uses this to check for plugin updates). Defaults to
      * the github-releases convention for this version.
      */
-    plg_url?: string | null;
+    plgUrl?: string | null;
   };
   path?: never;
   query?: never;
@@ -11423,7 +11725,7 @@ export type SystemBuildResponses = {
   200: {
     arch: string;
     format: PackageFormat;
-    out_dir: string;
+    outDir: string;
     version: string;
   };
 };
@@ -11468,18 +11770,18 @@ export type SystemCertsListResponses = {
    */
   200: {
     bootstrap?: CertInfo | null;
-    ca_previous?: CertInfo | null;
+    caPrevious?: CertInfo | null;
     founder: boolean;
-    leaf_client?: CertInfo | null;
-    leaf_server?: CertInfo | null;
+    leafClient?: CertInfo | null;
+    leafServer?: CertInfo | null;
     member: boolean;
-    mesh_ca?: CertInfo | null;
+    meshCa?: CertInfo | null;
     /**
      * Tier-2 secrets-storage permission. Independent of cert trust — a fully
      * paired host can still refuse to be a secrets sink. Left at its default
      * by [`mesh_cert_status`]; the caller fills it from the DB policy.
      */
-    self_secure?: boolean;
+    selfSecure?: boolean;
     /**
      * Running orca version of the host this status describes. For a
      * peer-dispatched (`--peer`) call this is the *remote* host's version,
@@ -11780,7 +12082,7 @@ export type SystemInfoDetailResponses = {
      * the caller's `chartWidth`/`chartHeight`. Absent unless both dimensions
      * are supplied. Folded in from the former `system.detail_view` tool.
      */
-    charts?: SystemDetailView | null;
+    charts?: SystemChartsView | null;
     host: SystemInfoReport & unknown;
   };
 };
@@ -11802,12 +12104,12 @@ export type SystemInstallData = {
      * SSH pubkey to append to the service user's `authorized_keys`.
      * Ignored when `service_user` is unset.
      */
-    admin_pubkey?: string | null;
+    adminPubkey?: string | null;
     /**
      * Home directory for the service user (default: `/var/lib/orca`).
      * Ignored when `service_user` is unset.
      */
-    home_dir?: string | null;
+    homeDir?: string | null;
     /**
      * HTTP port the daemon supervisor should bind. Defaults to the
      * workspace-wide `APP_REST_HTTP_PORT`.
@@ -11818,7 +12120,7 @@ export type SystemInstallData = {
      * (`useradd`, group membership, linger, optional SSH key). Linux-only;
      * no-op on macOS.
      */
-    service_user?: string | null;
+    serviceUser?: string | null;
   };
   path?: never;
   query?: never;
@@ -12979,7 +13281,7 @@ export type UnitIdentityCreateResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: UnitIdentityEntry;
   };
 };
 
@@ -13066,7 +13368,7 @@ export type UnitIdentityDetailResponses = {
    * Tool result
    */
   200: {
-    endpoint: EndpointEntry;
+    endpoint: UnitIdentityEntry;
   };
 };
 
@@ -13116,7 +13418,7 @@ export type UnitIdentityListResponses = {
    * Tool result
    */
   200: {
-    endpoints?: Array<EndpointEntry>;
+    endpoints?: Array<UnitIdentityEntry>;
     /**
      * Opaque cursor for the next page, or absent on the last page.
      */
@@ -13174,7 +13476,7 @@ export type UnitIdentityUpdateResponses = {
    */
   200: {
     applied: Array<string>;
-    endpoint: EndpointEntry;
+    endpoint: UnitIdentityEntry;
   };
 };
 

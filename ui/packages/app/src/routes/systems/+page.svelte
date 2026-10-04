@@ -66,7 +66,7 @@
   // Every `system.health` row is keyed by peer id; the local row's machine id
   // is its peer id.
   function healthRowFor(m: MeshInstance): MeshHealthRow | undefined {
-    return health.get(m.peer_id);
+    return health.get(m.peerId);
   }
 
   // The roster's `health` is "up" for every active remote and "unknown" for the
@@ -104,7 +104,7 @@
   // or two skipped beacons don't flip a row to "down".
   const LIVENESS_WINDOW_MS = 60_000;
 
-  // `last_seen_at` is epoch seconds, `null` for `departed` rows (unknown).
+  // `lastSeenAt` is epoch seconds, `null` for `departed` rows (unknown).
   function liveness(lastSeenAtSecs: number | null | undefined): boolean | null {
     if (lastSeenAtSecs == null || !relTime(lastSeenAtSecs, 's').ok) return null;
     return Date.now() - lastSeenAtSecs * 1000 <= LIVENESS_WINDOW_MS;
@@ -112,11 +112,11 @@
 
   function staleHealth(r: StaleRow): HealthView {
     const reason = staleReasonLabels[r.s.reason] ?? r.s.reason;
-    const title = `${reason} · last seen ${relTime(r.s.last_seen_at, 's').text}`;
+    const title = `${reason} · last seen ${relTime(r.s.lastSeenAt, 's').text}`;
     // A beacon from this machine's former identity is this machine, so its
     // liveness says nothing about that identity.
     if (r.selfIdentity) return { label: 'retired', ok: null, degraded: false, title };
-    const live = liveness(r.s.last_seen_at);
+    const live = liveness(r.s.lastSeenAt);
     const label = live === true ? 'up' : live === false ? 'down' : 'unknown';
     return { label, ok: live, degraded: false, title };
   }
@@ -151,18 +151,18 @@
   }
 
   function reachableRouteList(m: MeshInstance): { label: string; value: string }[] {
-    return m.reachable_addrs
+    return m.reachableAddrs
       .map(normalizeRoute)
       .filter(Boolean)
       .map(addr => {
         const host = hostOf(addr);
         const match = m.addresses.find(a => hostOf(a.value.toLowerCase()) === host);
-        return { label: match?.kind_label ?? 'address', value: addr };
+        return { label: match?.kindLabel ?? 'address', value: addr };
       });
   }
 
   // A loopback route to the local row is the browser sitting on that machine,
-  // which `reachable_addrs` (LAN only) never lists.
+  // which `reachableAddrs` (LAN only) never lists.
   function routeConfirmed(m: MeshInstance, current: string, routes: { value: string }[]): boolean {
     if (!current) return true;
     if (m.role === 'local' && LOOPBACK.test(current)) return true;
@@ -188,7 +188,7 @@
       const out = await unwrap(
         systemInfoDetail({
           body: {},
-          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.peer_id),
+          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.peerId),
           signal: ctrl.signal,
         }),
       );
@@ -210,7 +210,7 @@
   }
 
   // `system.list` returns a 3-way union; `MeshSnapshotOutput` is a superset of
-  // `MeshInstancesOutput`, so its required `cluster_membership`/`clusters` must
+  // `MeshInstancesOutput`, so its required `clusterMembership`/`clusters` must
   // be absent too. Anything else throws rather than being coerced.
   function isInstancesOutput(v: unknown): v is MeshInstancesOutput {
     return (
@@ -219,8 +219,8 @@
       'candidates' in v &&
       'members' in v &&
       'stale' in v &&
-      'inbound_offers' in v &&
-      !('cluster_membership' in v) &&
+      'inboundOffers' in v &&
+      !('clusterMembership' in v) &&
       !('clusters' in v)
     );
   }
@@ -242,7 +242,7 @@
       members = inst.members;
       candidates = inst.candidates;
       stale = inst.stale;
-      inboundOffers = inst.inbound_offers;
+      inboundOffers = inst.inboundOffers;
       // An `id: ''` row is orca failing to enumerate the roster, not a system.
       health = new Map(hr.systems.filter(r => r.id).map(r => [r.id, r]));
       healthRosterError = hr.systems.find(r => !r.id && r.error)?.error ?? null;
@@ -259,21 +259,21 @@
   // recently seen copy wins). Local system first, otherwise API order, so rows
   // never jump between polls.
   const unifiedRows = $derived.by((): UnifiedRow[] => {
-    const memberPeers = new Set(members.map(m => m.peer_id));
+    const memberPeers = new Set(members.map(m => m.peerId));
     const staleByPeer = new Map<string, MeshStaleRow>();
     for (const s of stale) {
-      if (memberPeers.has(s.peer_id)) continue;
-      const prev = staleByPeer.get(s.peer_id);
-      if (!prev || (s.last_seen_at ?? 0) > (prev.last_seen_at ?? 0)) staleByPeer.set(s.peer_id, s);
+      if (memberPeers.has(s.peerId)) continue;
+      const prev = staleByPeer.get(s.peerId);
+      if (!prev || (s.lastSeenAt ?? 0) > (prev.lastSeenAt ?? 0)) staleByPeer.set(s.peerId, s);
     }
     const memberRows: UnifiedRow[] = members.map(m => ({
       kind: 'member',
-      key: `member:${m.id}:${m.peer_id}`,
+      key: `member:${m.id}:${m.peerId}`,
       m,
     }));
     const staleRows: UnifiedRow[] = [...staleByPeer.values()].map(s => ({
       kind: 'stale',
-      key: `stale:${s.peer_id}`,
+      key: `stale:${s.peerId}`,
       s,
       selfIdentity: s.reason === 'stale self identity',
     }));
@@ -404,8 +404,8 @@
     <span class="dim">—</span>
   {:else}
     {@const hr = healthRowFor(r.m)}
-    {#if hr?.health?.daemon?.uptime_seconds != null}
-      {fmtUptime(hr.health.daemon.uptime_seconds)}
+    {#if hr?.health?.daemon?.uptimeSeconds != null}
+      {fmtUptime(hr.health.daemon.uptimeSeconds)}
     {:else}
       <span class="dim">—</span>
     {/if}
@@ -516,17 +516,17 @@
         <SectionHead title="Machine" />
         <div class="hw-grid">
           <span class="dim">Vendor / model</span>
-          <span>{r.dmi_vendor ?? '—'} {r.dmi_product ?? ''}</span>
+          <span>{r.dmiVendor ?? '—'} {r.dmiProduct ?? ''}</span>
           <span class="dim">OS</span>
-          <span>{r.os_name ?? r.distro ?? '—'} {r.os_version ?? ''}</span>
+          <span>{r.osName ?? r.distro ?? '—'} {r.osVersion ?? ''}</span>
           <span class="dim">Kernel / arch</span>
-          <span>{r.kernel_version ?? '—'} / {r.arch ?? '—'}</span>
+          <span>{r.kernelVersion ?? '—'} / {r.arch ?? '—'}</span>
           <span class="dim">Type</span>
-          <span>{r.system_type_label ?? '—'}</span>
+          <span>{r.systemTypeLabel ?? '—'}</span>
           <span class="dim">Virtualization</span>
           <span>{r.virtualization ?? '—'}</span>
           <span class="dim">Uptime</span>
-          <span>{fmtUptime(r.system_uptime_secs)}</span>
+          <span>{fmtUptime(r.systemUptimeSecs)}</span>
         </div>
       </section>
 
@@ -534,15 +534,13 @@
         <SectionHead title="CPU" />
         <div class="hw-grid">
           <span class="dim">Model</span>
-          <span>{r.cpu_model ?? '—'}</span>
+          <span>{r.cpuModel ?? '—'}</span>
           <span class="dim">Cores</span>
-          <span>{r.cpu_physical ?? '—'} physical / {r.cpu_logical ?? '—'} logical</span>
+          <span>{r.cpuPhysical ?? '—'} physical / {r.cpuLogical ?? '—'} logical</span>
           <span class="dim">Usage</span>
-          <!-- `cpu_usage_percent` is `None` on the first snapshot (it needs two
+          <!-- `cpuUsagePercent` is `None` on the first snapshot (it needs two
                sysinfo refreshes), so absent renders as unknown. -->
-          <span
-            >{r.cpu_usage_percent != null ? `${r.cpu_usage_percent.toFixed(0)}%` : 'unknown'}</span
-          >
+          <span>{r.cpuUsagePercent != null ? `${r.cpuUsagePercent.toFixed(0)}%` : 'unknown'}</span>
         </div>
       </section>
 
@@ -550,13 +548,13 @@
         <SectionHead title="Memory" />
         <div class="hw-grid">
           <span class="dim">Used / total</span>
-          <span>{fmtMb(r.mem_used_mb)} / {fmtMb(r.mem_total_mb)}</span>
+          <span>{fmtMb(r.memUsedMb)} / {fmtMb(r.memTotalMb)}</span>
           <span class="dim">Available</span>
-          <span>{fmtMb(r.mem_available_mb)}</span>
+          <span>{fmtMb(r.memAvailableMb)}</span>
           <span class="dim">Usage</span>
-          <span>{r.mem_percent != null ? `${r.mem_percent.toFixed(0)}%` : '—'}</span>
+          <span>{r.memPercent != null ? `${r.memPercent.toFixed(0)}%` : '—'}</span>
           <span class="dim">Swap used / total</span>
-          <span>{fmtMb(r.swap_used_mb)} / {fmtMb(r.swap_total_mb)}</span>
+          <span>{fmtMb(r.swapUsedMb)} / {fmtMb(r.swapTotalMb)}</span>
         </div>
       </section>
 
@@ -570,17 +568,17 @@
               <span class="dim">{gpu.name}</span>
               <span>{gpu.vendor}</span>
               <span class="dim">Utilisation</span>
-              <!-- `driver_status` (`no_driver`/`no_metrics`) explains why a
+              <!-- `driverStatus` (`no_driver`/`no_metrics`) explains why a
                    reading is absent. -->
               <span>
-                {gpu.utilization_percent != null
-                  ? `${gpu.utilization_percent.toFixed(0)}%`
-                  : `unknown (${gpu.driver_status ?? 'no metrics'})`}
+                {gpu.utilizationPercent != null
+                  ? `${gpu.utilizationPercent.toFixed(0)}%`
+                  : `unknown (${gpu.driverStatus ?? 'no metrics'})`}
               </span>
               <span class="dim">VRAM used / total</span>
-              <span>{fmtMb(gpu.vram_used_mb)} / {fmtMb(gpu.vram_total_mb)}</span>
+              <span>{fmtMb(gpu.vramUsedMb)} / {fmtMb(gpu.vramTotalMb)}</span>
               <span class="dim">Temperature</span>
-              <span>{gpu.temperature_c != null ? `${gpu.temperature_c}°C` : '—'}</span>
+              <span>{gpu.temperatureC != null ? `${gpu.temperatureC}°C` : '—'}</span>
             </div>
           {/each}
         {/if}
@@ -604,12 +602,12 @@
 
       <section>
         <SectionHead title="Capabilities" />
-        {#if !r.detected_capabilities || r.detected_capabilities.length === 0}
+        {#if !r.detectedCapabilities || r.detectedCapabilities.length === 0}
           <p class="dim">None detected</p>
         {:else}
           <div class="hw-capabilities">
-            {#each r.detected_capabilities as cap, i (cap)}
-              <Badge tone="neutral">{r.capability_labels?.[i] ?? cap}</Badge>
+            {#each r.detectedCapabilities as cap, i (cap)}
+              <Badge tone="neutral">{r.capabilityLabels?.[i] ?? cap}</Badge>
             {/each}
           </div>
         {/if}
@@ -621,12 +619,11 @@
              (`storage.list`, `storage.mount.list`, `storage.share.list`); orca#703. -->
         <div class="hw-grid">
           <span class="dim">orca dir</span>
-          <span class="mono">{r.orca_dir ?? '—'}</span>
+          <span class="mono">{r.orcaDir ?? '—'}</span>
           <span class="dim">Free / total</span>
           <span>
-            {r.orca_fs_avail_gb != null ? fmtGb(r.orca_fs_avail_gb) : '—'} / {r.orca_fs_total_gb !=
-            null
-              ? fmtGb(r.orca_fs_total_gb)
+            {r.orcaFsAvailGb != null ? fmtGb(r.orcaFsAvailGb) : '—'} / {r.orcaFsTotalGb != null
+              ? fmtGb(r.orcaFsTotalGb)
               : '—'}
           </span>
         </div>
