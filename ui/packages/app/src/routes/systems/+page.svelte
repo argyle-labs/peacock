@@ -66,7 +66,7 @@
   // Every `system.health` row is keyed by peer id; the local row's machine id
   // is its peer id.
   function healthRowFor(m: MeshInstance): MeshHealthRow | undefined {
-    return health.get(m.peerId);
+    return health.get(m.peer_id);
   }
 
   // The roster's `health` is "up" for every active remote and "unknown" for the
@@ -104,7 +104,7 @@
   // or two skipped beacons don't flip a row to "down".
   const LIVENESS_WINDOW_MS = 60_000;
 
-  // `lastSeenAt` is epoch seconds, `null` for `departed` rows (unknown).
+  // `last_seen_at` is epoch seconds, `null` for `departed` rows (unknown).
   function liveness(lastSeenAtSecs: number | null | undefined): boolean | null {
     if (lastSeenAtSecs == null || !relTime(lastSeenAtSecs, 's').ok) return null;
     return Date.now() - lastSeenAtSecs * 1000 <= LIVENESS_WINDOW_MS;
@@ -112,11 +112,11 @@
 
   function staleHealth(r: StaleRow): HealthView {
     const reason = staleReasonLabels[r.s.reason] ?? r.s.reason;
-    const title = `${reason} · last seen ${relTime(r.s.lastSeenAt, 's').text}`;
+    const title = `${reason} · last seen ${relTime(r.s.last_seen_at, 's').text}`;
     // A beacon from this machine's former identity is this machine, so its
     // liveness says nothing about that identity.
     if (r.selfIdentity) return { label: 'retired', ok: null, degraded: false, title };
-    const live = liveness(r.s.lastSeenAt);
+    const live = liveness(r.s.last_seen_at);
     const label = live === true ? 'up' : live === false ? 'down' : 'unknown';
     return { label, ok: live, degraded: false, title };
   }
@@ -151,18 +151,18 @@
   }
 
   function reachableRouteList(m: MeshInstance): { label: string; value: string }[] {
-    return m.reachableAddrs
+    return m.reachable_addrs
       .map(normalizeRoute)
       .filter(Boolean)
       .map(addr => {
         const host = hostOf(addr);
         const match = m.addresses.find(a => hostOf(a.value.toLowerCase()) === host);
-        return { label: match?.kindLabel ?? 'address', value: addr };
+        return { label: match?.kind_label ?? 'address', value: addr };
       });
   }
 
   // A loopback route to the local row is the browser sitting on that machine,
-  // which `reachableAddrs` (LAN only) never lists.
+  // which `reachable_addrs` (LAN only) never lists.
   function routeConfirmed(m: MeshInstance, current: string, routes: { value: string }[]): boolean {
     if (!current) return true;
     if (m.role === 'local' && LOOPBACK.test(current)) return true;
@@ -188,7 +188,7 @@
       const out = await unwrap(
         systemInfoDetail({
           body: {},
-          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.peerId),
+          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.peer_id),
           signal: ctrl.signal,
         }),
       );
@@ -210,7 +210,7 @@
   }
 
   // `system.list` returns a 3-way union; `MeshSnapshotOutput` is a superset of
-  // `MeshInstancesOutput`, so its required `clusterMembership`/`clusters` must
+  // `MeshInstancesOutput`, so its required `cluster_membership`/`clusters` must
   // be absent too. Anything else throws rather than being coerced.
   function isInstancesOutput(v: unknown): v is MeshInstancesOutput {
     return (
@@ -219,8 +219,8 @@
       'candidates' in v &&
       'members' in v &&
       'stale' in v &&
-      'inboundOffers' in v &&
-      !('clusterMembership' in v) &&
+      'inbound_offers' in v &&
+      !('cluster_membership' in v) &&
       !('clusters' in v)
     );
   }
@@ -242,7 +242,7 @@
       members = inst.members;
       candidates = inst.candidates;
       stale = inst.stale;
-      inboundOffers = inst.inboundOffers;
+      inboundOffers = inst.inbound_offers;
       // An `id: ''` row is orca failing to enumerate the roster, not a system.
       health = new Map(hr.systems.filter(r => r.id).map(r => [r.id, r]));
       healthRosterError = hr.systems.find(r => !r.id && r.error)?.error ?? null;
@@ -259,21 +259,21 @@
   // recently seen copy wins). Local system first, otherwise API order, so rows
   // never jump between polls.
   const unifiedRows = $derived.by((): UnifiedRow[] => {
-    const memberPeers = new Set(members.map(m => m.peerId));
+    const memberPeers = new Set(members.map(m => m.peer_id));
     const staleByPeer = new Map<string, MeshStaleRow>();
     for (const s of stale) {
-      if (memberPeers.has(s.peerId)) continue;
-      const prev = staleByPeer.get(s.peerId);
-      if (!prev || (s.lastSeenAt ?? 0) > (prev.lastSeenAt ?? 0)) staleByPeer.set(s.peerId, s);
+      if (memberPeers.has(s.peer_id)) continue;
+      const prev = staleByPeer.get(s.peer_id);
+      if (!prev || (s.last_seen_at ?? 0) > (prev.last_seen_at ?? 0)) staleByPeer.set(s.peer_id, s);
     }
     const memberRows: UnifiedRow[] = members.map(m => ({
       kind: 'member',
-      key: `member:${m.id}:${m.peerId}`,
+      key: `member:${m.id}:${m.peer_id}`,
       m,
     }));
     const staleRows: UnifiedRow[] = [...staleByPeer.values()].map(s => ({
       kind: 'stale',
-      key: `stale:${s.peerId}`,
+      key: `stale:${s.peer_id}`,
       s,
       selfIdentity: s.reason === 'stale self identity',
     }));
@@ -404,8 +404,8 @@
     <span class="dim">—</span>
   {:else}
     {@const hr = healthRowFor(r.m)}
-    {#if hr?.health?.daemon?.uptimeSeconds != null}
-      {fmtUptime(hr.health.daemon.uptimeSeconds)}
+    {#if hr?.health?.daemon?.uptime_seconds != null}
+      {fmtUptime(hr.health.daemon.uptime_seconds)}
     {:else}
       <span class="dim">—</span>
     {/if}
