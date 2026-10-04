@@ -58,6 +58,7 @@ export { default as Chart } from './primitives/Chart.svelte';
 export type { Tone, CellSpec, ChartPoint, Row, PathResult } from './types';
 export { resolvePath } from './types';
 export { relTime, fmtUptime } from './utils/format';
+export { pushOverlay } from './utils/overlayFocus';
 
 // ── Structure & overlays ─────────────────────────────────────────────────────
 export { default as SectionHead } from './primitives/SectionHead.svelte';

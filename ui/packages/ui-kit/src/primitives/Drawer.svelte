@@ -37,7 +37,10 @@
     if (open) return pushOverlay(token);
   });
 
-  function handleBackdropClick() {
+  // Clicking the backdrop can focus it; release that so focus returns to the
+  // trigger on close.
+  function handleBackdropClick(e: MouseEvent) {
+    (e.currentTarget as HTMLElement).blur();
     onclose?.();
   }
 

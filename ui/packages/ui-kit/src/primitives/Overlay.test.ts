@@ -41,6 +41,17 @@ describe('Drawer + Popover overlays', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
+  it('restores focus to the trigger after a backdrop click', async () => {
+    render(OverlayHarness);
+    const trigger = await openDrawer();
+    const backdrop = screen.getByLabelText('Close drawer');
+    backdrop.focus();
+    await fireEvent.click(backdrop);
+    await tick();
+    expect(drawerPanel()).not.toHaveClass('open');
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('does not steal focus back if it already moved outside the panel', async () => {
     render(OverlayHarness);
     await openDrawer();
