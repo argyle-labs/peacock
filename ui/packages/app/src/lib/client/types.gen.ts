@@ -8970,7 +8970,7 @@ export type PluginServeAssetData = {
      * The plugin repo web URL (catalog `repoUrl`), e.g.
      * `https://github.com/argyle-labs/sonarr`.
      */
-    repoUrl: string;
+    repo_url: string;
     /**
      * Rust target triple of the REQUESTER (e.g. `x86_64-unknown-linux-musl`).
      * The holder may be a different arch, so the caller MUST specify the asset
@@ -9013,7 +9013,7 @@ export type PluginServeAssetResponses = {
    * MUST re-verify after decode before installing).
    */
   200: {
-    assetB64: string;
+    asset_b64: string;
     sha256: string;
     version: string;
   };

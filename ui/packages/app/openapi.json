@@ -18799,7 +18799,7 @@
                     "description": "Include prerelease (`-rc`) tags when resolving the newest release.",
                     "type": "boolean"
                   },
-                  "repoUrl": {
+                  "repo_url": {
                     "description": "The plugin repo web URL (catalog `repoUrl`), e.g.\n`https://github.com/argyle-labs/sonarr`.",
                     "type": "string"
                   },
@@ -18817,7 +18817,7 @@
                 },
                 "required": [
                   "name",
-                  "repoUrl",
+                  "repo_url",
                   "target"
                 ],
                 "title": "PluginServeAssetArgs",
@@ -18834,7 +18834,7 @@
                 "schema": {
                   "description": "Result of [`plugin_serve_asset`]. `asset_b64` is base64-STANDARD of the raw\nplugin executable; `sha256` is the hex digest the holder verified (callers\nMUST re-verify after decode before installing).",
                   "properties": {
-                    "assetB64": {
+                    "asset_b64": {
                       "type": "string"
                     },
                     "sha256": {
@@ -18845,7 +18845,7 @@
                     }
                   },
                   "required": [
-                    "assetB64",
+                    "asset_b64",
                     "sha256",
                     "version"
                   ],
