@@ -380,7 +380,7 @@ export type ClaimEndpoint = {
   /**
    * Bind address the runtime reported (e.g. `"0.0.0.0"`, `"127.0.0.1"`).
    */
-  hostIp?: string | null;
+  host_ip?: string | null;
   /**
    * Container/guest-internal listening port.
    */
@@ -393,7 +393,7 @@ export type ClaimEndpoint = {
    * Host-published port when the runtime maps one (docker `-p`). `None` = not
    * published to the host (reachable only on the workload's own address).
    */
-  publishedPort?: number | null;
+  published_port?: number | null;
 };
 
 /**
@@ -732,7 +732,7 @@ export type DaemonRuntimeStatus = {
   pid?: number | null;
   port?: number | null;
   running: boolean;
-  uptimeSeconds?: number | null;
+  uptime_seconds?: number | null;
 };
 
 export type DbCompactReport = {
@@ -1249,7 +1249,7 @@ export type HealthReport = {
 
 export type HostChannel = {
   kind: string;
-  lastSeenAt: number;
+  last_seen_at: number;
   source: string;
   value: string;
 };
@@ -1476,11 +1476,11 @@ export type MeshCancelOfferOutput = {
 
 export type MeshCandidate = {
   addr: string;
-  canInvite: boolean;
+  can_invite: boolean;
   hostname: string;
-  peerId?: string | null;
+  peer_id?: string | null;
   port: number;
-  pubkeyFp: string;
+  pubkey_fp: string;
 };
 
 /**
@@ -1495,20 +1495,20 @@ export type MeshDeleteAction = 'kick' | 'leave' | 'forget';
 
 export type MeshDiscoveryRowDto = {
   addr: string;
-  canInvite: boolean;
+  can_invite: boolean;
   /**
    * mDNS-advertised membership: `"unclaimed"` or `"mesh:<mesh_id>"`. Named
    * `discovery_state` (not `state`) so it doesn't collide with the
    * `#[serde(tag = "state")]` discriminant on [`MeshMember`], which would
    * otherwise clobber the `"discovered"` tag and break state filtering.
    */
-  discoveryState: string;
-  firstSeenAt: number;
+  discovery_state: string;
+  first_seen_at: number;
   hostname: string;
-  lastSeenAt: number;
-  peerId?: string | null;
+  last_seen_at: number;
+  peer_id?: string | null;
   port: number;
-  pubkeyFp: string;
+  pubkey_fp: string;
 };
 
 export type MeshForgetNotice = {
@@ -1566,13 +1566,13 @@ export type MeshHealthRow = {
 };
 
 export type MeshInboundOffer = {
-  expiresAt: number;
-  inviterPeerId?: string | null;
-  offerId: string;
-  peerAddr: string;
-  peerHostname: string;
-  peerPort: number;
-  ttlSecs: number;
+  expires_at: number;
+  inviter_peer_id?: string | null;
+  offer_id: string;
+  peer_addr: string;
+  peer_hostname: string;
+  peer_port: number;
+  ttl_secs: number;
 };
 
 /**
@@ -1586,7 +1586,7 @@ export type MeshInstance = {
    * Full version list from a `system.update {}` probe. Always empty on
    * this endpoint — the page-level probe overlay populates it client-side.
    */
-  availableVersions: Array<VersionEntry>;
+  available_versions: Array<VersionEntry>;
   channel?: string | null;
   error?: string | null;
   /**
@@ -1598,7 +1598,7 @@ export type MeshInstance = {
   /**
    * Wall-clock millis when this row was assembled.
    */
-  lastChecked?: number | null;
+  last_checked?: number | null;
   mode?: string | null;
   /**
    * For the synthetic local row this is emitted as `""` — the frontend
@@ -1607,14 +1607,14 @@ export type MeshInstance = {
    * `addr:port` of the peer.
    */
   origin: string;
-  peerId: string;
-  pinnedTo?: string | null;
+  peer_id: string;
+  pinned_to?: string | null;
   port: number;
   /**
    * LAN addresses reachable by the browser. Computed server-side from
    * `addresses` + `system` to replace the JS `reachableAddrs()` helper.
    */
-  reachableAddrs: Array<string>;
+  reachable_addrs: Array<string>;
   /**
    * `"local"` for the synthetic self row, `"system"` for every paired peer.
    */
@@ -1623,15 +1623,15 @@ export type MeshInstance = {
   status?: string | null;
   system?: TopologyFacts | null;
   target?: string | null;
-  updateAvailable: boolean;
-  updateCheckedSecs?: number | null;
-  updateLatest?: string | null;
+  update_available: boolean;
+  update_checked_secs?: number | null;
+  update_latest?: string | null;
   version?: string | null;
 };
 
 export type MeshInstanceAddress = {
   kind: string;
-  kindLabel: string;
+  kind_label: string;
   value: string;
 };
 
@@ -1642,7 +1642,7 @@ export type MeshInstanceSecure = {
 
 export type MeshInstancesOutput = {
   candidates: Array<MeshCandidate>;
-  inboundOffers: Array<MeshInboundOffer>;
+  inbound_offers: Array<MeshInboundOffer>;
   members: Array<MeshInstance>;
   stale: Array<MeshStaleRow>;
 };
@@ -1671,7 +1671,7 @@ export type MeshListOutput = {
   /**
    * Opaque cursor for the next page, or absent on the last page.
    */
-  nextCursor?: string | null;
+  next_cursor?: string | null;
   /**
    * Total rows across all pages.
    */
@@ -1720,34 +1720,34 @@ export type MeshPeerDto = {
    */
   frontend?: string | null;
   hostname: string;
-  lastSeenAt: number;
+  last_seen_at: number;
   /**
    * Round-trip latency of the `mesh/ping` probe, milliseconds.
    */
-  latencyMs?: number | null;
+  latency_ms?: number | null;
   /**
    * True for the synthetic local-host row prepended to `system.list`. Remote
    * peers are always false. Lets UIs flag "this is me" without string
    * matching the hostname.
    */
   local?: boolean;
-  localSecure: boolean;
+  local_secure: boolean;
   /**
    * Peer-reported daemon mode: "daemon" | "parked" | "dev".
    */
   mode?: string | null;
-  peerId: string;
-  peerSecure: boolean;
+  peer_id: string;
+  peer_secure: boolean;
   /**
    * Peer-reported version pin if set.
    */
-  pinnedTo?: string | null;
+  pinned_to?: string | null;
   port: number;
   /**
    * Error string from the probe path (ping / runtime-spec / update-check).
    * First failure wins so the UI has one line to surface.
    */
-  probeError?: string | null;
+  probe_error?: string | null;
   /**
    * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
    * Propagated through roster sync so peers learned via intermediary can
@@ -1755,7 +1755,7 @@ export type MeshPeerDto = {
    * this, mesh/exec from a roster-synced peer is refused with "no pinned
    * bootstrap key" forever after.
    */
-  pubkeyFp?: string | null;
+  pubkey_fp?: string | null;
   /**
    * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
    * skipped (e.g. departed peers); `Some(false)` when the dial errored.
@@ -1781,18 +1781,18 @@ export type MeshPeerDto = {
    * True when an update is available for the peer (and not blocked by
    * `pinned_to`).
    */
-  updateAvailable?: boolean | null;
+  update_available?: boolean | null;
   /**
    * Age in seconds of the last successful `system.update {}` probe against
    * this peer. `None` until the periodic probe has succeeded at least
    * once (or for the synthetic local-host row).
    */
-  updateCheckedSecs?: number | null;
+  update_checked_secs?: number | null;
   /**
    * Latest release tag visible to the peer on its channel. Pulled from
    * `system.update-check`; `None` when the probe failed or timed out.
    */
-  updateLatest?: string | null;
+  update_latest?: string | null;
   /**
    * Peer-reported `system.runtime-spec.version`.
    */
@@ -1800,17 +1800,17 @@ export type MeshPeerDto = {
 };
 
 export type MeshPendingOfferDto = {
-  createdAt: number;
+  created_at: number;
   direction: string;
-  expiresAt: number;
-  inviterPeerId?: string | null;
-  meshId?: string | null;
-  offerId: string;
-  peerAddr: string;
-  peerHostname: string;
-  peerPort: number;
-  peerPubkeyFp: string;
-  ttlSecs: number;
+  expires_at: number;
+  inviter_peer_id?: string | null;
+  mesh_id?: string | null;
+  offer_id: string;
+  peer_addr: string;
+  peer_hostname: string;
+  peer_port: number;
+  peer_pubkey_fp: string;
+  ttl_secs: number;
 };
 
 export type MeshRecoverOutput = {
@@ -1819,14 +1819,14 @@ export type MeshRecoverOutput = {
    * peer either wasn't departed or doesn't exist locally.
    */
   cleared: boolean;
-  peerId: string;
+  peer_id: string;
 };
 
 /**
  * Result of `system.mesh.update action=settings`.
  */
 export type MeshSettingsOutput = {
-  selfSecure: boolean;
+  self_secure: boolean;
 };
 
 export type MeshSnapshotOutput = {
@@ -1838,7 +1838,7 @@ export type MeshSnapshotOutput = {
    * `peer_id` → cluster name for every joined peer matched to a cluster
    * via IP-first then hostname. Only matches included.
    */
-  clusterMembership: {
+  cluster_membership: {
     [key: string]: string;
   };
   /**
@@ -1848,7 +1848,7 @@ export type MeshSnapshotOutput = {
   /**
    * Handshaking offers whose `expires_at` is still in the future.
    */
-  inboundOffers: Array<MeshInboundOffer>;
+  inbound_offers: Array<MeshInboundOffer>;
   /**
    * Same shape as `system.list.members` — the UI reuses the existing type.
    */
@@ -1862,8 +1862,8 @@ export type MeshSnapshotOutput = {
 export type MeshStaleRow = {
   addr: string;
   hostname: string;
-  lastSeenAt?: number | null;
-  peerId: string;
+  last_seen_at?: number | null;
+  peer_id: string;
   port: number;
   /**
    * "departed" | "orphan" | "stale self identity".
@@ -1876,15 +1876,15 @@ export type MeshSyncOutput = {
 };
 
 export type MeshTrustOutput = {
-  localSecure: boolean;
+  local_secure: boolean;
   /**
    * True when both sides trust each other. Secure peers can sync
    * credentials; non-mutual peers only retain their own credentials.
    */
   mutual: boolean;
-  notifyResult: string;
-  peerId: string;
-  peerSecure: boolean;
+  notify_result: string;
+  peer_id: string;
+  peer_secure: boolean;
 };
 
 /**
@@ -2147,12 +2147,12 @@ export type PathChange = 'replaced' | 'renamed' | 'deleted' | 'added';
  * directly so operators see exactly what happened.
  */
 export type PeerSyncReport = {
-  durationMs: number;
+  duration_ms: number;
   error?: string | null;
   hostname: string;
   merged: number;
-  peerId: string;
-  skipReason?: string | null;
+  peer_id: string;
+  skip_reason?: string | null;
   /**
    * `in_sync` (0 merged), `merged` (n>0), `skipped`, `error`.
    */
@@ -3387,21 +3387,21 @@ export type StorageReplicationEntry = {
  * stays small, logs go to files with size+retention.
  */
 export type StorageReport = {
-  dbPath: string;
+  db_path: string;
   /**
    * Size of `orca.db` (including SQLite WAL/SHM if alongside) in bytes.
    */
-  dbSizeBytes: number;
+  db_size_bytes: number;
   /**
    * UNIX epoch seconds of the last retention sweep. `None` until the
    * sweep job lands.
    */
-  lastRetentionSweepAt?: number | null;
+  last_retention_sweep_at?: number | null;
   /**
    * Recursive size of `{home}/.orca/logs/` in bytes.
    */
-  logsDirBytes: number;
-  logsDirPath: string;
+  logs_dir_bytes: number;
+  logs_dir_path: string;
 };
 
 /**
@@ -3749,7 +3749,7 @@ export type SystemStatusReport = {
    * overrides, etc.). Was `system.host.detail.channels`.
    */
   channels: Array<HostChannel>;
-  claudeMd: ClaudeMdStatus;
+  claude_md: ClaudeMdStatus;
   daemon: DaemonRuntimeStatus & unknown;
   /**
    * Doctor entries (ok/warn/error) covering vault, agents, logs dir,
@@ -3761,7 +3761,7 @@ export type SystemStatusReport = {
    * Operator-visible host name (from the `display_name` addressing
    * channel, falling back to OS `hostname`).
    */
-  displayName: string;
+  display_name: string;
   /**
    * "embedded" when this binary was built with the `ui` feature on, "disabled" otherwise.
    */
@@ -3769,7 +3769,7 @@ export type SystemStatusReport = {
   /**
    * Stable machine identifier persisted to `~/.orca/machine_id`.
    */
-  machineId: string;
+  machine_id: string;
   mcp: McpStatus;
   /**
    * Daemon operating mode: "daemon" | "parked" | "dev". `None` when the
@@ -3779,7 +3779,7 @@ export type SystemStatusReport = {
   /**
    * Active version pin if any (`orca update --pin`).
    */
-  pinnedTo?: string | null;
+  pinned_to?: string | null;
   pki: PkiStatus;
   storage: StorageReport & unknown;
   /**
@@ -4053,7 +4053,7 @@ export type TopologyClaim = {
    * endpoint name from `db::proxmox`; for secret-keyed providers = the
    * `<instance>` segment of `<provider>.<instance>.<field>`.
    */
-  providerInstance: string;
+  provider_instance: string;
   routes?: Routes & unknown;
   /**
    * Hostname of the fleet node this child actually runs on, when the
@@ -4064,7 +4064,7 @@ export type TopologyClaim = {
    * peer when unset. Single-host providers (docker, dockge, standalone)
    * leave this `None`; the reporting peer *is* the host.
    */
-  runsOn?: string | null;
+  runs_on?: string | null;
   /**
    * Host-scoped compose-stack correlation key. A DESCRIPTIVE ATTRIBUTE that
    * groups the containers of one logical service/stack together — NOT an id
@@ -4079,14 +4079,14 @@ export type TopologyClaim = {
    * prefixing the host so the same stack name on two hosts stays distinct.
    * `None` = the provider can't attribute the workload to a stack.
    */
-  serviceIdentity?: string | null;
+  service_identity?: string | null;
   /**
    * Optional cheap service-role hint the provider derives from a well-known
    * label (e.g. `orca.role`). The authoritative role comes from a runtime
    * [`crate::service_identity::ServiceRegistration`], which overrides this at
    * correlation time.
    */
-  serviceRole?: string | null;
+  service_role?: string | null;
   /**
    * Normalized runtime run-state, when the provider can observe it. Cross-
    * provider vocabulary — providers map their native status onto it:
@@ -4139,22 +4139,22 @@ export type TopologyFacts = {
   /**
    * Kind of parent edge (`hypervisor` / `host`).
    */
-  parentKind?: string | null;
+  parent_kind?: string | null;
   /**
    * Inferred parent peer id (mac-match on claims). Written by the mesh
    * inference pass.
    */
-  parentPeerId?: string | null;
-  primaryIpv4?: string | null;
-  primaryIpv6?: string | null;
+  parent_peer_id?: string | null;
+  primary_ipv4?: string | null;
+  primary_ipv6?: string | null;
   /**
    * Canonical system-type tag (`proxmox-ve`, `unraid`, `macos`, ...).
    */
-  systemType?: string | null;
+  system_type?: string | null;
   /**
    * Human label for `system_type` (server-owned).
    */
-  systemTypeLabel?: string | null;
+  system_type_label?: string | null;
   /**
    * Hypervisor / container kind (`kvm`, `lxc`, `docker`, `none`, ...).
    */
@@ -4228,7 +4228,7 @@ export type VaultStatus = {
  */
 export type VersionEntry = {
   prerelease?: boolean;
-  publishedAt?: string | null;
+  published_at?: string | null;
   tag?: string;
 };
 
@@ -4257,7 +4257,7 @@ export type MeshListOutputWritable = {
   /**
    * Opaque cursor for the next page, or absent on the last page.
    */
-  nextCursor?: string | null;
+  next_cursor?: string | null;
   /**
    * Total rows across all pages.
    */
@@ -4302,34 +4302,34 @@ export type MeshPeerDtoWritable = {
    */
   frontend?: string | null;
   hostname: string;
-  lastSeenAt: number;
+  last_seen_at: number;
   /**
    * Round-trip latency of the `mesh/ping` probe, milliseconds.
    */
-  latencyMs?: number | null;
+  latency_ms?: number | null;
   /**
    * True for the synthetic local-host row prepended to `system.list`. Remote
    * peers are always false. Lets UIs flag "this is me" without string
    * matching the hostname.
    */
   local?: boolean;
-  localSecure: boolean;
+  local_secure: boolean;
   /**
    * Peer-reported daemon mode: "daemon" | "parked" | "dev".
    */
   mode?: string | null;
-  peerId: string;
-  peerSecure: boolean;
+  peer_id: string;
+  peer_secure: boolean;
   /**
    * Peer-reported version pin if set.
    */
-  pinnedTo?: string | null;
+  pinned_to?: string | null;
   port: number;
   /**
    * Error string from the probe path (ping / runtime-spec / update-check).
    * First failure wins so the UI has one line to surface.
    */
-  probeError?: string | null;
+  probe_error?: string | null;
   /**
    * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
    * Propagated through roster sync so peers learned via intermediary can
@@ -4337,7 +4337,7 @@ export type MeshPeerDtoWritable = {
    * this, mesh/exec from a roster-synced peer is refused with "no pinned
    * bootstrap key" forever after.
    */
-  pubkeyFp?: string | null;
+  pubkey_fp?: string | null;
   /**
    * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
    * skipped (e.g. departed peers); `Some(false)` when the dial errored.
@@ -4363,18 +4363,18 @@ export type MeshPeerDtoWritable = {
    * True when an update is available for the peer (and not blocked by
    * `pinned_to`).
    */
-  updateAvailable?: boolean | null;
+  update_available?: boolean | null;
   /**
    * Age in seconds of the last successful `system.update {}` probe against
    * this peer. `None` until the periodic probe has succeeded at least
    * once (or for the synthetic local-host row).
    */
-  updateCheckedSecs?: number | null;
+  update_checked_secs?: number | null;
   /**
    * Latest release tag visible to the peer on its channel. Pulled from
    * `system.update-check`; `None` when the probe failed or timed out.
    */
-  updateLatest?: string | null;
+  update_latest?: string | null;
   /**
    * Peer-reported `system.runtime-spec.version`.
    */
@@ -4390,7 +4390,7 @@ export type MeshSnapshotOutputWritable = {
    * `peer_id` → cluster name for every joined peer matched to a cluster
    * via IP-first then hostname. Only matches included.
    */
-  clusterMembership: {
+  cluster_membership: {
     [key: string]: string;
   };
   /**
@@ -4400,7 +4400,7 @@ export type MeshSnapshotOutputWritable = {
   /**
    * Handshaking offers whose `expires_at` is still in the future.
    */
-  inboundOffers: Array<MeshInboundOffer>;
+  inbound_offers: Array<MeshInboundOffer>;
   /**
    * Same shape as `system.list.members` — the UI reuses the existing type.
    */
