@@ -4,9 +4,7 @@
   import { NAV_SECTIONS } from '$lib/nav';
   import { isCommandPaletteOpen, closeCommandPalette } from '$lib/stores/commandPalette.svelte';
 
-  // Pages only: listing every SDK operationId (~156) buries the real pages in
-  // noise. `filterAndRank` and the keyboard/grouping logic stay kind-agnostic.
-  type Entry = { kind: 'nav'; label: string; href: string; section: string; enabled: boolean };
+  type Entry = { label: string; href: string; section: string; enabled: boolean };
 
   const open = $derived(isCommandPaletteOpen());
 
@@ -17,7 +15,6 @@
   const navEntries = $derived<Entry[]>(
     NAV_SECTIONS.flatMap(s =>
       s.items.map(i => ({
-        kind: 'nav' as const,
         label: i.label,
         href: i.href,
         section: s.label,
@@ -131,7 +128,7 @@
         {#if filtered.length === 0}
           <div class="cmd-empty">No matching pages</div>
         {/if}
-        {#each filtered as entry, i (`${entry.kind}-${entry.href}`)}
+        {#each filtered as entry, i (entry.href)}
           <button
             class="cmd-result {i === activeIdx ? 'active' : ''}"
             class:disabled={!entry.enabled}
