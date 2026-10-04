@@ -583,7 +583,7 @@
       "ClaimEndpoint": {
         "description": "A network endpoint a claimed workload listens on. Enables service-identity\ncorrelation: a runtime [`crate::service_identity::ServiceRegistration`] keyed\nby `(host, port)` joins to the claim whose `endpoints` contain that port on a\nmatching host.",
         "properties": {
-          "hostIp": {
+          "host_ip": {
             "description": "Bind address the runtime reported (e.g. `\"0.0.0.0\"`, `\"127.0.0.1\"`).",
             "type": [
               "string",
@@ -601,7 +601,7 @@
             "description": "`\"tcp\"` | `\"udp\"`. Defaults to `\"tcp\"`.",
             "type": "string"
           },
-          "publishedPort": {
+          "published_port": {
             "description": "Host-published port when the runtime maps one (docker `-p`). `None` = not\npublished to the host (reachable only on the workload's own address).",
             "format": "uint16",
             "maximum": 65535,
@@ -1283,7 +1283,7 @@
           "running": {
             "type": "boolean"
           },
-          "uptimeSeconds": {
+          "uptime_seconds": {
             "format": "int64",
             "type": [
               "integer",
@@ -2465,7 +2465,7 @@
           "kind": {
             "type": "string"
           },
-          "lastSeenAt": {
+          "last_seen_at": {
             "format": "int64",
             "type": "integer"
           },
@@ -2480,7 +2480,7 @@
           "kind",
           "value",
           "source",
-          "lastSeenAt"
+          "last_seen_at"
         ],
         "type": "object"
       },
@@ -3039,13 +3039,13 @@
           "addr": {
             "type": "string"
           },
-          "canInvite": {
+          "can_invite": {
             "type": "boolean"
           },
           "hostname": {
             "type": "string"
           },
-          "peerId": {
+          "peer_id": {
             "type": [
               "string",
               "null"
@@ -3057,16 +3057,16 @@
             "minimum": 0,
             "type": "integer"
           },
-          "pubkeyFp": {
+          "pubkey_fp": {
             "type": "string"
           }
         },
         "required": [
-          "pubkeyFp",
+          "pubkey_fp",
           "hostname",
           "addr",
           "port",
-          "canInvite"
+          "can_invite"
         ],
         "type": "object"
       },
@@ -3115,25 +3115,25 @@
           "addr": {
             "type": "string"
           },
-          "canInvite": {
+          "can_invite": {
             "type": "boolean"
           },
-          "discoveryState": {
+          "discovery_state": {
             "description": "mDNS-advertised membership: `\"unclaimed\"` or `\"mesh:<mesh_id>\"`. Named\n`discovery_state` (not `state`) so it doesn't collide with the\n`#[serde(tag = \"state\")]` discriminant on [`MeshMember`], which would\notherwise clobber the `\"discovered\"` tag and break state filtering.",
             "type": "string"
           },
-          "firstSeenAt": {
+          "first_seen_at": {
             "format": "int64",
             "type": "integer"
           },
           "hostname": {
             "type": "string"
           },
-          "lastSeenAt": {
+          "last_seen_at": {
             "format": "int64",
             "type": "integer"
           },
-          "peerId": {
+          "peer_id": {
             "type": [
               "string",
               "null"
@@ -3145,19 +3145,19 @@
             "minimum": 0,
             "type": "integer"
           },
-          "pubkeyFp": {
+          "pubkey_fp": {
             "type": "string"
           }
         },
         "required": [
-          "pubkeyFp",
+          "pubkey_fp",
           "hostname",
           "addr",
           "port",
-          "discoveryState",
-          "canInvite",
-          "firstSeenAt",
-          "lastSeenAt"
+          "discovery_state",
+          "can_invite",
+          "first_seen_at",
+          "last_seen_at"
         ],
         "type": "object"
       },
@@ -3257,43 +3257,43 @@
       },
       "MeshInboundOffer": {
         "properties": {
-          "expiresAt": {
+          "expires_at": {
             "format": "int64",
             "type": "integer"
           },
-          "inviterPeerId": {
+          "inviter_peer_id": {
             "type": [
               "string",
               "null"
             ]
           },
-          "offerId": {
+          "offer_id": {
             "type": "string"
           },
-          "peerAddr": {
+          "peer_addr": {
             "type": "string"
           },
-          "peerHostname": {
+          "peer_hostname": {
             "type": "string"
           },
-          "peerPort": {
+          "peer_port": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "ttlSecs": {
+          "ttl_secs": {
             "format": "int64",
             "type": "integer"
           }
         },
         "required": [
-          "offerId",
-          "peerHostname",
-          "peerAddr",
-          "peerPort",
-          "expiresAt",
-          "ttlSecs"
+          "offer_id",
+          "peer_hostname",
+          "peer_addr",
+          "peer_port",
+          "expires_at",
+          "ttl_secs"
         ],
         "type": "object"
       },
@@ -3306,7 +3306,7 @@
             },
             "type": "array"
           },
-          "availableVersions": {
+          "available_versions": {
             "description": "Full version list from a `system.update {}` probe. Always empty on\nthis endpoint — the page-level probe overlay populates it client-side.",
             "items": {
               "$ref": "#/components/schemas/VersionEntry"
@@ -3335,7 +3335,7 @@
           "label": {
             "type": "string"
           },
-          "lastChecked": {
+          "last_checked": {
             "description": "Wall-clock millis when this row was assembled.",
             "format": "int64",
             "type": [
@@ -3353,10 +3353,10 @@
             "description": "For the synthetic local row this is emitted as `\"\"` — the frontend\noverwrites it with `window.location.origin` after fetch since the\ndaemon doesn't know how the browser reached it. Remote rows carry the\n`addr:port` of the peer.",
             "type": "string"
           },
-          "peerId": {
+          "peer_id": {
             "type": "string"
           },
-          "pinnedTo": {
+          "pinned_to": {
             "type": [
               "string",
               "null"
@@ -3368,7 +3368,7 @@
             "minimum": 0,
             "type": "integer"
           },
-          "reachableAddrs": {
+          "reachable_addrs": {
             "description": "LAN addresses reachable by the browser. Computed server-side from\n`addresses` + `system` to replace the JS `reachableAddrs()` helper.",
             "items": {
               "type": "string"
@@ -3411,10 +3411,10 @@
               "null"
             ]
           },
-          "updateAvailable": {
+          "update_available": {
             "type": "boolean"
           },
-          "updateCheckedSecs": {
+          "update_checked_secs": {
             "format": "uint64",
             "minimum": 0,
             "type": [
@@ -3422,7 +3422,7 @@
               "null"
             ]
           },
-          "updateLatest": {
+          "update_latest": {
             "type": [
               "string",
               "null"
@@ -3437,16 +3437,16 @@
         },
         "required": [
           "id",
-          "peerId",
+          "peer_id",
           "label",
           "origin",
           "port",
           "role",
-          "updateAvailable",
+          "update_available",
           "health",
           "addresses",
-          "reachableAddrs",
-          "availableVersions"
+          "reachable_addrs",
+          "available_versions"
         ],
         "type": "object"
       },
@@ -3455,7 +3455,7 @@
           "kind": {
             "type": "string"
           },
-          "kindLabel": {
+          "kind_label": {
             "type": "string"
           },
           "value": {
@@ -3464,7 +3464,7 @@
         },
         "required": [
           "kind",
-          "kindLabel",
+          "kind_label",
           "value"
         ],
         "type": "object"
@@ -3492,7 +3492,7 @@
             },
             "type": "array"
           },
-          "inboundOffers": {
+          "inbound_offers": {
             "items": {
               "$ref": "#/components/schemas/MeshInboundOffer"
             },
@@ -3515,7 +3515,7 @@
           "members",
           "candidates",
           "stale",
-          "inboundOffers"
+          "inbound_offers"
         ],
         "type": "object"
       },
@@ -3584,7 +3584,7 @@
             },
             "type": "array"
           },
-          "nextCursor": {
+          "next_cursor": {
             "description": "Opaque cursor for the next page, or absent on the last page.",
             "type": [
               "string",
@@ -3735,11 +3735,11 @@
           "hostname": {
             "type": "string"
           },
-          "lastSeenAt": {
+          "last_seen_at": {
             "format": "int64",
             "type": "integer"
           },
-          "latencyMs": {
+          "latency_ms": {
             "description": "Round-trip latency of the `mesh/ping` probe, milliseconds.",
             "format": "uint32",
             "minimum": 0,
@@ -3753,7 +3753,7 @@
             "description": "True for the synthetic local-host row prepended to `system.list`. Remote\npeers are always false. Lets UIs flag \"this is me\" without string\nmatching the hostname.",
             "type": "boolean"
           },
-          "localSecure": {
+          "local_secure": {
             "type": "boolean"
           },
           "mode": {
@@ -3763,13 +3763,13 @@
               "null"
             ]
           },
-          "peerId": {
+          "peer_id": {
             "type": "string"
           },
-          "peerSecure": {
+          "peer_secure": {
             "type": "boolean"
           },
-          "pinnedTo": {
+          "pinned_to": {
             "description": "Peer-reported version pin if set.",
             "type": [
               "string",
@@ -3782,14 +3782,14 @@
             "minimum": 0,
             "type": "integer"
           },
-          "probeError": {
+          "probe_error": {
             "description": "Error string from the probe path (ping / runtime-spec / update-check).\nFirst failure wins so the UI has one line to surface.",
             "type": [
               "string",
               "null"
             ]
           },
-          "pubkeyFp": {
+          "pubkey_fp": {
             "description": "Bootstrap-pubkey fingerprint of this peer, as known to the responder.\nPropagated through roster sync so peers learned via intermediary can\ntransitively pin the fp instead of arriving with `None` — without\nthis, mesh/exec from a roster-synced peer is refused with \"no pinned\nbootstrap key\" forever after.",
             "type": [
               "string",
@@ -3836,14 +3836,14 @@
               "null"
             ]
           },
-          "updateAvailable": {
+          "update_available": {
             "description": "True when an update is available for the peer (and not blocked by\n`pinned_to`).",
             "type": [
               "boolean",
               "null"
             ]
           },
-          "updateCheckedSecs": {
+          "update_checked_secs": {
             "description": "Age in seconds of the last successful `system.update {}` probe against\nthis peer. `None` until the periodic probe has succeeded at least\nonce (or for the synthetic local-host row).",
             "format": "uint64",
             "minimum": 0,
@@ -3852,7 +3852,7 @@
               "null"
             ]
           },
-          "updateLatest": {
+          "update_latest": {
             "description": "Latest release tag visible to the peer on its channel. Pulled from\n`system.update-check`; `None` when the probe failed or timed out.",
             "type": [
               "string",
@@ -3868,74 +3868,74 @@
           }
         },
         "required": [
-          "peerId",
+          "peer_id",
           "hostname",
           "port",
-          "lastSeenAt",
-          "localSecure",
-          "peerSecure",
+          "last_seen_at",
+          "local_secure",
+          "peer_secure",
           "status"
         ],
         "type": "object"
       },
       "MeshPendingOfferDto": {
         "properties": {
-          "createdAt": {
+          "created_at": {
             "format": "int64",
             "type": "integer"
           },
           "direction": {
             "type": "string"
           },
-          "expiresAt": {
+          "expires_at": {
             "format": "int64",
             "type": "integer"
           },
-          "inviterPeerId": {
+          "inviter_peer_id": {
             "type": [
               "string",
               "null"
             ]
           },
-          "meshId": {
+          "mesh_id": {
             "type": [
               "string",
               "null"
             ]
           },
-          "offerId": {
+          "offer_id": {
             "type": "string"
           },
-          "peerAddr": {
+          "peer_addr": {
             "type": "string"
           },
-          "peerHostname": {
+          "peer_hostname": {
             "type": "string"
           },
-          "peerPort": {
+          "peer_port": {
             "format": "uint16",
             "maximum": 65535,
             "minimum": 0,
             "type": "integer"
           },
-          "peerPubkeyFp": {
+          "peer_pubkey_fp": {
             "type": "string"
           },
-          "ttlSecs": {
+          "ttl_secs": {
             "format": "int64",
             "type": "integer"
           }
         },
         "required": [
-          "offerId",
+          "offer_id",
           "direction",
-          "peerPubkeyFp",
-          "peerHostname",
-          "peerAddr",
-          "peerPort",
-          "expiresAt",
-          "ttlSecs",
-          "createdAt"
+          "peer_pubkey_fp",
+          "peer_hostname",
+          "peer_addr",
+          "peer_port",
+          "expires_at",
+          "ttl_secs",
+          "created_at"
         ],
         "type": "object"
       },
@@ -3945,12 +3945,12 @@
             "description": "`true` if a `departed_at` flag was actually cleared. `false` means the\npeer either wasn't departed or doesn't exist locally.",
             "type": "boolean"
           },
-          "peerId": {
+          "peer_id": {
             "type": "string"
           }
         },
         "required": [
-          "peerId",
+          "peer_id",
           "cleared"
         ],
         "type": "object"
@@ -3958,12 +3958,12 @@
       "MeshSettingsOutput": {
         "description": "Result of `system.mesh.update action=settings`.",
         "properties": {
-          "selfSecure": {
+          "self_secure": {
             "type": "boolean"
           }
         },
         "required": [
-          "selfSecure"
+          "self_secure"
         ],
         "type": "object"
       },
@@ -3976,7 +3976,7 @@
             },
             "type": "array"
           },
-          "clusterMembership": {
+          "cluster_membership": {
             "additionalProperties": {
               "type": "string"
             },
@@ -3990,7 +3990,7 @@
             },
             "type": "array"
           },
-          "inboundOffers": {
+          "inbound_offers": {
             "description": "Handshaking offers whose `expires_at` is still in the future.",
             "items": {
               "$ref": "#/components/schemas/MeshInboundOffer"
@@ -4016,9 +4016,9 @@
           "members",
           "candidates",
           "stale",
-          "inboundOffers",
+          "inbound_offers",
           "clusters",
-          "clusterMembership"
+          "cluster_membership"
         ],
         "type": "object"
       },
@@ -4030,14 +4030,14 @@
           "hostname": {
             "type": "string"
           },
-          "lastSeenAt": {
+          "last_seen_at": {
             "format": "int64",
             "type": [
               "integer",
               "null"
             ]
           },
-          "peerId": {
+          "peer_id": {
             "type": "string"
           },
           "port": {
@@ -4052,7 +4052,7 @@
           }
         },
         "required": [
-          "peerId",
+          "peer_id",
           "hostname",
           "addr",
           "port",
@@ -4076,29 +4076,29 @@
       },
       "MeshTrustOutput": {
         "properties": {
-          "localSecure": {
+          "local_secure": {
             "type": "boolean"
           },
           "mutual": {
             "description": "True when both sides trust each other. Secure peers can sync\ncredentials; non-mutual peers only retain their own credentials.",
             "type": "boolean"
           },
-          "notifyResult": {
+          "notify_result": {
             "type": "string"
           },
-          "peerId": {
+          "peer_id": {
             "type": "string"
           },
-          "peerSecure": {
+          "peer_secure": {
             "type": "boolean"
           }
         },
         "required": [
-          "peerId",
-          "localSecure",
-          "peerSecure",
+          "peer_id",
+          "local_secure",
+          "peer_secure",
           "mutual",
-          "notifyResult"
+          "notify_result"
         ],
         "type": "object"
       },
@@ -4782,7 +4782,7 @@
       "PeerSyncReport": {
         "description": "Per-peer outcome of a single sync (push or pull). `orca system mesh update --action sync` returns these\ndirectly so operators see exactly what happened.",
         "properties": {
-          "durationMs": {
+          "duration_ms": {
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
@@ -4801,10 +4801,10 @@
             "minimum": 0,
             "type": "integer"
           },
-          "peerId": {
+          "peer_id": {
             "type": "string"
           },
-          "skipReason": {
+          "skip_reason": {
             "type": [
               "string",
               "null"
@@ -4816,11 +4816,11 @@
           }
         },
         "required": [
-          "peerId",
+          "peer_id",
           "hostname",
           "status",
           "merged",
-          "durationMs"
+          "duration_ms"
         ],
         "type": "object"
       },
@@ -7404,16 +7404,16 @@
       "StorageReport": {
         "description": "Storage footprint snapshot — surfaces orca.db and log-dir sizes so\noperators can spot bloat. Per project_db_size_and_retention: orca.db\nstays small, logs go to files with size+retention.",
         "properties": {
-          "dbPath": {
+          "db_path": {
             "type": "string"
           },
-          "dbSizeBytes": {
+          "db_size_bytes": {
             "description": "Size of `orca.db` (including SQLite WAL/SHM if alongside) in bytes.",
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
           },
-          "lastRetentionSweepAt": {
+          "last_retention_sweep_at": {
             "description": "UNIX epoch seconds of the last retention sweep. `None` until the\nsweep job lands.",
             "format": "int64",
             "type": [
@@ -7421,21 +7421,21 @@
               "null"
             ]
           },
-          "logsDirBytes": {
+          "logs_dir_bytes": {
             "description": "Recursive size of `{home}/.orca/logs/` in bytes.",
             "format": "uint64",
             "minimum": 0,
             "type": "integer"
           },
-          "logsDirPath": {
+          "logs_dir_path": {
             "type": "string"
           }
         },
         "required": [
-          "dbSizeBytes",
-          "dbPath",
-          "logsDirBytes",
-          "logsDirPath"
+          "db_size_bytes",
+          "db_path",
+          "logs_dir_bytes",
+          "logs_dir_path"
         ],
         "type": "object"
       },
@@ -8232,7 +8232,7 @@
             },
             "type": "array"
           },
-          "claudeMd": {
+          "claude_md": {
             "$ref": "#/components/schemas/ClaudeMdStatus"
           },
           "daemon": {
@@ -8252,7 +8252,7 @@
             },
             "type": "array"
           },
-          "displayName": {
+          "display_name": {
             "description": "Operator-visible host name (from the `display_name` addressing\nchannel, falling back to OS `hostname`).",
             "type": "string"
           },
@@ -8260,7 +8260,7 @@
             "description": "\"embedded\" when this binary was built with the `ui` feature on, \"disabled\" otherwise.",
             "type": "string"
           },
-          "machineId": {
+          "machine_id": {
             "description": "Stable machine identifier persisted to `~/.orca/machine_id`.",
             "type": "string"
           },
@@ -8274,7 +8274,7 @@
               "null"
             ]
           },
-          "pinnedTo": {
+          "pinned_to": {
             "description": "Active version pin if any (`orca update --pin`).",
             "type": [
               "string",
@@ -8318,7 +8318,7 @@
         },
         "required": [
           "binary",
-          "claudeMd",
+          "claude_md",
           "vault",
           "agents",
           "pki",
@@ -8329,8 +8329,8 @@
           "topology",
           "storage",
           "diagnostic",
-          "displayName",
-          "machineId",
+          "display_name",
+          "machine_id",
           "channels",
           "daemon"
         ],
@@ -8753,7 +8753,7 @@
             "description": "Provider that emitted this claim (`\"proxmox\"`, `\"docker\"`,\n`\"unraid\"`, ...).",
             "type": "string"
           },
-          "providerInstance": {
+          "provider_instance": {
             "description": "Provider instance id. For docker = `\"local\"`; for proxmox = the\nendpoint name from `db::proxmox`; for secret-keyed providers = the\n`<instance>` segment of `<provider>.<instance>.<field>`.",
             "type": "string"
           },
@@ -8767,21 +8767,21 @@
               }
             ]
           },
-          "runsOn": {
+          "runs_on": {
             "description": "Hostname of the fleet node this child actually runs on, when the\nprovider can determine it. Needed for cluster-shared config sources\n(proxmox pmxcfs is cluster-wide, so every cluster peer reports every\nguest) — the inventory layer parents a non-peer claim node to the\npeer whose hostname matches `runs_on`, falling back to the reporting\npeer when unset. Single-host providers (docker, dockge, standalone)\nleave this `None`; the reporting peer *is* the host.",
             "type": [
               "string",
               "null"
             ]
           },
-          "serviceIdentity": {
+          "service_identity": {
             "description": "Host-scoped compose-stack correlation key. A DESCRIPTIVE ATTRIBUTE that\ngroups the containers of one logical service/stack together — NOT an id\n(respects the pure-uuidv7 identity rule; the stack node's identity is a\nuuidv7 minted via `unit_identity::resolve_or_mint`, keyed BY this string).\n\nCanonical form is produced by [`TopologyClaim::normalize_service_identity`]\nso docker and dockge — which see the same stack from different angles —\nemit byte-identical keys and dedup onto one stack node. Preferred source\nis the compose working-directory path (`/opt/stacks/<project>`); the\nfallback is the bare compose project name. Both are host-scoped by\nprefixing the host so the same stack name on two hosts stays distinct.\n`None` = the provider can't attribute the workload to a stack.",
             "type": [
               "string",
               "null"
             ]
           },
-          "serviceRole": {
+          "service_role": {
             "description": "Optional cheap service-role hint the provider derives from a well-known\nlabel (e.g. `orca.role`). The authoritative role comes from a runtime\n[`crate::service_identity::ServiceRegistration`], which overrides this at\ncorrelation time.",
             "type": [
               "string",
@@ -8805,7 +8805,7 @@
           "id",
           "name",
           "provider",
-          "providerInstance"
+          "provider_instance"
         ],
         "type": "object"
       },
@@ -8846,40 +8846,40 @@
             },
             "type": "array"
           },
-          "parentKind": {
+          "parent_kind": {
             "description": "Kind of parent edge (`hypervisor` / `host`).",
             "type": [
               "string",
               "null"
             ]
           },
-          "parentPeerId": {
+          "parent_peer_id": {
             "description": "Inferred parent peer id (mac-match on claims). Written by the mesh\ninference pass.",
             "type": [
               "string",
               "null"
             ]
           },
-          "primaryIpv4": {
+          "primary_ipv4": {
             "type": [
               "string",
               "null"
             ]
           },
-          "primaryIpv6": {
+          "primary_ipv6": {
             "type": [
               "string",
               "null"
             ]
           },
-          "systemType": {
+          "system_type": {
             "description": "Canonical system-type tag (`proxmox-ve`, `unraid`, `macos`, ...).",
             "type": [
               "string",
               "null"
             ]
           },
-          "systemTypeLabel": {
+          "system_type_label": {
             "description": "Human label for `system_type` (server-owned).",
             "type": [
               "string",
@@ -9033,7 +9033,7 @@
             "default": false,
             "type": "boolean"
           },
-          "publishedAt": {
+          "published_at": {
             "default": null,
             "type": [
               "string",
