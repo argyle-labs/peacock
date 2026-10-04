@@ -5228,7 +5228,7 @@ export const zPluginListResponse = z.object({
 export const zPluginServeAssetBody = z.object({
   name: z.string(),
   prerelease: z.boolean().optional().default(false),
-  repoUrl: z.string(),
+  repo_url: z.string(),
   target: z.string(),
   version: z.string().nullish(),
 });
@@ -5241,7 +5241,7 @@ export const zPluginServeAssetBody = z.object({
  * MUST re-verify after decode before installing).
  */
 export const zPluginServeAssetResponse = z.object({
-  assetB64: z.string(),
+  asset_b64: z.string(),
   sha256: z.string(),
   version: z.string(),
 });
