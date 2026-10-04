@@ -73,10 +73,12 @@ so configure the server to fall back to `index.html` for unmatched paths.
 cargo build --release        # produces target/release/peacock
 ```
 
-Requires a checked-out orca repo at `../orca` (the committed
-`.cargo/config.toml` patches the orca git deps to the local path). Drop the
-resulting `peacock` binary into orca's plugin install dir; orca spawns it on
-next startup.
+The orca crates resolve from orca `main` on GitHub at the commit pinned in the
+committed `Cargo.lock`. To build against a local orca checkout instead, add an
+uncommitted `[patch."https://github.com/argyle-labs/orca"]` section to
+`.cargo/config.toml` pointing at its crates, and don't commit the lock it
+produces. Drop the resulting `peacock` binary into orca's plugin install dir;
+orca spawns it on next startup.
 
 ## Layout
 

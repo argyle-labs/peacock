@@ -21,9 +21,9 @@ path = "src/main.rs"
 # features (the latter gates `serve()`) — never the `full` default that pulls
 # containers(bollard)/graphql/openapi(progenitor) into the artifact.
 #
-# All three orca crates resolve from the pinned git source; the committed
-# `[patch]` in `.cargo/config.toml` redirects them to a local `../orca` checkout
-# for development. `contract` + `derive` are needed directly because the
+# All three orca crates track orca `main` via the public GitHub git source; the
+# committed Cargo.lock pins the resolved commit and CI builds `--locked`.
+# `contract` + `derive` are needed directly because the
 # `#[orca_tool]` surface and the typed `contract::web::{WebRequest,WebResponse}`
 # request/response types are referenced in plugin source.
 plugin-toolkit = { git = "https://github.com/argyle-labs/orca", branch = "main", default-features = false, features = ["tools", "db"] }
