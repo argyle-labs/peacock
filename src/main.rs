@@ -21,7 +21,12 @@ use plugin_toolkit::serve::{PluginSpec, serve};
 /// Vite dev-server origin peacock's `npm run dev` binds. orca proxies its `/`
 /// route here when the daemon is in dev mode. `ui/` is an npm workspace root,
 /// so `npm run dev` there delegates to `@peacock/app`, which binds this port.
-const DEV_UPSTREAM: &str = "http://127.0.0.1:12001";
+///
+/// Must NOT be 12001: orca keeps 127.0.0.1:12001 as its bare-repo `VITE_ORIGIN`
+/// fallback and a server test asserts a 502 there, which fails (and blocks
+/// orca's working-tree pre-push gate) whenever something listens on it. orca
+/// resolves `dev_upstream` from the registered route, so any free port works.
+const DEV_UPSTREAM: &str = "http://127.0.0.1:12004";
 
 /// Env var orca (or a developer) sets to run peacock's Vite dev server and have
 /// orca proxy to it, instead of serving the embedded prod assets.

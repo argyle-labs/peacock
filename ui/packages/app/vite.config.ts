@@ -4,12 +4,24 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [sveltekit()],
   server: {
-    port: 12001,
+    port: 12004,
     host: '127.0.0.1',
-    // HMR goes through the orca proxy on :12000 (which forwards WSS → 12001)
-    // so the browser only ever talks to one origin. This makes session
-    // cookies same-origin and avoids cross-port ETP cookie blocks.
-    hmr: { clientPort: 12000, protocol: 'ws' },
+    // Two supported dev topologies:
+    //
+    //  1. Direct (default, no daemon surgery): open http://localhost:12004.
+    //     Vite serves the UI with HMR and proxies /api to the real local orca
+    //     daemon on :12000, so you develop against live fleet data. Cookies
+    //     ignore port, so the daemon's `orca_session` cookie set on
+    //     localhost:12000 is still sent to localhost:12004 — no auth dance.
+    //
+    //  2. Through orca's dev proxy: with the daemon in dev mode it forwards
+    //     its `/` route to the `dev_upstream` peacock registers (see
+    //     src/main.rs) and the browser uses :12000 for everything.
+    //
+    // Must not be 12001 — see DEV_UPSTREAM in src/main.rs.
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:12000', changeOrigin: false, ws: true },
+    },
     // Pre-transform critical first-paint modules on dev server boot so the
     // browser doesn't pay per-module transform latency on a cold reload.
     // Keep this list TIGHT — every entry blocks dev server start.

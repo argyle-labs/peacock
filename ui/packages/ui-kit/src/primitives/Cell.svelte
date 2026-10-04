@@ -94,7 +94,14 @@
 {:else if spec.kind === 'relTime'}
   {@const r = resolve(spec.field)}
   {#if r.ok}
-    {relTime(typeof r.value === 'number' ? r.value : null)}
+    {@const result = relTime(typeof r.value === 'number' ? r.value : null, spec.unit ?? 'ms')}
+    {#if result.ok}
+      {result.text}
+    {:else}
+      <span class="path-error" title={`implausible timestamp: ${String(r.value)}`}
+        >⚠ {result.text}</span
+      >
+    {/if}
   {:else}
     {@render pathError(spec.field)}
   {/if}
