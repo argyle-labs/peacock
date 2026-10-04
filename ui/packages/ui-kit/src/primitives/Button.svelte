@@ -5,6 +5,8 @@
     disabled?: boolean;
     type?: 'button' | 'submit';
     title?: string;
+    ariaHaspopup?: 'dialog' | 'menu' | 'listbox';
+    ariaExpanded?: boolean;
     onclick?: () => void;
     children: import('svelte').Snippet;
   }
@@ -14,12 +16,22 @@
     disabled = false,
     type = 'button',
     title,
+    ariaHaspopup,
+    ariaExpanded,
     onclick,
     children,
   }: Props = $props();
 </script>
 
-<button {type} {disabled} {title} class="btn btn--{variant} btn--{size}" {onclick}>
+<button
+  {type}
+  {disabled}
+  {title}
+  aria-haspopup={ariaHaspopup}
+  aria-expanded={ariaExpanded}
+  class="btn btn--{variant} btn--{size}"
+  {onclick}
+>
   {@render children()}
 </button>
 

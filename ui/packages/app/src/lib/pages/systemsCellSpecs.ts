@@ -1,18 +1,10 @@
 /**
  * The `CellSpec`s used by the `/systems` route's `spec`-driven columns, kept
- * here (rather than inlined in `+page.svelte`) so the portability round-trip
- * test imports the exact same object the page renders, not a copy that could
- * silently drift from it.
+ * out of `+page.svelte` so the portability round-trip test imports the exact
+ * objects the page renders.
  */
 
 import type { CellSpec } from '@peacock/ui-kit';
-
-export const memberSpecs: Record<string, CellSpec> = {
-  health: { kind: 'status', field: 'health' },
-  role: { kind: 'badge', field: 'role', toneMap: { local: 'accent' } },
-  version: { kind: 'text', field: 'version' },
-  lastSeen: { kind: 'relTime', field: 'last_checked' },
-};
 
 export const candidateSpecs: Record<string, CellSpec> = {
   hostname: { kind: 'text', field: 'hostname' },
@@ -26,11 +18,11 @@ export const candidateSpecs: Record<string, CellSpec> = {
   fp: { kind: 'mono', field: 'pubkey_fp' },
 };
 
-export const staleSpecs: Record<string, CellSpec> = {
-  hostname: { kind: 'text', field: 'hostname' },
-  addr: { kind: 'addr', hostField: 'addr', portField: 'port' },
-  reason: { kind: 'badge', field: 'reason', tone: 'warning' },
-  lastSeen: { kind: 'relTime', field: 'last_seen_at' },
+// Labels for `MeshStaleRow.reason`, shown in the Health cell tooltip.
+export const staleReasonLabels: Record<string, string> = {
+  departed: 'Left the mesh',
+  orphan: 'Seen on network, not paired',
+  'stale self identity': "This system's former identity",
 };
 
 export const offerSpecs: Record<string, CellSpec> = {

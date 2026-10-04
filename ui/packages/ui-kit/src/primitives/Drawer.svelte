@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { trackOverlayFocus, pushOverlay, isTopOverlay, trapTab } from '../utils/overlayFocus';
 
   interface Props {
     open: boolean;
+    title?: string;
     side?: 'left' | 'right';
     width?: string;
     onclose?: () => void;
@@ -13,6 +15,7 @@
 
   let {
     open,
+    title,
     side = 'right',
     width = 'min(420px, 90vw)',
     onclose,
@@ -21,12 +24,32 @@
     children,
   }: Props = $props();
 
-  function handleBackdropClick() {
+  const headingId = $props.id();
+  const token = {};
+  let panel = $state<HTMLElement>();
+  let returnFocusTo: HTMLElement | null = null;
+
+  $effect(() => {
+    returnFocusTo = trackOverlayFocus(open, panel, returnFocusTo);
+  });
+
+  $effect(() => {
+    if (open) return pushOverlay(token);
+  });
+
+  // Clicking the backdrop can focus it; release that so focus returns to the
+  // trigger on close.
+  function handleBackdropClick(e: MouseEvent) {
+    (e.currentTarget as HTMLElement).blur();
     onclose?.();
   }
 
   function handleKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && open) onclose?.();
+    if (!open || e.defaultPrevented || !isTopOverlay(token)) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onclose?.();
+    } else trapTab(e, panel);
   }
 </script>
 
@@ -37,21 +60,32 @@
     class="backdrop"
     class:open
     aria-label="Close drawer"
-    tabindex={open ? 0 : -1}
+    tabindex="-1"
     onclick={handleBackdropClick}
   ></button>
 {/if}
 
-<aside
+<div
   class="drawer {side}"
   class:open
   style="--drawer-width: {width}"
+  role="dialog"
+  aria-modal="true"
   aria-hidden={!open}
-  aria-label={ariaLabel}
+  aria-labelledby={title ? headingId : undefined}
+  aria-label={title ? undefined : ariaLabel}
   inert={!open}
+  bind:this={panel}
+  tabindex="-1"
 >
+  {#if title}
+    <div class="drawer-header">
+      <h3 id={headingId}>{title}</h3>
+      <button class="drawer-close" onclick={onclose} aria-label="Close">✕</button>
+    </div>
+  {/if}
   {@render children()}
-</aside>
+</div>
 
 <style>
   .backdrop {
@@ -95,5 +129,27 @@
   }
   .drawer.open {
     transform: translateX(0);
+  }
+  .drawer:focus-visible {
+    outline: none;
+  }
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-4) var(--space-2);
+    flex-shrink: 0;
+  }
+  .drawer-header h3 {
+    margin: 0;
+    font-size: var(--text-base);
+  }
+  .drawer-close {
+    background: none;
+    border: none;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    font-size: var(--text-base);
+    padding: var(--space-1);
   }
 </style>

@@ -34,7 +34,7 @@ declares:
 | --- | --- | --- |
 | `domain` | `web` | orca's web-route provider domain |
 | `endpoint` | `/` | the **exact** path peacock owns (root SPA) |
-| `capabilities` | `spa_fallback`, `dev_upstream=http://127.0.0.1:12001` | SPA catch-all on; dev Vite origin |
+| `capabilities` | `spa_fallback`, `dev_upstream=http://127.0.0.1:12004` | SPA catch-all on; dev Vite origin |
 | `invoke_prefix` | `peacock` | render calls route to `peacock.render` |
 
 Route ownership is **exact-path**: peacock owns `/`. Because it sets
@@ -57,7 +57,7 @@ directly:
 ```sh
 cd ui
 npm install
-npm run dev       # dev server on http://127.0.0.1:12001
+npm run dev       # dev server on http://127.0.0.1:12004
 # or
 npm run build     # static output to ui/build/
 npm run preview   # serve the built output

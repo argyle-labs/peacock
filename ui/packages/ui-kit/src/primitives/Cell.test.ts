@@ -67,6 +67,26 @@ describe('Cell', () => {
     expect(b.textContent?.trim()).toBe('—');
   });
 
+  it("renders relTime with unit 's' as an epoch-seconds value", () => {
+    const tenMinutesAgoSec = Math.round(Date.now() / 1000) - 10 * 60;
+    const { container } = renderCell(
+      { kind: 'relTime', field: 'ts', unit: 's' },
+      { ts: tenMinutesAgoSec },
+    );
+    expect(container.textContent?.trim()).toBe('10m ago');
+    expect(container.querySelector('.path-error')).toBeNull();
+  });
+
+  it('renders an implausible relTime as the error state with the raw value in the title', () => {
+    const secondsReadAsMs = Math.round(Date.now() / 1000);
+    const { container } = renderCell({ kind: 'relTime', field: 'ts' }, { ts: secondsReadAsMs });
+    const err = container.querySelector('.path-error');
+    expect(err).toBeTruthy();
+    expect(err?.textContent).toContain('invalid timestamp');
+    expect(err?.getAttribute('title')).toBe(`implausible timestamp: ${secondsReadAsMs}`);
+    expect(err?.querySelector('[aria-hidden="true"]')?.textContent).toBe('⚠');
+  });
+
   it('renders uptime for a duration and em-dash for a missing one', () => {
     const { container: a } = renderCell({ kind: 'uptime', field: 'secs' }, { secs: 7200 });
     expect(a.textContent?.trim()).toBe('2h');

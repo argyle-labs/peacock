@@ -56,7 +56,9 @@
 </script>
 
 {#snippet pathError(field: string)}
-  <span class="path-error" title={`field not found on row: "${field}"`}>⚠ bad field</span>
+  <span class="path-error" title={`field not found on row: "${field}"`}
+    ><span aria-hidden="true">⚠</span> bad field</span
+  >
 {/snippet}
 
 {#if spec.kind === 'text'}
@@ -94,7 +96,14 @@
 {:else if spec.kind === 'relTime'}
   {@const r = resolve(spec.field)}
   {#if r.ok}
-    {relTime(typeof r.value === 'number' ? r.value : null)}
+    {@const result = relTime(typeof r.value === 'number' ? r.value : null, spec.unit ?? 'ms')}
+    {#if result.ok}
+      {result.text}
+    {:else}
+      <span class="path-error" title={`implausible timestamp: ${String(r.value)}`}
+        ><span aria-hidden="true">⚠</span> {result.text}</span
+      >
+    {/if}
   {:else}
     {@render pathError(spec.field)}
   {/if}

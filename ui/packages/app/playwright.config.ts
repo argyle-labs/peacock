@@ -10,7 +10,7 @@ export default defineConfig({
     ['html', { open: 'never' }],
   ],
   use: {
-    baseURL: 'http://localhost:12001',
+    baseURL: 'http://localhost:12004',
     trace: 'on-first-retry',
   },
   projects: [
@@ -21,7 +21,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    port: 12001,
+    port: 12004,
     reuseExistingServer: true,
     timeout: 60_000,
   },

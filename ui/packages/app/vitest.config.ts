@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       $lib: '/src/lib',
       '$app/environment': '/src/mocks/app-environment.ts',
+      '$app/navigation': '/src/mocks/app-navigation.ts',
     },
   },
   test: {
@@ -19,8 +20,5 @@ export default defineConfig({
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.ts'],
     exclude: ['node_modules/**', 'e2e/**'],
-    // The app currently has no unit tests of its own (the one that existed
-    // tested a primitive and moved to ui-kit). Don't fail CI for that.
-    passWithNoTests: true,
   },
 });

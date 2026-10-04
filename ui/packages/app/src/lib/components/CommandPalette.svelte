@@ -1,37 +1,28 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { onMount, tick } from 'svelte';
-  import { runTool, allToolNames, type ToolName } from '$lib/stores/runTool';
+  import { tick } from 'svelte';
+  import { pushOverlay } from '@peacock/ui-kit';
   import { NAV_SECTIONS } from '$lib/nav';
   import { isCommandPaletteOpen, closeCommandPalette } from '$lib/stores/commandPalette.svelte';
 
-  type Entry =
-    | { kind: 'nav'; label: string; href: string; section: string; enabled: boolean }
-    | { kind: 'tool'; label: string; tool: ToolName; group: string };
+  type Entry = { label: string; href: string; section: string; enabled: boolean };
 
   const open = $derived(isCommandPaletteOpen());
+  const overlayToken = {};
+
+  // Registering as the topmost overlay keeps an open Drawer's Escape and Tab
+  // trap from acting while the palette is up.
+  $effect(() => {
+    if (open) return pushOverlay(overlayToken);
+  });
 
   let query = $state('');
   let activeIdx = $state(0);
   let inputEl: HTMLInputElement | null = $state(null);
-  let toolNames = $state<ToolName[]>([]);
-
-  // Enumerate tool functions from the generated SDK module. Source of truth
-  // is whatever the live OpenAPI spec produced — every operationId becomes a
-  // callable name here automatically.
-  // allToolNames() is async — it triggers the lazy SDK chunk import on
-  // first call so the SDK stays off the first-paint critical path. The
-  // palette populates its tool list as soon as the chunk resolves.
-  onMount(() => {
-    void allToolNames().then(names => {
-      toolNames = names;
-    });
-  });
 
   const navEntries = $derived<Entry[]>(
     NAV_SECTIONS.flatMap(s =>
       s.items.map(i => ({
-        kind: 'nav' as const,
         label: i.label,
         href: i.href,
         section: s.label,
@@ -40,16 +31,7 @@
     ),
   );
 
-  const toolEntries = $derived<Entry[]>(
-    toolNames.map(t => ({
-      kind: 'tool' as const,
-      label: humanize(String(t)),
-      tool: t,
-      group: groupOf(t),
-    })),
-  );
-
-  const filtered = $derived(filterAndRank([...navEntries, ...toolEntries], query));
+  const filtered = $derived(filterAndRank(navEntries, query));
 
   $effect(() => {
     if (open) {
@@ -64,21 +46,6 @@
     void query;
     activeIdx = 0;
   });
-
-  // operationIds are camelCase (e.g. `hostInfo`, `agentBackendKeyStatus`).
-  // Split on capitals for a readable label and use the first word as the group.
-  function humanize(camel: string): string {
-    return camel
-      .replace(/([A-Z])/g, ' $1')
-      .trim()
-      .toLowerCase();
-  }
-
-  function groupOf(method: ToolName): string {
-    const s = String(method);
-    const match = s.match(/^[a-z]+/);
-    return match ? match[0] : 'misc';
-  }
 
   function filterAndRank(entries: Entry[], q: string): Entry[] {
     const term = q.trim().toLowerCase();
@@ -114,16 +81,8 @@
 
   async function execute(entry: Entry) {
     closeCommandPalette();
-    if (entry.kind === 'nav') {
-      if (!entry.enabled) return;
-      await goto(entry.href);
-      return;
-    }
-    // Palette is a generic dispatcher: tools picked from here are invoked
-    // with empty args. Tools whose Args type has required fields surface a
-    // typed validation error through the toast pipeline. Domain pages should
-    // call the typed SDK function directly instead.
-    await runTool(entry.tool, {}, { successMessage: `${entry.label} ✓` });
+    if (!entry.enabled) return;
+    await goto(entry.href);
   }
 
   function handleKey(e: KeyboardEvent) {
@@ -168,28 +127,26 @@
         onkeydown={handleKey}
         type="text"
         class="cmd-input"
-        placeholder="Search pages and tools…"
+        placeholder="Search pages…"
         autocomplete="off"
         spellcheck="false"
       />
 
       <div class="cmd-results">
         {#if filtered.length === 0}
-          <div class="cmd-empty">No matches</div>
+          <div class="cmd-empty">No matching pages</div>
         {/if}
-        {#each filtered as entry, i (`${entry.kind}-${entry.kind === 'nav' ? entry.href : entry.tool}`)}
+        {#each filtered as entry, i (entry.href)}
           <button
             class="cmd-result {i === activeIdx ? 'active' : ''}"
-            class:disabled={entry.kind === 'nav' && !entry.enabled}
+            class:disabled={!entry.enabled}
             onmouseenter={() => (activeIdx = i)}
             onclick={() => execute(entry)}
             type="button"
           >
-            <span class="cmd-kind">{entry.kind === 'nav' ? '→' : '⌁'}</span>
+            <span class="cmd-kind">→</span>
             <span class="cmd-label">{entry.label}</span>
-            <span class="cmd-group">
-              {entry.kind === 'nav' ? entry.section : entry.group}
-            </span>
+            <span class="cmd-group">{entry.section}</span>
           </button>
         {/each}
       </div>
