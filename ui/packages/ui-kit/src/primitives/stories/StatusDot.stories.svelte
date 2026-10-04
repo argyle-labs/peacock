@@ -13,6 +13,7 @@
   {#snippet template()}
     <div style="display:flex; gap:1rem; align-items:center; font-size:0.85rem;">
       <span><StatusDot ok={true} /> up</span>
+      <span><StatusDot ok={true} degraded /> degraded</span>
       <span><StatusDot ok={false} /> down</span>
       <span><StatusDot ok={null} /> unknown</span>
     </div>

@@ -1,8 +1,11 @@
 <script lang="ts">
-  let { ok }: { ok: boolean | null } = $props();
+  let { ok, degraded = false }: { ok: boolean | null; degraded?: boolean } = $props();
 </script>
 
-<span class="dot {ok === true ? 'ok' : ok === false ? 'fail' : 'unknown'}">●</span>
+<span
+  class="dot {degraded ? 'degraded' : ok === true ? 'ok' : ok === false ? 'fail' : 'unknown'}"
+  aria-hidden="true">●</span
+>
 
 <style>
   .dot {
@@ -15,6 +18,9 @@
   }
   .fail {
     color: var(--color-error);
+  }
+  .degraded {
+    color: var(--color-warning);
   }
   .unknown {
     color: var(--color-text-faint);

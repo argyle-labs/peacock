@@ -51,14 +51,10 @@ export type Tone = 'neutral' | 'success' | 'warning' | 'error' | 'info' | 'accen
  *             `labelMap` key off the field's *stringified* value for the
  *             handful of columns whose tone/label depends on that value
  *             (e.g. a boolean "can invite" -> yes/no, success/neutral)
- *   - relTime a past timestamp rendered as "3m ago"; `unit` ('ms' | 's',
- *             default 'ms') must be set explicitly per field because orca's
- *             own APIs mix epoch units across (and even within) a single
- *             response — measured: `system.list`'s `members[].last_checked`
- *             is milliseconds, `stale[].last_seen_at` is seconds. An
- *             implausible result (outside `relTime`'s plausible-date window)
- *             renders as an explicit error, never a confident-looking wrong
- *             answer.
+ *   - relTime a past timestamp rendered as "3m ago"; set `unit` ('ms' | 's',
+ *             default 'ms') per field, since one orca response can mix epoch
+ *             units (orca#700). A value outside `relTime`'s plausible window renders as
+ *             an explicit error state.
  *   - uptime  a duration in seconds rendered as "3h"
  *   - addr    `host:port` built from two fields, monospace — general enough
  *             to earn a kind because it recurs across every mesh listing

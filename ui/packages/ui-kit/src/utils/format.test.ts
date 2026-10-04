@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { relTime, fmtUptime } from './format';
+
+const NOW = Date.parse('2026-06-01T12:00:00Z');
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('relTime', () => {
   it('renders em-dash for a missing timestamp', () => {
@@ -9,37 +20,43 @@ describe('relTime', () => {
   });
 
   it('renders a millisecond timestamp as minutes ago (default unit)', () => {
-    const tenMinutesAgoMs = Date.now() - 10 * 60 * 1000;
-    expect(relTime(tenMinutesAgoMs)).toEqual({ ok: true, text: '10m ago' });
+    expect(relTime(NOW - 10 * 60 * 1000)).toEqual({ ok: true, text: '10m ago' });
   });
 
   it('renders a seconds-unit timestamp as minutes ago', () => {
-    const tenMinutesAgoSec = Math.round(Date.now() / 1000) - 10 * 60;
-    expect(relTime(tenMinutesAgoSec, 's')).toEqual({ ok: true, text: '10m ago' });
+    expect(relTime(NOW / 1000 - 10 * 60, 's')).toEqual({ ok: true, text: '10m ago' });
   });
 
   it('treats a seconds value fed through the ms path as implausible', () => {
-    // Measured bug: `last_seen_at` (seconds) run through the ms-assuming
-    // path resolves to 1970 — ~497013h ago — and must be flagged, not
-    // formatted as if it were a real timestamp.
-    const secondsValueMisreadAsMs = Math.round(Date.now() / 1000);
-    const result = relTime(secondsValueMisreadAsMs, 'ms');
-    expect(result.ok).toBe(false);
+    // A seconds epoch read as milliseconds resolves to January 1970.
+    expect(relTime(NOW / 1000, 'ms').ok).toBe(false);
   });
 
   it('flags a timestamp from before orca could have existed', () => {
-    const result = relTime(Date.parse('2020-06-15T00:00:00Z'));
-    expect(result).toEqual({ ok: false, text: 'invalid timestamp' });
+    expect(relTime(Date.parse('2020-06-15T00:00:00Z'))).toEqual({
+      ok: false,
+      text: 'invalid timestamp',
+    });
   });
 
-  it('flags a timestamp far in the future as implausible', () => {
-    const result = relTime(Date.now() + 24 * 60 * 60 * 1000);
-    expect(result.ok).toBe(false);
+  it('flags negative inputs as implausible', () => {
+    expect(relTime(-5)).toEqual({ ok: false, text: 'invalid timestamp' });
+    expect(relTime(-5, 's')).toEqual({ ok: false, text: 'invalid timestamp' });
   });
 
-  it('allows a small amount of future clock skew', () => {
-    const result = relTime(Date.now() + 30 * 1000);
-    expect(result.ok).toBe(true);
+  it('switches from minutes to hours exactly at the 1h boundary', () => {
+    expect(relTime(NOW - 3599 * 1000)).toEqual({ ok: true, text: '59m ago' });
+    expect(relTime(NOW - 3600 * 1000)).toEqual({ ok: true, text: '1h ago' });
+  });
+
+  it('flags a timestamp beyond the future skew window as implausible', () => {
+    expect(relTime(NOW + 6 * 60 * 1000).ok).toBe(false);
+    expect(relTime(NOW + 60 * 60 * 1000).ok).toBe(false);
+  });
+
+  it('shows clock skew inside the window instead of "just now"', () => {
+    expect(relTime(NOW + 30 * 1000)).toEqual({ ok: true, text: '30s ahead (clock skew)' });
+    expect(relTime(NOW + 4 * 60 * 1000)).toEqual({ ok: true, text: '4m ahead (clock skew)' });
   });
 });
 
@@ -51,5 +68,14 @@ describe('fmtUptime', () => {
 
   it('renders hours for a duration under a day', () => {
     expect(fmtUptime(7200)).toBe('2h');
+  });
+
+  it('switches from minutes to hours exactly at the 1h boundary', () => {
+    expect(fmtUptime(3599)).toBe('59m');
+    expect(fmtUptime(3600)).toBe('1h');
+  });
+
+  it('flags a negative duration instead of rendering "-1m"', () => {
+    expect(fmtUptime(-60)).toBe('invalid duration');
   });
 });

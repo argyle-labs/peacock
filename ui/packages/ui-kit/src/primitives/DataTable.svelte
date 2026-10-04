@@ -22,12 +22,15 @@
     emptyText = 'No items',
     row: rowSnippet,
     loading = false,
+    rowKey,
   }: {
     columns: { label: string; width?: string; cell?: Snippet<[T]>; spec?: CellSpec }[];
     rows: T[];
     emptyText?: string;
     row?: Snippet<[T]>;
     loading?: boolean;
+    /** Stable, unique identity per row; without it rows are keyed by index. */
+    rowKey?: (item: T) => string | number;
   } = $props();
 </script>
 
@@ -43,7 +46,7 @@
     {#if loading}
       <tr><td colspan={columns.length} class="empty">Loading…</td></tr>
     {:else}
-      {#each rows as item}
+      {#each rows as item, i (rowKey ? rowKey(item) : i)}
         {#if rowSnippet}
           <tr>{@render rowSnippet(item)}</tr>
         {:else}

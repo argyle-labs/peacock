@@ -1,17 +1,21 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { trackOverlayFocus } from '../utils/overlayFocus';
+  import { trackOverlayFocus, pushOverlay, isTopOverlay } from '../utils/overlayFocus';
 
   let {
     open = $bindable(false),
     align = 'start',
     width,
+    ariaLabel,
     trigger,
     children,
   }: {
     open?: boolean;
     align?: 'start' | 'end';
     width?: number;
+    /** Names the dropdown and gives it `role="dialog"`, so a trigger can
+     * declare `aria-haspopup="dialog"`. */
+    ariaLabel?: string;
     trigger: Snippet;
     children: Snippet;
   } = $props();
@@ -19,9 +23,14 @@
   let anchorEl: HTMLElement | null = $state(null);
   let dropdownEl: HTMLElement | null = $state(null);
   let returnFocusTo: HTMLElement | null = null;
+  const token = {};
 
   $effect(() => {
     returnFocusTo = trackOverlayFocus(open, dropdownEl, returnFocusTo);
+  });
+
+  $effect(() => {
+    if (open) return pushOverlay(token);
   });
 
   function handleOutside(e: MouseEvent) {
@@ -32,7 +41,9 @@
   }
 
   function handleKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && open) open = false;
+    if (e.key !== 'Escape' || !open || e.defaultPrevented || !isTopOverlay(token)) return;
+    e.preventDefault();
+    open = false;
   }
 </script>
 
@@ -45,6 +56,8 @@
       class="popover-dropdown popover-{align}"
       style={width ? `width:${width}px` : ''}
       bind:this={dropdownEl}
+      role={ariaLabel ? 'dialog' : undefined}
+      aria-label={ariaLabel}
       tabindex="-1"
     >
       {@render children()}
