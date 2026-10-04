@@ -19,8 +19,5 @@ export default defineConfig({
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.ts'],
     exclude: ['node_modules/**', 'e2e/**'],
-    // The app currently has no unit tests of its own (the one that existed
-    // tested a primitive and moved to ui-kit). Don't fail CI for that.
-    passWithNoTests: true,
   },
 });

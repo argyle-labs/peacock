@@ -32,41 +32,42 @@
   let stale = $state<MeshStaleRow[]>([]);
   let inboundOffers = $state<MeshInboundOffer[]>([]);
   let health = $state<Map<string, MeshHealthRow>>(new Map());
+  let healthRosterError = $state<string | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
   let drawerOpen = $state(false);
   let openRoutePopover = $state<Record<string, boolean>>({});
 
-  // Hardware drawer — fetched on open, never on page load/poll: a fat
-  // `system.info.detail` probe per row, every 10s, across every system
-  // would be an unacceptable request fan-out for data an operator may
-  // never look at.
+  // Fetched on open only: a full `system.info.detail` probe per row on every
+  // poll would fan out requests for data an operator rarely opens.
   let hwOpen = $state(false);
   let hwLoading = $state(false);
   let hwError = $state<string | null>(null);
   let hwReport = $state<SystemInfoReport | null>(null);
   let hwLabel = $state('');
+  let hwRowKey = $state<string | null>(null);
+  let hwSeq = 0;
+  let hwAbort: AbortController | null = null;
 
-  // Local member row has no roster id (health rows key it as ""); every
-  // paired peer joins on `id`, falling back to `peer_id` for shape drift.
+  // orca's default disk warn threshold (`DEFAULT_DISK_WARN_PCT`).
+  const DISK_WARN_PCT = 85;
+
+  type HealthView = {
+    label: string;
+    ok: boolean | null;
+    degraded: boolean;
+    title?: string;
+  };
+
+  type MemberRow = { kind: 'member'; key: string; m: MeshInstance };
+  type StaleRow = { kind: 'stale'; key: string; s: MeshStaleRow; selfIdentity: boolean };
+  type UnifiedRow = MemberRow | StaleRow;
+
+  // Every `system.health` row is keyed by peer id; the local row's machine id
+  // is its peer id.
   function healthRowFor(m: MeshInstance): MeshHealthRow | undefined {
-    return health.get(m.role === 'local' ? '' : m.id) ?? health.get(m.peer_id);
+    return health.get(m.peer_id);
   }
-
-  // orca-side gap: the roster's own `health` field reports "unknown" for the
-  // local system (it never self-probes) even though `system.health` returns
-  // a full, trustworthy `HealthReport` for that same machine in the same
-  // call — measured: local member had `health: 'unknown'` while its health
-  // report showed `healthy: true`, `daemon.running: true`. Prefer the real
-  // report when one is joined; fall back to the roster string only when
-  // there's no report to derive from (a genuine unknown stays unknown).
-  function displayHealth(m: MeshInstance): string {
-    const h = healthRowFor(m)?.health;
-    if (!h) return m.health;
-    return h.healthy || h.daemon?.running ? 'up' : 'down';
-  }
-
-  const memberRows = $derived(members.map(m => ({ ...m, health: displayHealth(m) })));
 
   function statusOk(v: string): boolean | null {
     if (v === 'up') return true;
@@ -74,101 +75,144 @@
     return null;
   }
 
-  // `last_checked` is epoch MILLISECONDS (measured) — surfaced as a tooltip
-  // on the Health cell, since it answers "how current is this status?", not
-  // "how current is this machine's name?". `relTime`'s implausible-value
-  // guard still applies so a bad value renders as an explicit flag, not a
-  // confident-looking wrong answer.
-  function lastCheckedTitle(m: MeshInstance): string {
-    const r = relTime(m.last_checked, 'ms');
-    return `last checked ${r.text}`;
+  // The roster's `health` is "up" for every active remote and "unknown" for the
+  // local system regardless of any probe (orca#701), so it is only a fallback
+  // when `system.health` returned no row.
+  function memberHealth(m: MeshInstance): HealthView {
+    const row = healthRowFor(m);
+    if (row?.error) {
+      return { label: 'unreachable', ok: false, degraded: false, title: row.error };
+    }
+    const h = row?.health;
+    if (!h) {
+      return { label: m.health, ok: statusOk(m.health), degraded: false, title: 'no health probe' };
+    }
+    const reasons: string[] = [];
+    if (!h.healthy) reasons.push('probe reports unhealthy');
+    if (h.disk && h.disk.usedPct >= DISK_WARN_PCT) {
+      reasons.push(`disk ${h.disk.usedPct}% used on ${h.disk.path}`);
+    }
+    const checked = `checked ${relTime(h.checkedAtMs, 'ms').text}`;
+    return {
+      label: reasons.length ? 'degraded' : 'up',
+      ok: true,
+      degraded: reasons.length > 0,
+      title: [...reasons, checked].join(' · '),
+    };
   }
 
-  // No documented beacon cadence from orca — the page's own poller runs
-  // every 10s, so this window is a conservative multiple of that (one or
-  // two skipped beacons shouldn't flip a row to "offline"). This is a guess,
-  // not a measured interval; tighten it once the real cadence is known.
+  // No documented beacon cadence from orca; a multiple of the 10s poll so one
+  // or two skipped beacons don't flip a row to "down".
   const LIVENESS_WINDOW_MS = 60_000;
 
-  // `last_seen_at` is `null` for `departed` rows (they were never seen, they
-  // left) — that must render as genuinely unknown, not "offline". For an
-  // `orphan` row a fresh beacon is still a real, current sighting of that
-  // system — this is what lets hemlock/bragi show "up" despite orca's
-  // roster not counting them as active members.
+  // `last_seen_at` is epoch seconds, `null` for `departed` rows (unknown).
   function liveness(lastSeenAtSecs: number | null | undefined): boolean | null {
-    if (lastSeenAtSecs == null) return null;
+    if (lastSeenAtSecs == null || !relTime(lastSeenAtSecs, 's').ok) return null;
     return Date.now() - lastSeenAtSecs * 1000 <= LIVENESS_WINDOW_MS;
   }
 
-  // Tooltip for a `stale[]` row's Health cell: unlike `last_checked`
-  // (members, milliseconds), `last_seen_at` is epoch SECONDS — kept on its
-  // own path through `relTime` so the two units never touch. `reason` is
-  // folded in here as context, not as a column that would partition rows.
-  function staleHealthTitle(s: MeshStaleRow): string {
-    const r = relTime(s.last_seen_at, 's');
-    const reason = staleReasonLabels[s.reason] ?? s.reason;
-    return `${reason} · last seen ${r.text}`;
+  function staleHealth(r: StaleRow): HealthView {
+    const reason = staleReasonLabels[r.s.reason] ?? r.s.reason;
+    const title = `${reason} · last seen ${relTime(r.s.last_seen_at, 's').text}`;
+    // A beacon from this machine's former identity is this machine, so its
+    // liveness says nothing about that identity.
+    if (r.selfIdentity) return { label: 'retired', ok: null, degraded: false, title };
+    const live = liveness(r.s.last_seen_at);
+    const label = live === true ? 'up' : live === false ? 'down' : 'unknown';
+    return { label, ok: live, degraded: false, title };
   }
 
-  // `origin` is the strongest signal for the route actually in use (it's the
-  // `addr:port` the peer connection is live on); for the synthetic local row
-  // the daemon can't know how the browser reached it and emits `""`, so the
-  // browser's own `window.location.origin` is the documented substitute.
+  function rowHealth(r: UnifiedRow): HealthView {
+    return r.kind === 'member' ? memberHealth(r.m) : staleHealth(r);
+  }
+
+  function normalizeRoute(v: string): string {
+    return v
+      .trim()
+      .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+      .replace(/\/.*$/, '')
+      .toLowerCase();
+  }
+
+  // Bare host of `host:port`, `[v6]:port`, `[v6]`, or a bare v4/v6 address.
+  function hostOf(addr: string): string {
+    if (addr.startsWith('[')) return addr.slice(1, addr.indexOf(']'));
+    const parts = addr.split(':');
+    return parts.length === 2 ? parts[0] : addr;
+  }
+
+  const LOOPBACK = /^(localhost|127(\.\d{1,3}){3}|\[::1\])(:\d+)?$/;
+
+  // The local row's `origin` is "" (the daemon can't see how the browser
+  // reached it), so the browser's own host stands in.
   function currentRoute(m: MeshInstance): string {
-    if (m.origin) return m.origin;
-    if (m.role === 'local' && typeof window !== 'undefined') return window.location.origin;
-    return '—';
+    if (m.origin) return normalizeRoute(m.origin);
+    if (m.role === 'local' && typeof window !== 'undefined') return window.location.host;
+    return '';
   }
 
-  // `reachable_addrs` is the candidate set; `addresses` carries a human
-  // `kind_label` per address value. Match by value (allowing for a bare host
-  // in `addresses` vs. a `host:port` reachable addr) so the popover can name
-  // each route instead of listing bare strings.
   function reachableRouteList(m: MeshInstance): { label: string; value: string }[] {
-    return m.reachable_addrs.map(addr => {
-      const match = m.addresses.find(a => a.value === addr || addr.startsWith(`${a.value}:`));
-      return { label: match?.kind_label ?? 'address', value: addr };
-    });
+    return m.reachable_addrs
+      .map(normalizeRoute)
+      .filter(Boolean)
+      .map(addr => {
+        const host = hostOf(addr);
+        const match = m.addresses.find(a => hostOf(a.value.toLowerCase()) === host);
+        return { label: match?.kind_label ?? 'address', value: addr };
+      });
   }
 
-  // The universal peer-dispatch header — `undefined` routes to the local
-  // daemon (loopback), any other id proxies the call over the mesh.
-  function peerIdFor(r: UnifiedRow): string {
-    return r.kind === 'member' ? (r.m.role === 'local' ? 'local' : r.m.peer_id) : r.s.peer_id;
+  // A loopback route to the local row is the browser sitting on that machine,
+  // which `reachable_addrs` (LAN only) never lists.
+  function routeConfirmed(m: MeshInstance, current: string, routes: { value: string }[]): boolean {
+    if (!current) return true;
+    if (m.role === 'local' && LOOPBACK.test(current)) return true;
+    return routes.some(x => x.value === current);
   }
 
   function hostnameOf(r: UnifiedRow): string {
     return r.kind === 'member' ? r.m.label || r.m.origin || r.m.id : r.s.hostname;
   }
 
-  async function openHardware(r: UnifiedRow) {
+  async function openHardware(r: MemberRow) {
+    const seq = ++hwSeq;
+    hwAbort?.abort();
+    const ctrl = new AbortController();
+    hwAbort = ctrl;
     hwOpen = true;
     hwLoading = true;
     hwError = null;
     hwReport = null;
     hwLabel = hostnameOf(r);
+    hwRowKey = r.key;
     try {
-      const out = await unwrap(systemInfoDetail({ body: {}, headers: peerHeader(peerIdFor(r)) }));
-      hwReport = out.host;
+      const out = await unwrap(
+        systemInfoDetail({
+          body: {},
+          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.peer_id),
+          signal: ctrl.signal,
+        }),
+      );
+      if (seq === hwSeq) hwReport = out.host;
     } catch (e) {
-      hwError = e instanceof Error ? e.message : String(e);
+      if (seq === hwSeq) hwError = e instanceof Error ? e.message : String(e);
     } finally {
-      hwLoading = false;
+      if (seq === hwSeq) hwLoading = false;
     }
   }
 
-  // `system.list`'s 200 response is a 3-way union and `MeshSnapshotOutput`
-  // ALSO carries `candidates`/`inbound_offers`/`members`/`stale` — it is a
-  // superset of `MeshInstancesOutput` — so `'candidates' in v` alone only
-  // rules out `MeshListOutput`. The only fields unique to `MeshSnapshotOutput`
-  // are the required (non-optional) `cluster_membership` and `clusters`; their
-  // absence, combined with the presence of every `MeshInstancesOutput` field,
-  // is what actually discriminates the two. This still isn't a type-level
-  // guarantee — nothing stops a future response from carrying an odd mix of
-  // fields — it's the backend CONTRACT (`{ instances: true }` on the request
-  // is documented to return exactly `MeshInstancesOutput`) that guarantees
-  // the shape; this guard only verifies that contract held for this reply,
-  // and anything else must throw rather than be coerced.
+  function closeHardware() {
+    hwSeq++;
+    hwAbort?.abort();
+    hwAbort = null;
+    hwOpen = false;
+    hwLoading = false;
+    hwRowKey = null;
+  }
+
+  // `system.list` returns a 3-way union; `MeshSnapshotOutput` is a superset of
+  // `MeshInstancesOutput`, so its required `cluster_membership`/`clusters` must
+  // be absent too. Anything else throws rather than being coerced.
   function isInstancesOutput(v: unknown): v is MeshInstancesOutput {
     return (
       !!v &&
@@ -182,10 +226,8 @@
     );
   }
 
-  // `system.health`'s 200 response is untagged `MeshHealthReport | HealthReport`.
-  // `systems` is a required field unique to `MeshHealthReport` — a bare
-  // `HealthReport` (one system's own probe) never carries it — so its
-  // presence is a sound discriminant between the two.
+  // `system.health` returns untagged `MeshHealthReport | HealthReport`;
+  // only `MeshHealthReport` carries `systems`.
   function isHealthReport(v: unknown): v is MeshHealthReport {
     return !!v && typeof v === 'object' && 'systems' in v;
   }
@@ -202,7 +244,9 @@
       candidates = inst.candidates;
       stale = inst.stale;
       inboundOffers = inst.inbound_offers;
-      health = new Map(hr.systems.map(r => [r.id, r]));
+      // An `id: ''` row is orca failing to enumerate the roster, not a system.
+      health = new Map(hr.systems.filter(r => r.id).map(r => [r.id, r]));
+      healthRosterError = hr.systems.find(r => !r.id && r.error)?.error ?? null;
       error = null;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -212,81 +256,103 @@
     }
   }
 
-  // ONE table of every system orca knows about — a `stale[]` row (e.g.
-  // hemlock, bragi: paired systems orca's discovery view currently disagrees
-  // with its roster about, see the orca-side gap below) is still a system,
-  // not a lesser category, so it's a row here rather than a separate section.
-  type UnifiedRow =
-    { kind: 'member'; m: (typeof memberRows)[number] } | { kind: 'stale'; s: MeshStaleRow };
-
-  // Own system first; everything else keeps the order the API returned it
-  // in. Never sorted by health/liveness — that would make rows jump between
-  // polls, which is worse than any particular order.
-  const unifiedRows = $derived(
-    (
-      [
-        ...memberRows.map(m => ({ kind: 'member' as const, m })),
-        ...stale.map(s => ({ kind: 'stale' as const, s })),
-      ] satisfies UnifiedRow[]
-    ).sort((a, b) => {
+  // Stale rows that duplicate a member or each other are dropped (the most
+  // recently seen copy wins). Local system first, otherwise API order, so rows
+  // never jump between polls.
+  const unifiedRows = $derived.by((): UnifiedRow[] => {
+    const memberPeers = new Set(members.map(m => m.peer_id));
+    const staleByPeer = new Map<string, MeshStaleRow>();
+    for (const s of stale) {
+      if (memberPeers.has(s.peer_id)) continue;
+      const prev = staleByPeer.get(s.peer_id);
+      if (!prev || (s.last_seen_at ?? 0) > (prev.last_seen_at ?? 0)) staleByPeer.set(s.peer_id, s);
+    }
+    const memberRows: UnifiedRow[] = members.map(m => ({
+      kind: 'member',
+      key: `member:${m.id}:${m.peer_id}`,
+      m,
+    }));
+    const staleRows: UnifiedRow[] = [...staleByPeer.values()].map(s => ({
+      kind: 'stale',
+      key: `stale:${s.peer_id}`,
+      s,
+      selfIdentity: s.reason === 'stale self identity',
+    }));
+    return [...memberRows, ...staleRows].sort((a, b) => {
       const aLocal = a.kind === 'member' && a.m.role === 'local';
       const bLocal = b.kind === 'member' && b.m.role === 'local';
       return aLocal === bLocal ? 0 : aLocal ? -1 : 1;
-    }),
-  );
+    });
+  });
 
-  // Candidates and inbound offers live in a drawer, not the page body — the
-  // trigger's badge is the only reason to open it, so it must count both
-  // without the operator opening the drawer first.
   const drawerCount = $derived(candidates.length + inboundOffers.length);
 
   const poller = createPoller({ fn: refresh, intervalMs: 10000 });
   onMount(poller.start);
-  onDestroy(poller.stop);
+  onDestroy(() => {
+    poller.stop();
+    hwAbort?.abort();
+  });
 </script>
 
 <svelte:head><title>systems · orca</title></svelte:head>
 
 {#snippet hostnameCell(r: UnifiedRow)}
-  <!-- Escape hatch: a composite of fallback fields plus a conditional error
-       line for members, or the plain hostname for a `stale[]` row — the two
-       source shapes don't share a field name a `CellSpec` could target. The
-       name itself is the hardware-drawer trigger, so clicking any row
-       opens its `system.info.detail` probe. -->
-  <button type="button" class="hostname-trigger" onclick={() => openHardware(r)}>
-    {hostnameOf(r)}
-  </button>
   {#if r.kind === 'member'}
+    <button
+      type="button"
+      class="hostname-trigger"
+      aria-haspopup="dialog"
+      aria-expanded={hwOpen && hwRowKey === r.key}
+      onclick={() => openHardware(r)}
+    >
+      {hostnameOf(r)}
+    </button>
     {#if r.m.role === 'local'}
-      <span class="this-system" title="this system">(this system)</span>
+      <span class="this-system">(this system)</span>
     {/if}
     {#if r.m.error}
-      <br /><span class="dim-error" title={r.m.error}>⚠ {r.m.error}</span>
+      <br /><span class="dim-error" title={r.m.error}
+        ><span aria-hidden="true">⚠</span> {r.m.error}</span
+      >
+    {/if}
+  {:else}
+    <span title="Hardware detail is only available for active members">{hostnameOf(r)}</span>
+    {#if r.selfIdentity}
+      <span class="this-system">(former identity of this system)</span>
     {/if}
   {/if}
 {/snippet}
 
 {#snippet routeCell(r: UnifiedRow)}
-  <!-- Escape hatch: `stale[]` rows only ever have one address (`addr:port`);
-       members get the live route plus a popover over every reachable one. -->
   {#if r.kind === 'stale'}
     <span class="mono">{r.s.addr}:{r.s.port}</span>
   {:else}
     {@const m = r.m}
     {@const current = currentRoute(m)}
     {@const routes = reachableRouteList(m)}
-    {@const mismatch = routes.length === 0 || !routes.some(x => x.value === current)}
-    <Popover align="start" width={260} bind:open={openRoutePopover[m.id]}>
+    {@const confirmed = routeConfirmed(m, current, routes)}
+    <Popover
+      align="start"
+      width={260}
+      ariaLabel={`Routes for ${hostnameOf(r)}`}
+      bind:open={() => openRoutePopover[r.key] ?? false, v => (openRoutePopover[r.key] = v)}
+    >
       {#snippet trigger()}
         <button
           type="button"
           class="route-trigger"
-          onclick={() => (openRoutePopover[m.id] = !openRoutePopover[m.id])}
+          aria-haspopup="dialog"
+          aria-expanded={openRoutePopover[r.key] ?? false}
+          onclick={() => (openRoutePopover[r.key] = !openRoutePopover[r.key])}
         >
-          <span class="mono">{current}</span>
-          {#if mismatch}
-            <span class="route-warn" title="current route not confirmed in the reachable set"
-              >⚠</span
+          <span class="mono">{current || '—'}</span>
+          {#if !confirmed}
+            <span
+              class="route-warn"
+              role="img"
+              aria-label="current route not in the reachable set"
+              title="current route not in the reachable set">⚠</span
             >
           {/if}
         </button>
@@ -294,7 +360,7 @@
       {#snippet children()}
         <div class="route-list">
           {#if routes.length === 0}
-            <p class="dim route-note">No reachable routes reported</p>
+            <p class="dim route-note">No LAN addresses reported</p>
           {:else}
             {#each routes as route (route.value)}
               <div class="route-row">
@@ -318,7 +384,6 @@
 {/snippet}
 
 {#snippet daemonCell(r: UnifiedRow)}
-  <!-- Escape hatch: joins against `health`. `stale[]` rows carry no probe. -->
   {#if r.kind === 'stale'}
     <span class="dim">—</span>
   {:else}
@@ -336,9 +401,6 @@
 {/snippet}
 
 {#snippet uptimeCell(r: UnifiedRow)}
-  <!-- `uptime_seconds` is a DURATION, not a timestamp — `fmtUptime`, never
-       `relTime`'s implausible-timestamp guard, which only applies to epoch
-       values. No probe (incl. every `stale[]` row) is explicit "unknown". -->
   {#if r.kind === 'stale'}
     <span class="dim">—</span>
   {:else}
@@ -352,28 +414,21 @@
 {/snippet}
 
 {#snippet healthCell(r: UnifiedRow)}
-  <!-- Escape hatch: same `StatusDot` + label a `status` `CellSpec` renders,
-       plus a last-checked/last-seen tooltip — "how current is this
-       reading" belongs on the value it describes, not the hostname. Members
-       use `last_checked` (ms); `stale[]` rows use `last_seen_at` (s) with
-       `reason` folded in as context — the two units never cross paths. -->
-  {#if r.kind === 'member'}
-    <span title={lastCheckedTitle(r.m)}>
-      <StatusDot ok={statusOk(r.m.health)} />
-      {r.m.health}
-    </span>
-  {:else}
-    {@const live = liveness(r.s.last_seen_at)}
-    <span title={staleHealthTitle(r.s)}>
-      <StatusDot ok={live} />
-      {live === true ? 'up' : live === false ? 'down' : 'unknown'}
-    </span>
-  {/if}
+  {@const h = rowHealth(r)}
+  <span class="health" title={h.title}>
+    <StatusDot ok={h.ok} degraded={h.degraded} />
+    {h.label}
+  </span>
 {/snippet}
 
 <div class="page">
   <div class="page-header">
-    <Button variant="secondary" onclick={() => (drawerOpen = true)}>
+    <Button
+      variant="secondary"
+      ariaHaspopup="dialog"
+      ariaExpanded={drawerOpen}
+      onclick={() => (drawerOpen = true)}
+    >
       Candidates &amp; offers
       {#if drawerCount > 0}
         <Badge tone="accent">{drawerCount}</Badge>
@@ -384,6 +439,9 @@
   {#if error}
     <p class="banner-error">Failed to refresh systems: {error}</p>
   {/if}
+  {#if healthRosterError}
+    <p class="banner-error">Health is incomplete: {healthRosterError}</p>
+  {/if}
 
   <section>
     <DataTable
@@ -392,10 +450,11 @@
         { key: 'route', label: 'Route', cell: routeCell },
         { key: 'version', label: 'Version', width: '90px', cell: versionCell },
         { key: 'daemon', label: 'Daemon', width: '110px', cell: daemonCell },
-        { key: 'uptime', label: 'Uptime', width: '80px', cell: uptimeCell },
-        { key: 'health', label: 'Health', width: '90px', cell: healthCell },
+        { key: 'uptime', label: 'Daemon uptime', width: '120px', cell: uptimeCell },
+        { key: 'health', label: 'Health', width: '110px', cell: healthCell },
       ] satisfies Column<UnifiedRow>[])}
       rows={unifiedRows}
+      rowKey={r => r.key}
       {loading}
       emptyText="No known systems"
     />
@@ -407,7 +466,6 @@
   title="Candidates & offers"
   width="min(560px, 90vw)"
   onclose={() => (drawerOpen = false)}
-  ariaLabel="Candidates and inbound offers"
 >
   <div class="drawer-body">
     <section>
@@ -446,8 +504,7 @@
   open={hwOpen}
   title={hwLabel ? `Hardware · ${hwLabel}` : 'Hardware'}
   width="min(480px, 90vw)"
-  onclose={() => (hwOpen = false)}
-  ariaLabel="System hardware detail"
+  onclose={closeHardware}
 >
   <div class="drawer-body hw-body">
     {#if hwLoading}
@@ -482,8 +539,8 @@
           <span class="dim">Cores</span>
           <span>{r.cpu_physical ?? '—'} physical / {r.cpu_logical ?? '—'} logical</span>
           <span class="dim">Usage</span>
-          <!-- `cpu_usage_percent` is always `None` on the first snapshot
-               (needs two sysinfo refreshes) — that's unknown, not 0%. -->
+          <!-- `cpu_usage_percent` is `None` on the first snapshot (it needs two
+               sysinfo refreshes), so absent renders as unknown. -->
           <span
             >{r.cpu_usage_percent != null ? `${r.cpu_usage_percent.toFixed(0)}%` : 'unknown'}</span
           >
@@ -509,13 +566,13 @@
         {#if !r.gpus || r.gpus.length === 0}
           <p class="dim">No GPU detected</p>
         {:else}
-          {#each r.gpus as gpu (gpu.name)}
+          {#each r.gpus as gpu, i (`${gpu.name}-${i}`)}
             <div class="hw-grid">
               <span class="dim">{gpu.name}</span>
               <span>{gpu.vendor}</span>
               <span class="dim">Utilisation</span>
-              <!-- `driver_status` explains an absent reading: `no_driver`/
-                   `no_metrics` means unknown, never a measured zero. -->
+              <!-- `driver_status` (`no_driver`/`no_metrics`) explains why a
+                   reading is absent. -->
               <span>
                 {gpu.utilization_percent != null
                   ? `${gpu.utilization_percent.toFixed(0)}%`
@@ -561,11 +618,8 @@
 
       <section>
         <SectionHead title="Storage (orca filesystem only)" />
-        <!-- `SystemInfoReport` carries no per-disk/per-mount list and no
-             shares — those live in the separate storage domain
-             (`storage.list`, `storage.share.list`, `storage.mount.list`),
-             not this report. Saying so here rather than implying this is
-             the whole picture. -->
+        <!-- Per-disk, mount, and share inventory lives in the storage domain
+             (`storage.list`, `storage.mount.list`, `storage.share.list`); orca#703. -->
         <div class="hw-grid">
           <span class="dim">orca dir</span>
           <span class="mono">{r.orca_dir ?? '—'}</span>
@@ -657,6 +711,11 @@
   }
   .route-note {
     margin: 0;
+  }
+  .health {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
   }
   .hostname-trigger {
     background: none;
