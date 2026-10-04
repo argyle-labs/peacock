@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, within } from '@testing-library/svelte';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { tick } from 'svelte';
 import type {
   HealthReport,
@@ -19,7 +19,8 @@ vi.mock('$lib/client/sdk.gen', () => ({
 import { systemList, systemHealth, systemInfoDetail } from '$lib/client/sdk.gen';
 import Page from './+page.svelte';
 
-const NOW_S = Math.round(Date.now() / 1000);
+const NOW = Date.parse('2026-06-01T12:00:00Z');
+const NOW_S = NOW / 1000;
 
 function member(over: Partial<MeshInstance>): MeshInstance {
   return {
@@ -41,7 +42,7 @@ function member(over: Partial<MeshInstance>): MeshInstance {
 
 function report(over: Partial<HealthReport> = {}): HealthReport {
   return {
-    checkedAtMs: Date.now() - 30_000,
+    checkedAtMs: NOW - 30_000,
     daemon: { running: true, uptime_seconds: 7200 } as HealthReport['daemon'],
     displayName: 'host',
     healthy: true,
@@ -72,7 +73,13 @@ const members: MeshInstance[] = [
     reachable_addrs: ['10.0.0.2:12000'],
     addresses: [{ kind: 'lan', kind_label: 'LAN', value: '10.0.0.2' }],
   }),
-  member({ id: 'r2', peer_id: 'peer-sick', label: 'charlie' }),
+  member({
+    id: 'r2',
+    peer_id: 'peer-sick',
+    label: 'charlie',
+    origin: '10.0.0.9:12000',
+    reachable_addrs: ['10.0.0.3:12000'],
+  }),
   member({ id: 'r3', peer_id: 'peer-down', label: 'delta' }),
   member({ id: 'r4', peer_id: 'peer-disk', label: 'echo' }),
   member({ id: 'r5', peer_id: 'peer-noprobe', label: 'foxtrot' }),
@@ -119,11 +126,17 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(NOW);
   vi.mocked(systemList).mockReset();
   vi.mocked(systemHealth).mockReset();
   vi.mocked(systemInfoDetail).mockReset();
   vi.mocked(systemList).mockResolvedValue({ data: listOutput } as never);
   vi.mocked(systemHealth).mockResolvedValue({ data: { systems: healthRows } } as never);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 async function renderPage() {
@@ -163,29 +176,39 @@ describe('/systems page', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('derives health from the probe: healthy, unhealthy, unreachable, disk pressure', async () => {
+  it('derives health from the probe: healthy, daemon stopped, unreachable, disk pressure', async () => {
     await renderPage();
     expect(healthCell(rowsNamed('bravo')[0])).toHaveTextContent('up');
-    expect(healthCell(rowsNamed('charlie')[0])).toHaveTextContent('degraded');
-    expect(healthCell(rowsNamed('charlie')[0]).title).toContain('probe reports unhealthy');
+    const charlie = healthCell(rowsNamed('charlie')[0]);
+    expect(charlie).toHaveTextContent('down');
+    expect(charlie.querySelector('.fail')).toBeTruthy();
+    expect(charlie.title).toBe('daemon not running · checked 30s ago');
     const delta = healthCell(rowsNamed('delta')[0]);
     expect(delta).toHaveTextContent('unreachable');
     expect(delta.title).toBe('connection refused');
     const echo = healthCell(rowsNamed('echo')[0]);
     expect(echo).toHaveTextContent('degraded');
-    expect(echo.title).toContain('disk 92% used on /');
+    expect(echo.title).toBe('disk 92% used on / · checked 30s ago');
   });
 
-  it('falls back to the roster health only when there is no probe', async () => {
+  it('shows unknown, not the roster status, when there is no probe', async () => {
     await renderPage();
     const foxtrot = healthCell(rowsNamed('foxtrot')[0]);
-    expect(foxtrot).toHaveTextContent('up');
+    expect(foxtrot).toHaveTextContent('unknown');
+    expect(foxtrot.querySelector('.unknown')).toBeTruthy();
     expect(foxtrot.title).toBe('no health probe');
   });
 
   it('uses the probe checkedAtMs for the tooltip', async () => {
     await renderPage();
-    expect(healthCell(rowsNamed('bravo')[0]).title).toMatch(/^checked 3\ds ago$/);
+    expect(healthCell(rowsNamed('bravo')[0]).title).toBe('checked 30s ago');
+  });
+
+  it('warns when the current route is not in the reachable set', async () => {
+    await renderPage();
+    const warn = rowsNamed('charlie')[0].querySelector('.route-warn');
+    expect(warn).toHaveAttribute('aria-label', 'current route not in the reachable set');
+    expect(rowsNamed('bravo')[0].querySelector('.route-warn')).toBeNull();
   });
 
   it('joins the local row by peer id, not the id-less roster error row', async () => {
@@ -240,6 +263,17 @@ describe('/systems page', () => {
     expect(screen.queryByText('first-cpu')).toBeNull();
     expect(screen.getByText('second-cpu')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'Hardware · charlie' })).toBeInTheDocument();
+  });
+
+  it('renders identical GPUs as separate entries', async () => {
+    const gpu = { name: 'RTX 4090', vendor: 'nvidia', utilization_percent: 10 };
+    vi.mocked(systemInfoDetail).mockResolvedValueOnce({
+      data: { host: { ...hwReport('cpu').host, gpus: [gpu, gpu] } },
+    } as never);
+    await renderPage();
+    await fireEvent.click(screen.getByRole('button', { name: 'bravo' }));
+    await tick();
+    expect(await screen.findAllByText('RTX 4090')).toHaveLength(2);
   });
 
   it('aborts the hardware request when the drawer closes', async () => {

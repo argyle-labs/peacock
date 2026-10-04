@@ -69,30 +69,29 @@
     return health.get(m.peer_id);
   }
 
-  function statusOk(v: string): boolean | null {
-    if (v === 'up') return true;
-    if (v === 'down') return false;
-    return null;
-  }
-
   // The roster's `health` is "up" for every active remote and "unknown" for the
-  // local system regardless of any probe (orca#701), so it is only a fallback
-  // when `system.health` returned no row.
+  // local system regardless of any probe (orca#701), so without a probe the
+  // state is unknown. orca sets `healthy` to `daemon.running`.
   function memberHealth(m: MeshInstance): HealthView {
     const row = healthRowFor(m);
     if (row?.error) {
       return { label: 'unreachable', ok: false, degraded: false, title: row.error };
     }
     const h = row?.health;
-    if (!h) {
-      return { label: m.health, ok: statusOk(m.health), degraded: false, title: 'no health probe' };
+    if (!h) return { label: 'unknown', ok: null, degraded: false, title: 'no health probe' };
+    const checked = `checked ${relTime(h.checkedAtMs, 'ms').text}`;
+    if (!h.healthy) {
+      return {
+        label: 'down',
+        ok: false,
+        degraded: false,
+        title: `daemon not running · ${checked}`,
+      };
     }
     const reasons: string[] = [];
-    if (!h.healthy) reasons.push('probe reports unhealthy');
     if (h.disk && h.disk.usedPct >= DISK_WARN_PCT) {
       reasons.push(`disk ${h.disk.usedPct}% used on ${h.disk.path}`);
     }
-    const checked = `checked ${relTime(h.checkedAtMs, 'ms').text}`;
     return {
       label: reasons.length ? 'degraded' : 'up',
       ok: true,

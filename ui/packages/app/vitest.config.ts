@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       $lib: '/src/lib',
       '$app/environment': '/src/mocks/app-environment.ts',
+      '$app/navigation': '/src/mocks/app-navigation.ts',
     },
   },
   test: {

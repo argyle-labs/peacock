@@ -1,12 +1,20 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { tick } from 'svelte';
+  import { pushOverlay } from '@peacock/ui-kit';
   import { NAV_SECTIONS } from '$lib/nav';
   import { isCommandPaletteOpen, closeCommandPalette } from '$lib/stores/commandPalette.svelte';
 
   type Entry = { label: string; href: string; section: string; enabled: boolean };
 
   const open = $derived(isCommandPaletteOpen());
+  const overlayToken = {};
+
+  // Registering as the topmost overlay keeps an open Drawer's Escape and Tab
+  // trap from acting while the palette is up.
+  $effect(() => {
+    if (open) return pushOverlay(overlayToken);
+  });
 
   let query = $state('');
   let activeIdx = $state(0);

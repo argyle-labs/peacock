@@ -18,7 +18,7 @@ export default defineConfig({
     //     its `/` route to the `dev_upstream` peacock registers (see
     //     src/main.rs) and the browser uses :12000 for everything.
     //
-    // Must not be 12001 — see DEV_UPSTREAM in src/main.rs.
+    // Matches DEV_UPSTREAM in src/main.rs.
     proxy: {
       '/api': { target: 'http://127.0.0.1:12000', changeOrigin: false, ws: true },
     },
