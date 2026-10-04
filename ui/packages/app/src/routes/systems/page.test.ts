@@ -25,16 +25,16 @@ const NOW_S = NOW / 1000;
 function member(over: Partial<MeshInstance>): MeshInstance {
   return {
     addresses: [],
-    available_versions: [],
+    availableVersions: [],
     health: 'up',
     id: 'r',
     label: 'host',
     origin: '',
-    peer_id: 'peer',
+    peerId: 'peer',
     port: 12000,
-    reachable_addrs: [],
+    reachableAddrs: [],
     role: 'system',
-    update_available: false,
+    updateAvailable: false,
     version: '0.3.0',
     ...over,
   };
@@ -43,7 +43,7 @@ function member(over: Partial<MeshInstance>): MeshInstance {
 function report(over: Partial<HealthReport> = {}): HealthReport {
   return {
     checkedAtMs: NOW - 30_000,
-    daemon: { running: true, uptime_seconds: 7200 } as HealthReport['daemon'],
+    daemon: { running: true, uptimeSeconds: 7200 } as HealthReport['daemon'],
     displayName: 'host',
     healthy: true,
     machineId: 'm',
@@ -56,8 +56,8 @@ function staleRow(over: Partial<MeshStaleRow>): MeshStaleRow {
   return {
     addr: '10.0.0.50',
     hostname: 'stale',
-    last_seen_at: NOW_S,
-    peer_id: 'stale-peer',
+    lastSeenAt: NOW_S,
+    peerId: 'stale-peer',
     port: 12000,
     reason: 'orphan',
     ...over,
@@ -67,37 +67,37 @@ function staleRow(over: Partial<MeshStaleRow>): MeshStaleRow {
 const members: MeshInstance[] = [
   member({
     id: 'r1',
-    peer_id: 'peer-healthy',
+    peerId: 'peer-healthy',
     label: 'bravo',
     origin: '10.0.0.2:12000',
-    reachable_addrs: ['10.0.0.2:12000'],
-    addresses: [{ kind: 'lan', kind_label: 'LAN', value: '10.0.0.2' }],
+    reachableAddrs: ['10.0.0.2:12000'],
+    addresses: [{ kind: 'lan', kindLabel: 'LAN', value: '10.0.0.2' }],
   }),
   member({
     id: 'r2',
-    peer_id: 'peer-sick',
+    peerId: 'peer-sick',
     label: 'charlie',
     origin: '10.0.0.9:12000',
-    reachable_addrs: ['10.0.0.3:12000'],
+    reachableAddrs: ['10.0.0.3:12000'],
   }),
-  member({ id: 'r3', peer_id: 'peer-down', label: 'delta' }),
-  member({ id: 'r4', peer_id: 'peer-disk', label: 'echo' }),
-  member({ id: 'r5', peer_id: 'peer-noprobe', label: 'foxtrot' }),
+  member({ id: 'r3', peerId: 'peer-down', label: 'delta' }),
+  member({ id: 'r4', peerId: 'peer-disk', label: 'echo' }),
+  member({ id: 'r5', peerId: 'peer-noprobe', label: 'foxtrot' }),
   member({
     id: '',
-    peer_id: 'local-machine',
+    peerId: 'local-machine',
     role: 'local',
     label: 'alpha',
     health: 'unknown',
-    reachable_addrs: [''],
+    reachableAddrs: [''],
   }),
 ];
 
 const stale: MeshStaleRow[] = [
-  staleRow({ peer_id: 'peer-healthy', hostname: 'bravo' }),
-  staleRow({ peer_id: 'peer-ghost', hostname: 'golf', last_seen_at: NOW_S - 1000 }),
-  staleRow({ peer_id: 'peer-ghost', hostname: 'golf', last_seen_at: NOW_S - 10 }),
-  staleRow({ peer_id: 'old-self', hostname: 'alpha', reason: 'stale self identity' }),
+  staleRow({ peerId: 'peer-healthy', hostname: 'bravo' }),
+  staleRow({ peerId: 'peer-ghost', hostname: 'golf', lastSeenAt: NOW_S - 1000 }),
+  staleRow({ peerId: 'peer-ghost', hostname: 'golf', lastSeenAt: NOW_S - 10 }),
+  staleRow({ peerId: 'old-self', hostname: 'alpha', reason: 'stale self identity' }),
 ];
 
 const healthRows: MeshHealthRow[] = [
@@ -113,10 +113,10 @@ const healthRows: MeshHealthRow[] = [
   { id: '', host: '', error: 'enumerate mesh systems: roster locked' },
 ];
 
-const listOutput: MeshInstancesOutput = { candidates: [], inbound_offers: [], members, stale };
+const listOutput: MeshInstancesOutput = { candidates: [], inboundOffers: [], members, stale };
 
 function hwReport(cpu: string): { host: SystemInfoReport } {
-  return { host: { cpu_model: cpu, gpus: [], interfaces: [], detected_capabilities: [] } };
+  return { host: { cpuModel: cpu, gpus: [], interfaces: [], detectedCapabilities: [] } };
 }
 
 function deferred<T>() {
@@ -266,7 +266,7 @@ describe('/systems page', () => {
   });
 
   it('renders identical GPUs as separate entries', async () => {
-    const gpu = { name: 'RTX 4090', vendor: 'nvidia', utilization_percent: 10 };
+    const gpu = { name: 'RTX 4090', vendor: 'nvidia', utilizationPercent: 10 };
     vi.mocked(systemInfoDetail).mockResolvedValueOnce({
       data: { host: { ...hwReport('cpu').host, gpus: [gpu, gpu] } },
     } as never);

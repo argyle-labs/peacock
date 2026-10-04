@@ -11,11 +11,11 @@ export const candidateSpecs: Record<string, CellSpec> = {
   addr: { kind: 'addr', hostField: 'addr', portField: 'port' },
   invite: {
     kind: 'badge',
-    field: 'can_invite',
+    field: 'canInvite',
     toneMap: { true: 'success', false: 'neutral' },
     labelMap: { true: 'yes', false: 'no' },
   },
-  fp: { kind: 'mono', field: 'pubkey_fp' },
+  fp: { kind: 'mono', field: 'pubkeyFp' },
 };
 
 // Labels for `MeshStaleRow.reason`, shown in the Health cell tooltip.
@@ -26,8 +26,8 @@ export const staleReasonLabels: Record<string, string> = {
 };
 
 export const offerSpecs: Record<string, CellSpec> = {
-  hostname: { kind: 'text', field: 'peer_hostname' },
-  addr: { kind: 'addr', hostField: 'peer_addr', portField: 'peer_port' },
-  inviter: { kind: 'mono', field: 'inviter_peer_id' },
-  ttl: { kind: 'uptime', field: 'ttl_secs' },
+  hostname: { kind: 'text', field: 'peerHostname' },
+  addr: { kind: 'addr', hostField: 'peerAddr', portField: 'peerPort' },
+  inviter: { kind: 'mono', field: 'inviterPeerId' },
+  ttl: { kind: 'uptime', field: 'ttlSecs' },
 };

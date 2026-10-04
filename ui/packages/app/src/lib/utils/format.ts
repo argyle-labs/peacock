@@ -17,6 +17,6 @@ export function fmtGb(gb: number): string {
 }
 
 export function fmtGpu(g: GpuInfo): string {
-  const util = g.utilization_percent != null ? ` ${g.utilization_percent.toFixed(0)}%` : '';
+  const util = g.utilizationPercent != null ? ` ${g.utilizationPercent.toFixed(0)}%` : '';
   return `${g.name}${util}`;
 }

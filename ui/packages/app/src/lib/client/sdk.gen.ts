@@ -142,6 +142,9 @@ import type {
   GuestWriteFileData,
   GuestWriteFileErrors,
   GuestWriteFileResponses,
+  IdentityPrivilegeAuditData,
+  IdentityPrivilegeAuditErrors,
+  IdentityPrivilegeAuditResponses,
   MediaDetailData,
   MediaDetailErrors,
   MediaDetailResponses,
@@ -1592,6 +1595,34 @@ export const guestWriteFile = <ThrowOnError extends boolean = false>(
       },
     ],
     url: '/api/v1/guest.write_file',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * identity.privilege.audit
+ *
+ * Report every sudo/doas grant on the host this runs on, flagging dangling targets and sole grants. Pure filesystem read: `audit` is a read-shaped verb, so it is neither gated nor a mutation. `role = "read"` because the grant list maps out which accounts can become root.
+ */
+export const identityPrivilegeAudit = <ThrowOnError extends boolean = false>(
+  options: Options<IdentityPrivilegeAuditData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    IdentityPrivilegeAuditResponses,
+    IdentityPrivilegeAuditErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/identity.privilege.audit',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -3558,7 +3589,7 @@ export const storageShareList = <ThrowOnError extends boolean = false>(
 /**
  * storage.share.repair-permissions
  *
- * storage_share_repair_permissions
+ * Repair a share's permissions. Without `--apply` it detects mode and ownership drift against sibling shares and changes nothing; with `--apply` it writes the confirmed mode/owner onto the path.
  */
 export const storageShareRepairPermissions = <ThrowOnError extends boolean = false>(
   options: Options<StorageShareRepairPermissionsData, ThrowOnError>,
@@ -4330,7 +4361,7 @@ export const unitIdentityUpdate = <ThrowOnError extends boolean = false>(
 /**
  * web.update
  *
- * [MUTATES STATE when `--path`+`--owner` given] The single web-route ownership tool. Read-only (omit args) it reports every registered path, its active owner, and any contenders. With `--path`+`--owner` it makes that provider the active owner of that exact path and persists the choice; a bad selection is refused non-fatally (the incumbent keeps serving). Mirrors how a contested `/` is resolved: the user picks a different UI plugin here.
+ * The single web-route ownership tool. Mutates only when `--path` and `--owner` are both given: it makes that provider the active owner of that exact path and persists the choice; a bad selection is refused non-fatally (the incumbent keeps serving). Omit both args and it is a pure read, reporting every registered path, its active owner, and any contenders. Mirrors how a contested `/` is resolved: the user picks a different UI plugin here.
  */
 export const webUpdate = <ThrowOnError extends boolean = false>(
   options: Options<WebUpdateData, ThrowOnError>,
