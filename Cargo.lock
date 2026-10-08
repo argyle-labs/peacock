@@ -894,10 +894,6 @@ dependencies = [
  "mime_guess",
  "plugin-toolkit",
  "rust-embed",
- "schemars",
- "serde",
- "serde_json",
- "tokio",
  "tracing",
 ]
 
