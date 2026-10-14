@@ -65,6 +65,8 @@ jobs:
         uses: argyle-labs/.github/.github/actions/job-rust-test@main
         with:
           ui: 'true'
+          # Binary crate with no Rust tests yet; warn rather than fail on an empty run.
+          no-tests: warn
           sccache-endpoint: ${{ vars.SCCACHE_ENDPOINT }}
           sccache-access-key: ${{ secrets.SCCACHE_S3_ACCESS_KEY }}
           sccache-secret-key: ${{ secrets.SCCACHE_S3_SECRET_KEY }}
@@ -80,7 +82,8 @@ jobs:
       - name: Vite test
         uses: argyle-labs/.github/.github/actions/job-vite-test@main
         with:
-          test-command: npm run test:run
+          # The app's tsconfig extends .svelte-kit/tsconfig.json, which `svelte-kit sync` generates.
+          test-command: npm exec -w @peacock/app -- svelte-kit sync && npm run test:run
           check-command: npm run check
           sccache-endpoint: ${{ vars.SCCACHE_ENDPOINT }}
           sccache-access-key: ${{ secrets.SCCACHE_S3_ACCESS_KEY }}
