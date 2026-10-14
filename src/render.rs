@@ -32,19 +32,97 @@ struct Assets;
 /// `/index.html`) for client-side routing.
 #[orca_tool(domain = "peacock", verb = "render", cli = skip)]
 async fn render(req: WebRequest, _ctx: &contract::ToolCtx) -> anyhow::Result<WebResponse> {
-    let rel = req.path.trim_start_matches('/');
+    Ok(respond(&req.path, |rel| {
+        Assets::get(rel).map(|a| a.data.into_owned())
+    }))
+}
+
+/// Map a request path to a response using `lookup` to fetch asset bytes.
+fn respond(path: &str, lookup: impl Fn(&str) -> Option<Vec<u8>>) -> WebResponse {
+    let rel = path.trim_start_matches('/');
     let rel = if rel.is_empty() { "index.html" } else { rel };
 
-    match Assets::get(rel) {
-        Some(asset) => {
+    match lookup(rel) {
+        Some(data) => {
             let mime = mime_guess::from_path(rel).first_or_octet_stream();
-            Ok(WebResponse {
+            WebResponse {
                 status: 200,
                 headers: vec![("content-type".to_string(), mime.as_ref().to_string())],
-                body_b64: B64.encode(asset.data.as_ref()),
-            })
+                body_b64: B64.encode(data),
+            }
         }
         // Bare 404 → orca's SPA fallback re-requests `/index.html`.
-        None => Ok(WebResponse::not_found()),
+        None => WebResponse::not_found(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fixture(rel: &str) -> Option<Vec<u8>> {
+        match rel {
+            "index.html" => Some(b"<html></html>".to_vec()),
+            "_app/app.js" => Some(b"export {}".to_vec()),
+            "style.css" => Some(b"body{}".to_vec()),
+            "blob.unknownext" => Some(vec![0, 1, 2]),
+            _ => None,
+        }
+    }
+
+    fn content_type(resp: &WebResponse) -> &str {
+        resp.headers
+            .iter()
+            .find(|(k, _)| k == "content-type")
+            .map(|(_, v)| v.as_str())
+            .unwrap()
+    }
+
+    #[test]
+    fn root_serves_index() {
+        for path in ["/", ""] {
+            let resp = respond(path, fixture);
+            assert_eq!(resp.status, 200);
+            assert_eq!(content_type(&resp), "text/html");
+            assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"<html></html>");
+        }
+    }
+
+    #[test]
+    fn nested_asset_strips_leading_slashes() {
+        let resp = respond("//_app/app.js", fixture);
+        assert_eq!(resp.status, 200);
+        assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"export {}");
+    }
+
+    #[test]
+    fn content_type_follows_extension() {
+        assert_eq!(content_type(&respond("/style.css", fixture)), "text/css");
+        assert!(content_type(&respond("/_app/app.js", fixture)).contains("javascript"));
+        assert_eq!(
+            content_type(&respond("/blob.unknownext", fixture)),
+            "application/octet-stream"
+        );
+    }
+
+    #[test]
+    fn unknown_path_is_bare_404_for_spa_fallback() {
+        let resp = respond("/systems/abc", fixture);
+        let expected = WebResponse::not_found();
+        assert_eq!(resp.status, 404);
+        assert_eq!(resp.status, expected.status);
+        assert_eq!(resp.body_b64, expected.body_b64);
+    }
+
+    #[test]
+    fn traversal_path_is_404() {
+        let embedded = |rel: &str| Assets::get(rel).map(|a| a.data.into_owned());
+        assert_eq!(respond("/../Cargo.toml", embedded).status, 404);
+        assert_eq!(respond("/../../src/main.rs", embedded).status, 404);
+    }
+
+    #[test]
+    fn embedded_index_is_present() {
+        assert!(Assets::get("index.html").is_some());
     }
 }
