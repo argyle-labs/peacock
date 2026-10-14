@@ -87,3 +87,30 @@ fn spawn_vite() -> Option<Child> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn backends_json_declares_root_web_route() {
+        let v: serde_json::Value = serde_json::from_str(&backends_json()).unwrap();
+        let backends = v.as_array().unwrap();
+        assert_eq!(backends.len(), 1);
+        let b = &backends[0];
+        assert_eq!(b["domain"], "web");
+        assert_eq!(b["name"], "peacock");
+        assert_eq!(b["endpoint"], "/");
+        assert_eq!(b["invoke_prefix"], "peacock");
+        let caps: Vec<&str> = b["capabilities"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c.as_str().unwrap())
+            .collect();
+        assert_eq!(
+            caps,
+            ["spa_fallback", "dev_upstream=http://127.0.0.1:12004"]
+        );
+    }
+}

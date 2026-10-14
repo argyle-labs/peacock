@@ -894,6 +894,7 @@ dependencies = [
  "mime_guess",
  "plugin-toolkit",
  "rust-embed",
+ "serde_json",
  "tracing",
 ]
 
