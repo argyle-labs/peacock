@@ -26,9 +26,9 @@ path = "src/main.rs"
 # `contract` + `derive` are needed directly because the
 # `#[orca_tool]` surface and the typed `contract::web::{WebRequest,WebResponse}`
 # request/response types are referenced in plugin source.
-plugin-toolkit = { git = "https://github.com/argyle-labs/orca", branch = "main", default-features = false, features = ["tools", "db"] }
-contract = { git = "https://github.com/argyle-labs/orca", branch = "main", default-features = false }
-derive = { git = "https://github.com/argyle-labs/orca", branch = "main" }
+plugin-toolkit = { git = "https://github.com/argyle-labs/orca", branch = "main", package = "orca-plugin-toolkit", default-features = false, features = ["tools", "db"] }
+contract = { git = "https://github.com/argyle-labs/orca", branch = "main", package = "orca-contract", default-features = false }
+derive = { git = "https://github.com/argyle-labs/orca", branch = "main", package = "orca-derive" }
 
 anyhow = "1"
 base64 = "0.22"
