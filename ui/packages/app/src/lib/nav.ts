@@ -24,4 +24,8 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Fleet',
     items: [{ label: 'Systems', href: '/systems', icon: '🖧', enabled: true }],
   },
+  {
+    label: 'Delivery',
+    items: [{ label: 'Releases', href: '/releases', icon: '🚀', enabled: true }],
+  },
 ];
