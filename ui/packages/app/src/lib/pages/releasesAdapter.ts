@@ -6,25 +6,31 @@ export interface ReleaseDraft {
   repo: string;
   tag: string;
   kind: ReleaseKind;
-  draft: boolean;
-  created: string | null;
-  htmlUrl: string;
+  createdAt: string | null;
+  publishUrl: string | null;
 }
 
 export type RunPhase = 'running' | 'queued' | 'failed' | 'other';
 
+export interface RunFailure {
+  job: string | null;
+  stage: 'setup' | 'step';
+  step: string | null;
+  runnerName: string | null;
+  logTail: string[];
+  url: string | null;
+}
+
 export interface ReleaseRun {
   repo: string;
   runId: string;
-  tag: string;
+  tag: string | null;
   status: string;
   conclusion: string | null;
   durationSecs: number | null;
-  htmlUrl: string;
+  url: string | null;
   phase: RunPhase;
-  failedJob: string | null;
-  failedStep: string | null;
-  logTail: string | null;
+  failure: RunFailure | null;
 }
 
 export interface Runner {
@@ -32,91 +38,139 @@ export interface Runner {
   labels: string[];
   online: boolean;
   busy: boolean;
-  flags: string[];
+  disabled: boolean;
+  setupFailures: string[];
 }
 
-export interface RunnerHealth {
+export interface RunnerFleet {
   runners: Runner[];
-  starvedLabels: string[];
+  starved: { labels: string[]; detail: string }[];
+  notes: string[];
 }
 
-type Raw = Record<string, unknown>;
-
-async function callTool(name: string): Promise<unknown> {
-  const res = await client.post({ url: `/api/v1/${name}`, body: {} });
-  return res.data;
+export interface Releases {
+  drafts: ReleaseDraft[];
+  runs: ReleaseRun[];
+  fleet: RunnerFleet;
+  notes: string[];
 }
 
-function list(v: unknown, key: string): Raw[] {
-  if (Array.isArray(v)) return v as Raw[];
-  if (v && typeof v === 'object' && Array.isArray((v as Raw)[key])) return (v as Raw)[key] as Raw[];
-  return [];
+interface WireRelease {
+  repo: string;
+  tag: string;
+  kind: ReleaseKind;
+  createdAt: string | null;
+  url: string | null;
+  publishUrl: string | null;
 }
 
-const str = (v: unknown): string => (v == null ? '' : String(v));
-const optStr = (v: unknown): string | null => (v == null || v === '' ? null : String(v));
-const strs = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
+interface WireRun {
+  repo: string;
+  runId: number | string;
+  tag: string | null;
+  status: string;
+  conclusion: string | null;
+  durationSecs: number | null;
+  url: string | null;
+  failure?: RunFailure;
+}
 
-export function mapDraft(r: Raw): ReleaseDraft {
+interface WireRunner {
+  name: string;
+  online: boolean;
+  busy: boolean;
+  disabled: boolean;
+  labels: string[];
+}
+
+interface WireFlag {
+  kind: 'setupFailures' | 'noOnlineRunner';
+  runner?: string;
+  labels: string[];
+  detail: string;
+}
+
+interface WireFleet {
+  runners: WireRunner[];
+  instanceRunners?: string;
+  flags: WireFlag[];
+  notes?: string[];
+}
+
+async function callTool<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  const res = await client.post({ url: `/api/v1/${name}`, body });
+  return res.data as T;
+}
+
+export async function fetchEndpoint(): Promise<string | null> {
+  const out = await callTool<{ endpoints: { name: string; enabled: boolean }[] }>('gitea.list', {});
+  return out.endpoints.find(e => e.enabled)?.name ?? null;
+}
+
+export function mapDraft(r: WireRelease): ReleaseDraft {
   return {
-    repo: str(r.repo),
-    tag: str(r.tag),
-    kind: r.kind === 'stable' ? 'stable' : 'rc',
-    draft: r.draft !== false,
-    created: optStr(r.created),
-    htmlUrl: str(r.html_url),
+    repo: r.repo,
+    tag: r.tag,
+    kind: r.kind,
+    createdAt: r.createdAt,
+    publishUrl: r.publishUrl ?? r.url,
   };
 }
 
 function phaseOf(status: string, conclusion: string | null): RunPhase {
   if (conclusion === 'failure' || status === 'failure') return 'failed';
-  if (status === 'running' || status === 'in_progress') return 'running';
-  if (status === 'queued' || status === 'waiting' || status === 'blocked') return 'queued';
+  if (status === 'running') return 'running';
+  if (status === 'waiting' || status === 'blocked' || status === 'queued') return 'queued';
   return 'other';
 }
 
-export function mapRun(r: Raw): ReleaseRun {
-  const status = str(r.status);
-  const conclusion = optStr(r.conclusion);
-  const failure = (r.failure ?? {}) as Raw;
+export function mapRun(r: WireRun): ReleaseRun {
   return {
-    repo: str(r.repo),
-    runId: str(r.run_id ?? r.id),
-    tag: str(r.tag),
-    status,
-    conclusion,
-    durationSecs: typeof r.duration === 'number' ? r.duration : null,
-    htmlUrl: str(r.html_url),
-    phase: phaseOf(status, conclusion),
-    failedJob: optStr(r.failed_job ?? failure.job),
-    failedStep: optStr(r.failed_step ?? failure.step),
-    logTail: optStr(r.log_tail ?? failure.log_tail),
+    repo: r.repo,
+    runId: String(r.runId),
+    tag: r.tag,
+    status: r.status,
+    conclusion: r.conclusion,
+    durationSecs: r.durationSecs,
+    url: r.url,
+    phase: phaseOf(r.status, r.conclusion),
+    failure: r.failure ?? null,
   };
 }
 
-export function mapRunner(r: Raw): Runner {
+export function mapFleet(f: WireFleet): RunnerFleet {
+  const setup = f.flags.filter(x => x.kind === 'setupFailures');
   return {
-    name: str(r.name),
-    labels: strs(r.labels),
-    online: r.online === true,
-    busy: r.busy === true,
-    flags: strs(r.flags),
+    runners: f.runners.map(r => ({
+      name: r.name,
+      labels: r.labels,
+      online: r.online,
+      busy: r.busy,
+      disabled: r.disabled,
+      setupFailures: setup.filter(x => x.runner === r.name).map(x => x.detail),
+    })),
+    starved: f.flags
+      .filter(x => x.kind === 'noOnlineRunner')
+      .map(x => ({ labels: x.labels, detail: x.detail })),
+    notes: [...(f.instanceRunners ? [f.instanceRunners] : []), ...(f.notes ?? [])],
   };
 }
 
-export async function fetchDrafts(): Promise<ReleaseDraft[]> {
-  return list(await callTool('gitea.release.list'), 'releases').map(mapDraft);
-}
-
-export async function fetchRuns(): Promise<ReleaseRun[]> {
-  return list(await callTool('gitea.release.runs'), 'runs').map(mapRun);
-}
-
-export async function fetchRunnerHealth(): Promise<RunnerHealth> {
-  const out = await callTool('gitea.runner.health');
-  const starved =
-    out && typeof out === 'object' && !Array.isArray(out)
-      ? strs((out as Raw).starved_labels ?? (out as Raw).unserved_labels)
-      : [];
-  return { runners: list(out, 'runners').map(mapRunner), starvedLabels: starved };
+export async function fetchReleases(): Promise<Releases | null> {
+  const endpoint = await fetchEndpoint();
+  if (!endpoint) return null;
+  const [list, runs, fleet] = await Promise.all([
+    callTool<{ releases: WireRelease[]; notes?: string[] }>('gitea.release.list', {
+      endpoint,
+      draftOnly: true,
+    }),
+    callTool<{ runs: WireRun[] }>('gitea.release.runs', { endpoint }),
+    callTool<WireFleet>('gitea.runner.fleet', { endpoint }),
+  ]);
+  return {
+    drafts: list.releases.map(mapDraft),
+    runs: runs.runs.map(mapRun),
+    fleet: mapFleet(fleet),
+    notes: list.notes ?? [],
+  };
 }
