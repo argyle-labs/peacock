@@ -8,5 +8,6 @@
 # levels up by packages/app/svelte.config.js — and it must stay at exactly this
 # path because src/render.rs embeds it with `#[folder = "ui/dist/"]`. build.rs
 # writes a placeholder index.html when it is absent so a clean checkout compiles.
-ui/dist/
+ui/dist/*
+!ui/dist/.gitkeep
 *.log
