@@ -6,9 +6,7 @@
   import { relTime, fmtUptime } from '$lib/utils/format';
   import { tableColumns, type Column } from '$lib/pages/descriptor';
   import {
-    fetchDrafts,
-    fetchRuns,
-    fetchRunnerHealth,
+    fetchReleases,
     type ReleaseDraft,
     type ReleaseRun,
     type Runner,
@@ -17,17 +15,21 @@
   let drafts = $state<ReleaseDraft[]>([]);
   let runs = $state<ReleaseRun[]>([]);
   let runners = $state<Runner[]>([]);
-  let starvedLabels = $state<string[]>([]);
+  let starved = $state<{ labels: string[]; detail: string }[]>([]);
+  let notes = $state<string[]>([]);
+  let noEndpoint = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
   async function refresh() {
     try {
-      const [d, r, h] = await Promise.all([fetchDrafts(), fetchRuns(), fetchRunnerHealth()]);
-      drafts = d;
-      runs = r;
-      runners = h.runners;
-      starvedLabels = h.starvedLabels;
+      const out = await fetchReleases();
+      noEndpoint = out === null;
+      drafts = out?.drafts ?? [];
+      runs = out?.runs ?? [];
+      runners = out?.fleet.runners ?? [];
+      starved = out?.fleet.starved ?? [];
+      notes = out ? [...out.notes, ...out.fleet.notes] : [];
       error = null;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -43,16 +45,25 @@
   const failedRuns = $derived(runs.filter(r => r.phase === 'failed'));
 
   function created(d: ReleaseDraft): string {
-    if (!d.created) return '—';
-    const ms = Date.parse(d.created);
-    return Number.isNaN(ms) ? d.created : relTime(ms, 'ms').text;
+    if (!d.createdAt) return '—';
+    const ms = Date.parse(d.createdAt);
+    return Number.isNaN(ms) ? d.createdAt : relTime(ms, 'ms').text;
   }
 
   function duration(r: ReleaseRun): string {
     return r.durationSecs == null ? '—' : fmtUptime(r.durationSecs);
   }
 
+  function failedAt(r: ReleaseRun): string {
+    const f = r.failure;
+    if (f?.stage === 'setup') {
+      return `Failed before any step (runner setup) on ${f.runnerName ?? 'unknown runner'}`;
+    }
+    return `Failed at ${[f?.job, f?.step].filter(Boolean).join(' › ') || 'unknown step'}`;
+  }
+
   function runnerState(r: Runner): { label: string; ok: boolean | null; degraded: boolean } {
+    if (r.disabled) return { label: 'disabled', ok: null, degraded: false };
     if (!r.online) return { label: 'offline', ok: false, degraded: false };
     if (r.busy) return { label: 'busy', ok: true, degraded: true };
     return { label: 'online', ok: true, degraded: false };
@@ -78,17 +89,19 @@
 {#snippet tagCell(d: ReleaseDraft)}<span class="mono">{d.tag}</span>{/snippet}
 {#snippet createdCell(d: ReleaseDraft)}{created(d)}{/snippet}
 {#snippet publishCell(d: ReleaseDraft)}
-  <a
-    class="link"
-    href={d.htmlUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label={`Publish ${d.repo} ${d.tag} in Gitea (opens in a new tab)`}>Publish in Gitea</a
-  >
+  {#if d.publishUrl}<a
+      class="link"
+      href={d.publishUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Publish ${d.repo} ${d.tag} in Gitea (opens in a new tab)`}>Publish in Gitea</a
+    >{:else}<span class="dim">no link</span>{/if}
 {/snippet}
 
 {#snippet runRepoCell(r: ReleaseRun)}
-  <a class="link" href={r.htmlUrl} target="_blank" rel="noopener noreferrer">{r.repo} #{r.runId}</a>
+  {#if r.url}<a class="link" href={r.url} target="_blank" rel="noopener noreferrer"
+      >{r.repo} #{r.runId}</a
+    >{:else}{r.repo} #{r.runId}{/if}
 {/snippet}
 {#snippet runTagCell(r: ReleaseRun)}<span class="mono">{r.tag || '—'}</span>{/snippet}
 {#snippet runStatusCell(r: ReleaseRun)}
@@ -110,11 +123,11 @@
   </span>
 {/snippet}
 {#snippet runnerFlagsCell(r: Runner)}
-  {#if r.flags.length === 0}
+  {#if r.setupFailures.length === 0}
     <span class="dim">—</span>
   {:else}
     <span class="chips">
-      {#each r.flags as f (f)}<Badge tone="warning">{f}</Badge>{/each}
+      {#each r.setupFailures as f (f)}<Badge tone="warning">{f}</Badge>{/each}
     </span>
   {/if}
 {/snippet}
@@ -123,6 +136,12 @@
   {#if error}
     <p class="banner-error" role="alert">Failed to refresh releases: {error}</p>
   {/if}
+  {#if noEndpoint}
+    <p class="banner-info" role="status">No enabled gitea endpoint is configured.</p>
+  {/if}
+  {#each notes as n (n)}
+    <p class="banner-info">{n}</p>
+  {/each}
 
   <section aria-label="Awaiting approval">
     <SectionHead title="Awaiting approval" />
@@ -173,22 +192,20 @@
           <li class="failure">
             <div class="failure-head">
               <StatusDot ok={false} />
-              <a class="link" href={r.htmlUrl} target="_blank" rel="noopener noreferrer"
-                >{r.repo} #{r.runId}</a
+              <a
+                class="link"
+                href={r.failure?.url ?? r.url}
+                target="_blank"
+                rel="noopener noreferrer">{r.repo} #{r.runId}</a
               >
-              <span class="mono">{r.tag}</span>
+              <span class="mono">{r.tag ?? '—'}</span>
               <span class="dim">{duration(r)}</span>
             </div>
-            <p class="failure-step">
-              Failed at
-              <strong
-                >{[r.failedJob, r.failedStep].filter(Boolean).join(' › ') || 'unknown step'}</strong
-              >
-            </p>
-            {#if r.logTail}
+            <p class="failure-step"><strong>{failedAt(r)}</strong></p>
+            {#if r.failure?.logTail.length}
               <details>
                 <summary>Log tail</summary>
-                <pre class="log">{r.logTail}</pre>
+                <pre class="log">{r.failure.logTail.join('\n')}</pre>
               </details>
             {/if}
           </li>
@@ -199,12 +216,13 @@
 
   <section aria-label="Runners">
     <SectionHead title="Runners" />
-    {#if starvedLabels.length > 0}
+    {#each starved as f (f.labels.join(','))}
       <p class="banner-warn" role="status">
         Queued jobs with no online runner for:
-        {#each starvedLabels as l (l)}<Badge tone="warning">{l}</Badge>{/each}
+        {#each f.labels as l (l)}<Badge tone="warning">{l}</Badge>{/each}
+        <span>{f.detail}</span>
       </p>
-    {/if}
+    {/each}
     <DataTable
       columns={tableColumns([
         { key: 'name', label: 'Runner', cell: runnerNameCell },
@@ -240,6 +258,14 @@
     background: color-mix(in srgb, var(--color-error) 15%, transparent);
     border: 1px solid var(--color-error);
     color: var(--color-error);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+  .banner-info {
+    border: 1px solid var(--color-info);
+    color: var(--color-text);
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
