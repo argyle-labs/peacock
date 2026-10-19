@@ -19,10 +19,9 @@ use derive::orca_tool;
 /// `ui/dist` is the SvelteKit adapter-static output — `@peacock/app`'s
 /// `packages/app/svelte.config.js` aims `pages`/`assets` two levels up at
 /// `../../dist` precisely so it lands here. `npm run build` in `ui/` (the npm
-/// workspace root, which delegates to that package) regenerates it. A
-/// clean checkout ships a tracked placeholder `ui/dist/index.html` so rust-embed
-/// always has a folder to read; the real build overwrites it. rust-embed
-/// tolerates an empty folder — the render simply 404s until built.
+/// workspace root, which delegates to that package) regenerates it. `build.rs`
+/// writes a placeholder `index.html` when it is absent so a clean checkout
+/// compiles.
 #[derive(rust_embed::RustEmbed)]
 #[folder = "ui/dist/"]
 struct Assets;
