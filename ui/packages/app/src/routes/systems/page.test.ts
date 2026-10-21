@@ -67,7 +67,7 @@ function staleRow(over: Partial<MeshStaleRow>): MeshStaleRow {
 
 const members: MeshInstance[] = [
   member({
-    id: 'peer-healthy',
+    id: 'sys-bravo',
     peer_id: 'peer-healthy',
     label: 'bravo',
     origin: '10.0.0.2:12000',
@@ -85,7 +85,7 @@ const members: MeshInstance[] = [
   member({ id: 'peer-disk', peer_id: 'peer-disk', label: 'echo' }),
   member({ id: 'peer-noprobe', peer_id: 'peer-noprobe', label: 'foxtrot' }),
   member({
-    id: 'local-machine',
+    id: '',
     peer_id: 'local-machine',
     role: 'local',
     label: 'alpha',
@@ -95,17 +95,17 @@ const members: MeshInstance[] = [
 ];
 
 const stale: MeshStaleRow[] = [
-  staleRow({ id: 'peer-healthy', peer_id: 'peer-healthy', hostname: 'bravo' }),
+  staleRow({ id: 'sys-bravo', peer_id: 'peer-bravo-old', hostname: 'bravo' }),
   staleRow({
     id: 'peer-ghost',
-    peer_id: 'peer-ghost',
+    peer_id: 'ghost-a',
     hostname: 'golf',
     last_seen_at: NOW_S - 1000,
   }),
-  staleRow({ id: 'peer-ghost', peer_id: 'peer-ghost', hostname: 'golf', last_seen_at: NOW_S - 10 }),
+  staleRow({ id: 'peer-ghost', peer_id: 'ghost-b', hostname: 'golf', last_seen_at: NOW_S - 10 }),
   staleRow({
     id: 'old-self',
-    peer_id: 'old-self',
+    peer_id: 'old-self-peer',
     hostname: 'alpha',
     reason: 'stale self identity',
   }),
@@ -113,7 +113,7 @@ const stale: MeshStaleRow[] = [
 
 const healthRows: MeshHealthRow[] = [
   { id: 'local-machine', host: 'alpha', health: report() },
-  { id: 'peer-healthy', host: 'bravo', health: report() },
+  { id: 'sys-bravo', host: 'bravo', health: report() },
   { id: 'peer-sick', host: 'charlie', health: report({ healthy: false }) },
   { id: 'peer-down', host: 'delta', error: 'connection refused' },
   {
@@ -222,8 +222,9 @@ describe('/systems page', () => {
     expect(rowsNamed('bravo')[0].querySelector('.route-warn')).toBeNull();
   });
 
-  it('joins the local row by peer id, not the id-less roster error row', async () => {
+  it('joins health by id, falling back to peer id for an id-less local row, not the id-less roster error row', async () => {
     await renderPage();
+    expect(healthCell(rowsNamed('bravo')[0])).toHaveTextContent('up');
     const local = rowsNamed('alpha').find(tr => tr.textContent?.includes('(this system)'))!;
     expect(healthCell(local)).toHaveTextContent('up');
     expect(screen.getByText(/Health is incomplete: enumerate mesh systems/)).toBeInTheDocument();
@@ -238,7 +239,7 @@ describe('/systems page', () => {
     expect(screen.getByText('No LAN addresses reported')).toBeInTheDocument();
   });
 
-  it('drops stale rows that duplicate a member or each other', async () => {
+  it('drops stale rows whose id duplicates a member or each other', async () => {
     await renderPage();
     expect(rowsNamed('bravo')).toHaveLength(1);
     const golf = rowsNamed('golf');
