@@ -179,8 +179,13 @@ export type BackupRecord = {
   note?: string | null;
   /**
    * Absolute path to this backup's payload directory on the host that holds it.
+   *
+   * Derived by the store from WHERE the manifest was found, never read back
+   * from the manifest: a manifest on a shared pool may be written by another
+   * host or crafted, and this path is what prune deletes. On disk it is the
+   * slot-relative `payload`.
    */
-  path: string;
+  path?: string;
   /**
    * Total payload size in bytes.
    */
@@ -194,6 +199,11 @@ export type BackupRecord = {
    * operator must never have to name a host to find out.
    */
   system?: string;
+  /**
+   * The host that wrote this backup. Absent on backups written before writer
+   * identity was recorded.
+   */
+  writer?: BackupWriter | null;
 };
 
 /**
@@ -211,9 +221,36 @@ export type BackupTargetRef = {
    */
   kind: string;
   /**
+   * The backup kinds this target receives. `None` = every kind not claimed
+   * by another target's explicit `kinds` list (see [`Self::accepts`]).
+   */
+  kinds?: Array<string> | null;
+  /**
    * Instance name within the kind. `default` for the single, unnamed target.
    */
   name?: string;
+  /**
+   * The target's storage is intentionally shared by several hosts (a sync
+   * pool). Slot ids written here carry a host discriminator, same-kind
+   * destinations on it are not collisions, and it only ever receives the
+   * kinds it lists explicitly.
+   */
+  shared?: boolean;
+};
+
+/**
+ * The host that produced a backup. Distinguishes writers sharing one pool.
+ */
+export type BackupWriter = {
+  /**
+   * Display hostname of the writer.
+   */
+  host: string;
+  /**
+   * Stable machine id of the writer, when known. Preferred over `host` for
+   * identity because hostnames can be reused.
+   */
+  machineId?: string;
 };
 
 export type BinaryStatus = {
@@ -720,6 +757,28 @@ export type Controller = {
   providerInstance: string;
 };
 
+export type CronAction = 'enable' | 'disable' | 'add' | 'remove';
+
+/**
+ * One job line, enabled or commented out.
+ */
+export type CronEntry = {
+  command: string;
+  /**
+   * False when the job line is commented out.
+   */
+  enabled: boolean;
+  /**
+   * 1-based line number in the crontab text.
+   */
+  lineNo: number;
+  raw: string;
+  /**
+   * Five time fields or an `@keyword`, single-space joined.
+   */
+  schedule: string;
+};
+
 /**
  * Runtime snapshot of the orca daemon (pid/port/uptime + liveness).
  *
@@ -796,6 +855,24 @@ export type DbSweepReport = {
 export type DbUpdateAction = 'migrate' | 'up' | 'down' | 'sweep' | 'compact';
 
 /**
+ * A capability a target supports. Consumers check these before invoking an
+ * operation so an unsupported call fails fast rather than at the transport.
+ */
+export type DeployCapability =
+  | 'launch'
+  | 'stop'
+  | 'restart'
+  | 'logs'
+  | 'shell'
+  | 'metrics'
+  | 'snapshot'
+  | 'migrate'
+  | 'provision'
+  | 'destroy'
+  | 'adopt'
+  | 'status';
+
+/**
  * Outcome of a [`DeployTarget::launch`] / `stop` / `restart` operation.
  */
 export type DeployOutcome = {
@@ -812,6 +889,15 @@ export type DeployOutcome = {
    * The workload name acted on.
    */
   workload: string;
+};
+
+export type DeployTargetRow = {
+  capabilities: Array<DeployCapability>;
+  endpoint: string;
+  host: string;
+  id: string;
+  kind: TargetKind;
+  runtime: Runtime;
 };
 
 /**
@@ -851,7 +937,7 @@ export type Drain = {
    * Seconds to wait after the lazy unmount before the forced one, letting
    * in-flight I/O settle.
    */
-  settleSecs?: number;
+  settle_secs?: number;
 };
 
 /**
@@ -898,6 +984,46 @@ export type EndpointArgs = {
 };
 
 /**
+ * What a gated verb WOULD do. Returned in place of the tool's own output when
+ * the caller asked for a dry run.
+ *
+ * `dryRun` is always `true` here — it exists so a caller that cannot tell the
+ * two response shapes apart structurally still has one unambiguous field to
+ * branch on. A response without it applied changes.
+ */
+export type ExecutionPlan = {
+  /**
+   * The changes this verb would make. **Empty means "this verb has not
+   * implemented plan detail yet"**, NOT "nothing would change" — those are
+   * very different claims and a UI must not present the first as the second.
+   * `detailed` disambiguates them.
+   */
+  changes?: Array<PlannedChange>;
+  /**
+   * Whether `changes` is a real enumeration. False = the generic gate
+   * response; the verb refused nothing, it simply cannot yet describe itself.
+   */
+  detailed: boolean;
+  /**
+   * Always `true`. Nothing was changed.
+   */
+  dryRun: boolean;
+  /**
+   * How to actually apply it.
+   */
+  howToExecute: string;
+  inputs: JsonAny & unknown;
+  /**
+   * One-line human summary of the intent.
+   */
+  summary: string;
+  /**
+   * Canonical `<domain>.<verb>` name of the tool that was planned.
+   */
+  tool: string;
+};
+
+/**
  * An export a host serves, tagged with the backend that publishes it. Flat
  * projection of [`plugin_toolkit::storage::ExportEntry`].
  */
@@ -930,7 +1056,7 @@ export type Failover = {
    * Consecutive confirming ticks a transition must persist before it is acted
    * on — the blip filter that rides out a briefly-slow server.
    */
-  confirmTicks?: number;
+  confirm_ticks?: number;
   /**
    * Whether ordered-source fail-over is performed at all. When `false` the
    * mount stays pinned to its primary source and is never re-elected.
@@ -942,7 +1068,7 @@ export type Failover = {
    * (index 0 = primary wins the next election). When `false`, a mount that
    * degraded to a secondary stays there until it too fails.
    */
-  returnToPrimary?: boolean;
+  return_to_primary?: boolean;
 };
 
 export type FixView = {
@@ -955,9 +1081,9 @@ export type FixView = {
 
 export type FleetPluginResult = {
   /**
-   * Per-plugin error. The fan-out continues past it.
+   * Version installed by this run; set only when `status` is `updated`.
    */
-  error?: string | null;
+  applied?: string | null;
   /**
    * Display hostname of the host.
    */
@@ -971,47 +1097,27 @@ export type FleetPluginResult = {
    */
   name: string;
   /**
-   * Human-readable note — e.g. why an unreleased/sideloaded plugin was skipped.
+   * Why the row is `blocked`, `failed` or `unknown`, or why an
+   * `up_to_date` row was left alone (e.g. installed newer than the catalog).
    */
-  note?: string | null;
+  reason?: string | null;
+  status?: UpdateRowStatus & unknown;
   /**
    * Newest version resolved for the plugin.
    */
   target?: string | null;
-  /**
-   * True when `target` is strictly newer than `installed`.
-   */
-  updateAvailable: boolean;
-  /**
-   * True when this plugin was actually (re)installed (execute only).
-   */
-  updated: boolean;
 };
 
 export type FleetSystemResult = {
   /**
-   * Version applied (execute only); `None` on a dry run or no-op.
+   * Version the host reports applying; set on any execute run where the
+   * host applied one, whatever `status` says (a failed health gate keeps it).
    */
   applied?: string | null;
-  /**
-   * True when the host structurally cannot fetch a release asset — no local
-   * `github_token` and no trusted peer to delegate through (#652). A row can
-   * be both `update_available` and `blocked`: a newer version exists, and
-   * THIS host cannot obtain it. Read them together before `--execute`.
-   */
-  blocked: boolean;
-  /**
-   * Why [`Self::blocked`] is set, naming the remedies. `None` when not blocked.
-   */
-  blockedReason?: string | null;
   /**
    * Current daemon version probed on the host.
    */
   current?: string | null;
-  /**
-   * Per-host error (probe/apply/health-gate). The fan-out continues past it.
-   */
-  error?: string | null;
   /**
    * Display hostname of the host.
    */
@@ -1025,13 +1131,14 @@ export type FleetSystemResult = {
    */
   id: string;
   /**
+   * Why the row is `blocked`, `failed` or `unknown`.
+   */
+  reason?: string | null;
+  status?: UpdateRowStatus & unknown;
+  /**
    * Channel-latest the host would move to.
    */
   target?: string | null;
-  /**
-   * True when `target` is strictly newer than `current`.
-   */
-  updateAvailable: boolean;
 };
 
 export type FleetUpdateOutput = {
@@ -1144,10 +1251,10 @@ export type GpuInfo = {
  */
 export type GpuPoint = {
   name: string;
-  temperatureC?: number | null;
-  utilizationPercent?: number | null;
-  vramTotalMb?: number | null;
-  vramUsedMb?: number | null;
+  temperature_c?: number | null;
+  utilization_percent?: number | null;
+  vram_total_mb?: number | null;
+  vram_used_mb?: number | null;
 };
 
 export type GpuSeries = {
@@ -1247,6 +1354,29 @@ export type HealthReport = {
   version: string;
 };
 
+export type HookEntry = {
+  approved: boolean;
+  command: string;
+  event: HookEvent;
+  hash: string;
+  matcher: string;
+  origin: string;
+};
+
+/**
+ * The Claude Code lifecycle events a hook can bind to. Typed — never a raw
+ * string — so composition can validate and group by event.
+ */
+export type HookEvent =
+  | 'PreToolUse'
+  | 'PostToolUse'
+  | 'PreCompact'
+  | 'PostCompact'
+  | 'Stop'
+  | 'Notification'
+  | 'SessionStart'
+  | 'UserPromptSubmit';
+
 export type HostChannel = {
   kind: string;
   last_seen_at: number;
@@ -1286,6 +1416,13 @@ export type JobStatus = {
   lastRunOk?: boolean | null;
   lastRunStarted?: string | null;
 };
+
+/**
+ * Opaque JSON passthrough wrapper for genuinely free-form upstream payloads
+ * (e.g. Home Assistant entity dumps, Proxmox cluster listings, MCP structuredContent).
+ * Using `Value` here is intentional — the upstream schema is not owned by orca.
+ */
+export type JsonAny = unknown;
 
 /**
  * Where bytes physically live — a reference into the storage domain. The same
@@ -1493,24 +1630,6 @@ export type MeshCreateAction = 'join' | 'offer' | 'accept';
  */
 export type MeshDeleteAction = 'kick' | 'leave' | 'forget';
 
-export type MeshDiscoveryRowDto = {
-  addr: string;
-  can_invite: boolean;
-  /**
-   * mDNS-advertised membership: `"unclaimed"` or `"mesh:<mesh_id>"`. Named
-   * `discovery_state` (not `state`) so it doesn't collide with the
-   * `#[serde(tag = "state")]` discriminant on [`MeshMember`], which would
-   * otherwise clobber the `"discovered"` tag and break state filtering.
-   */
-  discovery_state: string;
-  first_seen_at: number;
-  hostname: string;
-  last_seen_at: number;
-  peer_id?: string | null;
-  port: number;
-  pubkey_fp: string;
-};
-
 export type MeshForgetNotice = {
   /**
    * A live member we asked to forget the target.
@@ -1686,15 +1805,122 @@ export type MeshListOutput = {
  * consolidation).
  */
 export type MeshMember =
-  | (MeshPeerDto & {
+  | {
+      /**
+       * Peer-reported release channel.
+       */
+      channel?: string | null;
+      /**
+       * Peer-reported "embedded" / "disabled" UI flag.
+       */
+      frontend?: string | null;
+      hostname: string;
+      /**
+       * Aliases decode rosters from peers that still emit `peer_id`.
+       */
+      id: string;
+      last_seen_at: number;
+      /**
+       * Round-trip latency of the `mesh/ping` probe, milliseconds.
+       */
+      latency_ms?: number | null;
+      /**
+       * True for the synthetic local-host row prepended to `system.list`. Remote
+       * peers are always false. Lets UIs flag "this is me" without string
+       * matching the hostname.
+       */
+      local?: boolean;
+      local_secure: boolean;
+      /**
+       * Peer-reported daemon mode: "daemon" | "parked" | "dev".
+       */
+      mode?: string | null;
+      peer_secure: boolean;
+      /**
+       * Peer-reported version pin if set.
+       */
+      pinned_to?: string | null;
+      port: number;
+      /**
+       * Error string from the probe path (ping / runtime-spec / update-check).
+       * First failure wins so the UI has one line to surface.
+       */
+      probe_error?: string | null;
+      /**
+       * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
+       * Propagated through roster sync so peers learned via intermediary can
+       * transitively pin the fp instead of arriving with `None` — without
+       * this, mesh/exec from a roster-synced peer is refused with "no pinned
+       * bootstrap key" forever after.
+       */
+      pubkey_fp?: string | null;
+      /**
+       * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
+       * skipped (e.g. departed peers); `Some(false)` when the dial errored.
+       */
+      reachable?: boolean | null;
+      routes?: Routes & unknown;
       state: 'joined';
-    })
+      /**
+       * "active" | "departed".
+       */
+      status: string;
+      /**
+       * Lean topology facts (hostname/type/cluster/virt/macs/claims/primary IPs)
+       * projected from the peer's `system.detail`. Drives parent-inference,
+       * cluster grouping, and host-card rendering without the fat host snapshot
+       * (which lives on `system.info.detail`). `None` when the probe failed.
+       */
+      system?: TopologyFacts | null;
+      /**
+       * Peer-reported build target triple.
+       */
+      target?: string | null;
+      /**
+       * True when an update is available for the peer (and not blocked by
+       * `pinned_to`).
+       */
+      update_available?: boolean | null;
+      /**
+       * Age in seconds of the last successful `system.update {}` probe against
+       * this peer. `None` until the periodic probe has succeeded at least
+       * once (or for the synthetic local-host row).
+       */
+      update_checked_secs?: number | null;
+      /**
+       * Latest release tag visible to the peer on its channel. Pulled from
+       * `system.update-check`; `None` when the probe failed or timed out.
+       */
+      update_latest?: string | null;
+      /**
+       * Peer-reported `system.runtime-spec.version`.
+       */
+      version?: string | null;
+    }
   | (MeshPendingOfferDto & {
       state: 'handshaking';
     })
-  | (MeshDiscoveryRowDto & {
+  | {
+      addr: string;
+      can_invite: boolean;
+      /**
+       * mDNS-advertised membership: `"unclaimed"` or `"mesh:<mesh_id>"`. Named
+       * `discovery_state` (not `state`) so it doesn't collide with the
+       * `#[serde(tag = "state")]` discriminant on [`MeshMember`], which would
+       * otherwise clobber the `"discovered"` tag and break state filtering.
+       */
+      discovery_state: string;
+      first_seen_at: number;
+      hostname: string;
+      /**
+       * The discovered system's id, when it advertises one.
+       */
+      id?: string | null;
+      last_seen_at: number;
+      port: number;
+      pubkey_fp: string;
       state: 'discovered';
-    });
+    };
 
 export type MeshOfferOutput = {
   /**
@@ -1708,95 +1934,6 @@ export type MeshOfferOutput = {
   joinerPort: number;
   joinerPubkeyFp: string;
   offerId: string;
-};
-
-export type MeshPeerDto = {
-  /**
-   * Peer-reported release channel.
-   */
-  channel?: string | null;
-  /**
-   * Peer-reported "embedded" / "disabled" UI flag.
-   */
-  frontend?: string | null;
-  hostname: string;
-  last_seen_at: number;
-  /**
-   * Round-trip latency of the `mesh/ping` probe, milliseconds.
-   */
-  latency_ms?: number | null;
-  /**
-   * True for the synthetic local-host row prepended to `system.list`. Remote
-   * peers are always false. Lets UIs flag "this is me" without string
-   * matching the hostname.
-   */
-  local?: boolean;
-  local_secure: boolean;
-  /**
-   * Peer-reported daemon mode: "daemon" | "parked" | "dev".
-   */
-  mode?: string | null;
-  peer_id: string;
-  peer_secure: boolean;
-  /**
-   * Peer-reported version pin if set.
-   */
-  pinned_to?: string | null;
-  port: number;
-  /**
-   * Error string from the probe path (ping / runtime-spec / update-check).
-   * First failure wins so the UI has one line to surface.
-   */
-  probe_error?: string | null;
-  /**
-   * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
-   * Propagated through roster sync so peers learned via intermediary can
-   * transitively pin the fp instead of arriving with `None` — without
-   * this, mesh/exec from a roster-synced peer is refused with "no pinned
-   * bootstrap key" forever after.
-   */
-  pubkey_fp?: string | null;
-  /**
-   * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
-   * skipped (e.g. departed peers); `Some(false)` when the dial errored.
-   */
-  reachable?: boolean | null;
-  routes?: Routes & unknown;
-  /**
-   * "active" | "departed".
-   */
-  status: string;
-  /**
-   * Lean topology facts (hostname/type/cluster/virt/macs/claims/primary IPs)
-   * projected from the peer's `system.detail`. Drives parent-inference,
-   * cluster grouping, and host-card rendering without the fat host snapshot
-   * (which lives on `system.info.detail`). `None` when the probe failed.
-   */
-  system?: TopologyFacts | null;
-  /**
-   * Peer-reported build target triple.
-   */
-  target?: string | null;
-  /**
-   * True when an update is available for the peer (and not blocked by
-   * `pinned_to`).
-   */
-  update_available?: boolean | null;
-  /**
-   * Age in seconds of the last successful `system.update {}` probe against
-   * this peer. `None` until the periodic probe has succeeded at least
-   * once (or for the synthetic local-host row).
-   */
-  update_checked_secs?: number | null;
-  /**
-   * Latest release tag visible to the peer on its channel. Pulled from
-   * `system.update-check`; `None` when the probe failed or timed out.
-   */
-  update_latest?: string | null;
-  /**
-   * Peer-reported `system.runtime-spec.version`.
-   */
-  version?: string | null;
 };
 
 export type MeshPendingOfferDto = {
@@ -1887,10 +2024,18 @@ export type MeshTrustOutput = {
   peer_secure: boolean;
 };
 
+export type MeshUnpinOutput = {
+  /**
+   * `false` when the peer was not pinned or is not on this host's roster.
+   */
+  cleared: boolean;
+  id: string;
+};
+
 /**
  * Operation selector for `system.mesh.update`.
  */
-export type MeshUpdateAction = 'settings' | 'trust' | 'sync' | 'recover' | 'cancel_offer';
+export type MeshUpdateAction = 'settings' | 'trust' | 'sync' | 'recover' | 'cancel_offer' | 'unpin';
 
 export type ModelRow = {
   /**
@@ -2134,6 +2279,12 @@ export type OwnerCandidate = {
   uid: number;
 };
 
+export type OwnerlessSchedule = {
+  job: string;
+  name: string;
+  reason: string;
+};
+
 export type PackageFormat = 'deb' | 'rpm' | 'apk' | 'pkgbuild' | 'pkg' | 'homebrew' | 'plg';
 
 /**
@@ -2238,6 +2389,26 @@ export type Placement = {
 };
 
 /**
+ * One thing a verb would do. `target` is the addressable thing being changed
+ * (a host, a container, a datastore path), `action` what would happen to it.
+ */
+export type PlannedChange = {
+  /**
+   * What would happen to it: `create`, `delete`, `overwrite`, `restart`, …
+   */
+  action: string;
+  /**
+   * Optional specifics: old → new, sizes, counts.
+   */
+  detail?: string | null;
+  /**
+   * What would be changed — a host, unit, container, path. Addressable, so
+   * an operator can tell two otherwise-identical changes apart.
+   */
+  target: string;
+};
+
+/**
  * The `plugin.create` action.
  */
 export type PluginCreateAction = 'install' | 'invoke';
@@ -2265,6 +2436,11 @@ export type PluginInstallOutput = {
    * True — sideload registers tools immediately, no restart needed.
    */
   loadedLive: boolean;
+  /**
+   * Whether the installed release carried a verified signature. An
+   * unsigned one is not trusted for privileged ops.
+   */
+  signed?: boolean;
   /**
    * The installed plugin's `target_software`.
    */
@@ -2918,6 +3094,13 @@ export type SecretEntry = {
   updatedAt: string;
 };
 
+export type SecretGrantEntry = {
+  createdAt: string;
+  grantedBy: string;
+  holder: string;
+  secretName: string;
+};
+
 /**
  * A series/sequence position, tying a unit to the cross-format reading-order
  * convergence (e.g. Stormlight #1). Kept generic across media types.
@@ -3469,6 +3652,30 @@ export type StorageSharesOutput = {
   shares: Array<ShareRow>;
 };
 
+/**
+ * What `backup.sync` did for one instance.
+ */
+export type SyncInstanceOutcome = {
+  /**
+   * Failures for this instance; the run continued past them.
+   */
+  errors?: Array<string>;
+  instance: string;
+  /**
+   * Backups committed after the restore (one per target that took one).
+   */
+  produced: Array<BackupRecord>;
+  /**
+   * The backup another host wrote that was restored here, if it was the
+   * newest one.
+   */
+  restored?: BackupRecord | null;
+  /**
+   * Targets (`<kind>/<name>`) where the kind reported nothing changed.
+   */
+  unchanged?: Array<string>;
+};
+
 export type SyncMcpSpecsResult = {
   errors: Array<string>;
   server: string;
@@ -3512,7 +3719,7 @@ export type SystemDetailView = 'summary' | 'capabilities' | 'retention';
  * tick by the daemon, read back as `SystemInfoReport.history`.
  */
 export type SystemHistoryPoint = {
-  cpuPercent?: number | null;
+  cpu_percent?: number | null;
   /**
    * Capacity of the filesystem hosting `~/.orca`, in GiB. Sampled into the
    * ring so capacity can be judged by TREND rather than by a current-level
@@ -3520,22 +3727,24 @@ export type SystemHistoryPoint = {
    * nothing to fit, and "85% and climbing fast" is indistinguishable from
    * "85% for two years".
    */
-  fsTotalGb?: number | null;
+  fs_total_gb?: number | null;
+  fs_total_mb?: number | null;
   /**
    * Used space on that filesystem, in GiB (`total - avail`). Stored as used
    * rather than avail so it shares the monotonic-growth orientation of every
    * other `*_used_*` field in this struct.
    */
-  fsUsedGb?: number | null;
+  fs_used_gb?: number | null;
+  fs_used_mb?: number | null;
   gpus?: Array<GpuPoint>;
-  memTotalMb?: number | null;
-  memUsedMb?: number | null;
+  mem_total_mb?: number | null;
+  mem_used_mb?: number | null;
   /**
    * RSS of this orca process at sample time, in MiB. Lets the history
    * ring carry the daemon's own memory footprint alongside host memory
    * so a leak in orca is distinguishable from host-wide pressure.
    */
-  processRssMb?: number | null;
+  process_rss_mb?: number | null;
   /**
    * Unix seconds at sample time.
    */
@@ -3662,7 +3871,9 @@ export type SystemInfoReport = {
   meshPort?: number | null;
   orcaDir?: string | null;
   orcaFsAvailGb?: number | null;
+  orcaFsAvailMb?: number | null;
   orcaFsTotalGb?: number | null;
+  orcaFsTotalMb?: number | null;
   osName?: string | null;
   osVersion?: string | null;
   /**
@@ -3725,8 +3936,11 @@ export type SystemInfoReport = {
   topProcesses?: Array<TopProcess>;
   /**
    * Hypervisor / container kind: `kvm`, `qemu`, `vmware`, `lxc`,
-   * `docker`, `none`, etc. Linux-only — read from `/sys/class/dmi/id/`
-   * + `/proc/1/cgroup`. macOS reports `None`.
+   * `docker`, `none`, etc. Linux-only. Container signals (`container=` in
+   * `/proc/1/environ`, `/run/systemd/container`, `/.dockerenv`,
+   * `/proc/1/cgroup`, lxcfs mounted over `/proc`) win over DMI
+   * (`/sys/class/dmi/id/`), which inside a container describes the host.
+   * macOS reports `None`.
    */
   virtualization?: string | null;
 };
@@ -3917,6 +4131,15 @@ export type TargetInfo = {
 };
 
 /**
+ * How orca provisions and manages a workload on a given [`Runtime`]. Orthogonal
+ * to the runtime: e.g. a `Docker` runtime can be driven via `Dockge`, a raw
+ * `Compose` file, or the plain `Cli`. An `Lxc`/`Vm` runtime is driven via
+ * `Proxmox`. Kept open-ended so new management surfaces don't force a runtime
+ * change.
+ */
+export type TargetKind = 'cli' | 'dockge' | 'compose' | 'proxmox' | 'quadlet';
+
+/**
  * A concrete storage location a target kind exposes for selection — the "point
  * a target" surface. A storage plugin (smb/nfs) enumerates the mounts/shares it
  * manages; the backup-create flow lists these so the user picks the ROOT (e.g.
@@ -3953,8 +4176,8 @@ export type TargetLocation = {
 
 export type TargetsOutput = {
   /**
-   * The targets `backup.run` currently fans out to (the `backup`/`targets`
-   * config, or the built-in `local` fallback).
+   * The targets `backup.run` currently fans out to (this host's own
+   * `backup`/`targets` config, or the built-in `local` fallback).
    */
   configured: Array<BackupTargetRef>;
   placement: Placement & unknown;
@@ -3971,12 +4194,10 @@ export type TargetsOutput = {
 };
 
 export type TelemetrySnapshotRow = {
-  peerId: string;
   receivedAtUnix: number;
   snapshotAtUnix: number;
   /**
-   * Always `"local"` — telemetry is local-only. Kept on the wire for
-   * backward compatibility with existing consumers.
+   * Always `"local"`: every row is read from the recording system's storage.
    */
   source: string;
   /**
@@ -3984,6 +4205,10 @@ export type TelemetrySnapshotRow = {
    * (typically: a schema mismatch after an upgrade).
    */
   system?: SystemInfoReport | null;
+  /**
+   * The id of the system that recorded this snapshot.
+   */
+  systemId: string;
 };
 
 /**
@@ -4185,12 +4410,35 @@ export type Track = {
  */
 export type TrackKind = 'video' | 'audio' | 'subtitle';
 
+/**
+ * A `(kind, instance)` whose backup reported nothing new, so no slot was
+ * committed.
+ */
+export type UnchangedBackup = {
+  instance: string;
+  kind: string;
+  /**
+   * The system it ran on. Empty = this one.
+   */
+  system?: string;
+  /**
+   * The target it would have been written to (`<kind>/<name>`).
+   */
+  target?: string | null;
+};
+
 export type UnitIdentityEntry = {
   enabled: boolean;
   name: string;
   routes: Routes;
   uuid: string;
 };
+
+/**
+ * Outcome of one fleet-update row, daemon or plugin.
+ */
+export type UpdateRowStatus =
+  'up_to_date' | 'failed' | 'update_available' | 'updated' | 'blocked' | 'unknown';
 
 /**
  * One concrete manifestation of a unit: a quality/format variant plus its tracks
@@ -4272,114 +4520,132 @@ export type MeshListOutputWritable = {
  * consolidation).
  */
 export type MeshMemberWritable =
-  | (MeshPeerDtoWritable & {
+  | {
+      /**
+       * Legacy single dial address. No longer serialized — every address now
+       * lives in `addresses` as an equal channel (there is no privileged
+       * "primary" address). Kept as a `serde(default)` inbound field so rosters
+       * from pre-collapse peers (which still send `addr`) still deserialize, and
+       * as an internal fallback until every peer advertises a full `addresses`
+       * snapshot. The shaping layer folds this value into `addresses` so nothing
+       * is lost when it stops being serialized.
+       */
+      addr?: string;
+      /**
+       * Peer-reported release channel.
+       */
+      channel?: string | null;
+      /**
+       * Peer-reported "embedded" / "disabled" UI flag.
+       */
+      frontend?: string | null;
+      hostname: string;
+      /**
+       * Aliases decode rosters from peers that still emit `peer_id`.
+       */
+      id: string;
+      last_seen_at: number;
+      /**
+       * Round-trip latency of the `mesh/ping` probe, milliseconds.
+       */
+      latency_ms?: number | null;
+      /**
+       * True for the synthetic local-host row prepended to `system.list`. Remote
+       * peers are always false. Lets UIs flag "this is me" without string
+       * matching the hostname.
+       */
+      local?: boolean;
+      local_secure: boolean;
+      /**
+       * Peer-reported daemon mode: "daemon" | "parked" | "dev".
+       */
+      mode?: string | null;
+      peer_secure: boolean;
+      /**
+       * Peer-reported version pin if set.
+       */
+      pinned_to?: string | null;
+      port: number;
+      /**
+       * Error string from the probe path (ping / runtime-spec / update-check).
+       * First failure wins so the UI has one line to surface.
+       */
+      probe_error?: string | null;
+      /**
+       * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
+       * Propagated through roster sync so peers learned via intermediary can
+       * transitively pin the fp instead of arriving with `None` — without
+       * this, mesh/exec from a roster-synced peer is refused with "no pinned
+       * bootstrap key" forever after.
+       */
+      pubkey_fp?: string | null;
+      /**
+       * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
+       * skipped (e.g. departed peers); `Some(false)` when the dial errored.
+       */
+      reachable?: boolean | null;
+      routes?: Routes & unknown;
       state: 'joined';
-    })
+      /**
+       * "active" | "departed".
+       */
+      status: string;
+      /**
+       * Lean topology facts (hostname/type/cluster/virt/macs/claims/primary IPs)
+       * projected from the peer's `system.detail`. Drives parent-inference,
+       * cluster grouping, and host-card rendering without the fat host snapshot
+       * (which lives on `system.info.detail`). `None` when the probe failed.
+       */
+      system?: TopologyFacts | null;
+      /**
+       * Peer-reported build target triple.
+       */
+      target?: string | null;
+      /**
+       * True when an update is available for the peer (and not blocked by
+       * `pinned_to`).
+       */
+      update_available?: boolean | null;
+      /**
+       * Age in seconds of the last successful `system.update {}` probe against
+       * this peer. `None` until the periodic probe has succeeded at least
+       * once (or for the synthetic local-host row).
+       */
+      update_checked_secs?: number | null;
+      /**
+       * Latest release tag visible to the peer on its channel. Pulled from
+       * `system.update-check`; `None` when the probe failed or timed out.
+       */
+      update_latest?: string | null;
+      /**
+       * Peer-reported `system.runtime-spec.version`.
+       */
+      version?: string | null;
+    }
   | (MeshPendingOfferDto & {
       state: 'handshaking';
     })
-  | (MeshDiscoveryRowDto & {
+  | {
+      addr: string;
+      can_invite: boolean;
+      /**
+       * mDNS-advertised membership: `"unclaimed"` or `"mesh:<mesh_id>"`. Named
+       * `discovery_state` (not `state`) so it doesn't collide with the
+       * `#[serde(tag = "state")]` discriminant on [`MeshMember`], which would
+       * otherwise clobber the `"discovered"` tag and break state filtering.
+       */
+      discovery_state: string;
+      first_seen_at: number;
+      hostname: string;
+      /**
+       * The discovered system's id, when it advertises one.
+       */
+      id?: string | null;
+      last_seen_at: number;
+      port: number;
+      pubkey_fp: string;
       state: 'discovered';
-    });
-
-export type MeshPeerDtoWritable = {
-  /**
-   * Legacy single dial address. No longer serialized — every address now
-   * lives in `addresses` as an equal channel (there is no privileged
-   * "primary" address). Kept as a `serde(default)` inbound field so rosters
-   * from pre-collapse peers (which still send `addr`) still deserialize, and
-   * as an internal fallback until every peer advertises a full `addresses`
-   * snapshot. The shaping layer folds this value into `addresses` so nothing
-   * is lost when it stops being serialized.
-   */
-  addr?: string;
-  /**
-   * Peer-reported release channel.
-   */
-  channel?: string | null;
-  /**
-   * Peer-reported "embedded" / "disabled" UI flag.
-   */
-  frontend?: string | null;
-  hostname: string;
-  last_seen_at: number;
-  /**
-   * Round-trip latency of the `mesh/ping` probe, milliseconds.
-   */
-  latency_ms?: number | null;
-  /**
-   * True for the synthetic local-host row prepended to `system.list`. Remote
-   * peers are always false. Lets UIs flag "this is me" without string
-   * matching the hostname.
-   */
-  local?: boolean;
-  local_secure: boolean;
-  /**
-   * Peer-reported daemon mode: "daemon" | "parked" | "dev".
-   */
-  mode?: string | null;
-  peer_id: string;
-  peer_secure: boolean;
-  /**
-   * Peer-reported version pin if set.
-   */
-  pinned_to?: string | null;
-  port: number;
-  /**
-   * Error string from the probe path (ping / runtime-spec / update-check).
-   * First failure wins so the UI has one line to surface.
-   */
-  probe_error?: string | null;
-  /**
-   * Bootstrap-pubkey fingerprint of this peer, as known to the responder.
-   * Propagated through roster sync so peers learned via intermediary can
-   * transitively pin the fp instead of arriving with `None` — without
-   * this, mesh/exec from a roster-synced peer is refused with "no pinned
-   * bootstrap key" forever after.
-   */
-  pubkey_fp?: string | null;
-  /**
-   * `mesh/ping` succeeded inside the fanout budget. `None` when probing was
-   * skipped (e.g. departed peers); `Some(false)` when the dial errored.
-   */
-  reachable?: boolean | null;
-  routes?: Routes & unknown;
-  /**
-   * "active" | "departed".
-   */
-  status: string;
-  /**
-   * Lean topology facts (hostname/type/cluster/virt/macs/claims/primary IPs)
-   * projected from the peer's `system.detail`. Drives parent-inference,
-   * cluster grouping, and host-card rendering without the fat host snapshot
-   * (which lives on `system.info.detail`). `None` when the probe failed.
-   */
-  system?: TopologyFacts | null;
-  /**
-   * Peer-reported build target triple.
-   */
-  target?: string | null;
-  /**
-   * True when an update is available for the peer (and not blocked by
-   * `pinned_to`).
-   */
-  update_available?: boolean | null;
-  /**
-   * Age in seconds of the last successful `system.update {}` probe against
-   * this peer. `None` until the periodic probe has succeeded at least
-   * once (or for the synthetic local-host row).
-   */
-  update_checked_secs?: number | null;
-  /**
-   * Latest release tag visible to the peer on its channel. Pulled from
-   * `system.update-check`; `None` when the probe failed or timed out.
-   */
-  update_latest?: string | null;
-  /**
-   * Peer-reported `system.runtime-spec.version`.
-   */
-  version?: string | null;
-};
+    };
 
 export type MeshSnapshotOutputWritable = {
   /**
@@ -4570,7 +4836,12 @@ export type AgentCreateData = {
     prompt: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/agent.create';
 };
 
@@ -4713,6 +4984,104 @@ export type AgentListResponses = {
 
 export type AgentListResponse = AgentListResponses[keyof AgentListResponses];
 
+export type AgentHookApproveData = {
+  /**
+   * ApproveHookArgs
+   */
+  body: {
+    /**
+     * Hook hash as shown by `agent_hook list`.
+     */
+    hash: string;
+    /**
+     * Registering plugin (the hook's `origin`).
+     */
+    origin: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/agent_hook.approve';
+};
+
+export type AgentHookApproveErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type AgentHookApproveError = AgentHookApproveErrors[keyof AgentHookApproveErrors];
+
+export type AgentHookApproveResponses = {
+  /**
+   * ApproveHookOutput
+   *
+   * Tool result
+   */
+  200: {
+    command: string;
+    hash: string;
+    origin: string;
+  };
+};
+
+export type AgentHookApproveResponse = AgentHookApproveResponses[keyof AgentHookApproveResponses];
+
+export type AgentHookListData = {
+  /**
+   * ListHooksArgs
+   */
+  body: {
+    [key: string]: unknown;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/agent_hook.list';
+};
+
+export type AgentHookListErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type AgentHookListError = AgentHookListErrors[keyof AgentHookListErrors];
+
+export type AgentHookListResponses = {
+  /**
+   * ListHooksOutput
+   *
+   * Tool result
+   */
+  200: {
+    hooks: Array<HookEntry>;
+  };
+};
+
+export type AgentHookListResponse = AgentHookListResponses[keyof AgentHookListResponses];
+
 export type AuthLoginData = {
   /**
    * LoginArgs
@@ -4833,7 +5202,12 @@ export type AuthSessionCreateData = {
     provider: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/auth.session.create';
 };
 
@@ -4881,7 +5255,12 @@ export type AuthSessionDeleteData = {
     provider: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/auth.session.delete';
 };
 
@@ -4986,7 +5365,12 @@ export type AuthTokenCreateData = {
     role: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/auth.token.create';
 };
 
@@ -5034,7 +5418,12 @@ export type AuthTokenDeleteData = {
     id: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/auth.token.delete';
 };
 
@@ -5133,7 +5522,12 @@ export type BackupCheckData = {
     [key: string]: unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/backup.check';
 };
 
@@ -5333,7 +5727,12 @@ export type BackupRestoreData = {
     localOnly?: boolean;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/backup.restore';
 };
 
@@ -5400,7 +5799,12 @@ export type BackupRunData = {
     localOnly?: boolean;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/backup.run';
 };
 
@@ -5446,10 +5850,80 @@ export type BackupRunResponses = {
      * Targets this run wrote to (`<kind>/<name>`).
      */
     targets: Array<string>;
+    /**
+     * Backups the kind skipped because nothing changed since the latest one.
+     */
+    unchanged?: Array<UnchangedBackup>;
   };
 };
 
 export type BackupRunResponse = BackupRunResponses[keyof BackupRunResponses];
+
+export type BackupSyncData = {
+  /**
+   * BackupSyncArgs
+   */
+  body: {
+    /**
+     * One instance to sync. Omit for every instance the kind advertises here
+     * plus every instance already present in the kind's targets, so a host
+     * pulls instances it has never backed up.
+     */
+    instance?: string | null;
+    /**
+     * Kind to sync (e.g. `game-saves`). Only kinds that advertise `syncable`
+     * are accepted; `host` never is.
+     */
+    kind?: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/backup.sync';
+};
+
+export type BackupSyncErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type BackupSyncError = BackupSyncErrors[keyof BackupSyncErrors];
+
+export type BackupSyncResponses = {
+  /**
+   * BackupSyncOutput
+   *
+   * Tool result
+   */
+  200: {
+    /**
+     * Failures not tied to one instance: enumeration, target refresh/open/sync.
+     */
+    errors?: Array<string>;
+    instances: Array<SyncInstanceOutcome>;
+    kind: string;
+    /**
+     * Targets bound to the kind that were synced (`<kind>/<name>`).
+     */
+    targets: Array<string>;
+  };
+};
+
+export type BackupSyncResponse = BackupSyncResponses[keyof BackupSyncResponses];
 
 export type ConfigDeleteData = {
   /**
@@ -5464,7 +5938,12 @@ export type ConfigDeleteData = {
     noun: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/config.delete';
 };
 
@@ -5541,6 +6020,8 @@ export type ConfigDetailResponses = {
    * Tool result
    */
   200: {
+    cspRestartPending?: boolean | null;
+    effectiveCsp?: string | null;
     row?: ConfigRowOut | null;
   };
 };
@@ -5620,7 +6101,12 @@ export type ConfigSourceApplyData = {
     [key: string]: unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/config.source.apply';
 };
 
@@ -5742,7 +6228,12 @@ export type ConfigSourcePullData = {
     [key: string]: unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/config.source.pull';
 };
 
@@ -5786,7 +6277,12 @@ export type ConfigSourcePushData = {
     [key: string]: unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/config.source.push';
 };
 
@@ -5907,7 +6403,12 @@ export type ConfigSourceSyncData = {
     [key: string]: unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/config.source.sync';
 };
 
@@ -5961,7 +6462,12 @@ export type ConfigUpsertData = {
     noun: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/config.upsert';
 };
 
@@ -6027,7 +6533,12 @@ export type ContainerCreateData = {
     stdin?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/container.create';
 };
 
@@ -6279,7 +6790,12 @@ export type ContainerUpdateData = {
     runtime?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/container.update';
 };
 
@@ -6375,7 +6891,12 @@ export type DbUpdateData = {
     table?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/db.update';
 };
 
@@ -6407,6 +6928,48 @@ export type DbUpdateResponses = {
 
 export type DbUpdateResponse = DbUpdateResponses[keyof DbUpdateResponses];
 
+export type DeployListData = {
+  /**
+   * DeployListArgs
+   */
+  body: {
+    [key: string]: unknown;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/deploy.list';
+};
+
+export type DeployListErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type DeployListError = DeployListErrors[keyof DeployListErrors];
+
+export type DeployListResponses = {
+  /**
+   * DeployListOutput
+   *
+   * Tool result
+   */
+  200: {
+    targets: Array<DeployTargetRow>;
+  };
+};
+
+export type DeployListResponse = DeployListResponses[keyof DeployListResponses];
+
 export type FilesDeleteData = {
   /**
    * FsDeleteArgs
@@ -6426,7 +6989,12 @@ export type FilesDeleteData = {
     unregisterRoot?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/files.delete';
 };
 
@@ -6772,7 +7340,12 @@ export type FilesUpdateData = {
     registerRootPath?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/files.update';
 };
 
@@ -6835,7 +7408,12 @@ export type GuestExecData = {
     timeoutMs?: number | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/guest.exec';
 };
 
@@ -6941,7 +7519,12 @@ export type GuestWriteFileData = {
     scope?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/guest.write_file';
 };
 
@@ -7036,6 +7619,65 @@ export type IdentityPrivilegeAuditResponses = {
 
 export type IdentityPrivilegeAuditResponse =
   IdentityPrivilegeAuditResponses[keyof IdentityPrivilegeAuditResponses];
+
+export type IdentityPrivilegeRepairData = {
+  /**
+   * IdentityPrivilegeRepairArgs
+   */
+  body: {
+    serviceUser?: string | null;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/identity.privilege.repair';
+};
+
+export type IdentityPrivilegeRepairErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type IdentityPrivilegeRepairError =
+  IdentityPrivilegeRepairErrors[keyof IdentityPrivilegeRepairErrors];
+
+export type IdentityPrivilegeRepairResponses = {
+  /**
+   * SudoersRepairPlan
+   *
+   * Tool result
+   */
+  200: {
+    current?: string | null;
+    diff: Array<string>;
+    executed: boolean;
+    flashCopyCurrent: boolean;
+    goBlockCurrent: boolean;
+    path: string;
+    privilegedCopyCurrent: boolean;
+    rendered: string;
+    unraid: boolean;
+    upToDate: boolean;
+    user: string;
+  };
+};
+
+export type IdentityPrivilegeRepairResponse =
+  IdentityPrivilegeRepairResponses[keyof IdentityPrivilegeRepairResponses];
 
 export type MediaDetailData = {
   /**
@@ -7308,7 +7950,12 @@ export type MediaUnitRescanData = {
     title?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/media.unit.rescan';
 };
 
@@ -7432,7 +8079,12 @@ export type ModelCreateData = {
     provider: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/model.create';
 };
 
@@ -7474,7 +8126,12 @@ export type ModelDeleteData = {
     id: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/model.delete';
 };
 
@@ -7649,7 +8306,12 @@ export type ModelUpdateData = {
     provider?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/model.update';
 };
 
@@ -7708,7 +8370,12 @@ export type NamespaceAccessCreateData = {
     user: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/namespace.access.create';
 };
 
@@ -7755,7 +8422,12 @@ export type NamespaceAccessDeleteData = {
     user: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/namespace.access.delete';
 };
 
@@ -7865,7 +8537,12 @@ export type NamespaceCreateData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/namespace.create';
 };
 
@@ -7918,7 +8595,12 @@ export type NamespaceDeleteData = {
     spec: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/namespace.delete';
 };
 
@@ -8075,7 +8757,12 @@ export type NamespaceUseData = {
     spec: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/namespace.use';
 };
 
@@ -8171,7 +8858,12 @@ export type NotifyCreateData = {
     userId?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/notify.create';
 };
 
@@ -8284,7 +8976,12 @@ export type NotifyUpdateData = {
     key?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/notify.update';
 };
 
@@ -8332,7 +9029,12 @@ export type PkiCreateData = {
     pluginId?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/pki.create';
 };
 
@@ -8439,24 +9141,40 @@ export type PluginCreateData = {
   body: {
     action: PluginCreateAction & unknown;
     /**
+     * `install` with `--name`: accept a release published without a
+     * `.minisig` signature. Development builds only.
+     */
+    allowUnsigned?: boolean;
+    /**
      * `invoke`: argument object forwarded verbatim to the plugin verb. On the
      * CLI, pass a JSON object string (`--args '{"node":"frigg"}'`).
      */
     args?: unknown;
     /**
-     * `install`: absolute path to an executable plugin to **sideload**.
-     * Mutually exclusive with `name`.
+     * `install`: apply it. Omitted or false returns an ExecutionPlan and
+     * installs nothing. Ignored by `invoke`: the plugin verb gates itself, so
+     * pass its own opt-in inside `args`.
+     */
+    execute?: boolean;
+    /**
+     * `install`: absolute path to an executable plugin to **sideload**. Needs
+     * `name`; without it the file is only probed.
      */
     file?: string | null;
     /**
-     * `install`: catalog name to auto-download + install from its GitHub
-     * release. Mutually exclusive with `file`.
+     * `install`: the plugin's name — the catalog entry to fetch (alone), or
+     * the name a `file` sideload must declare in its handshake.
      */
     name?: string | null;
     /**
      * `install` with `--name` and no `--version`: include pre-release tags.
      */
     prerelease?: boolean;
+    /**
+     * `install` with `--file`: allow overwriting an already-installed plugin
+     * with the same name.
+     */
+    replace?: boolean;
     /**
      * `invoke`: fully-qualified verb of a loaded plugin, e.g.
      * `proxmox.put_set_timezone`.
@@ -8495,7 +9213,7 @@ export type PluginCreateResponses = {
    *
    * `plugin.create` payload — one variant per `action`.
    */
-  200: PluginInstallOutput | PluginInvokeOutput;
+  200: PluginInstallOutput | PluginInvokeOutput | ExecutionPlan;
 };
 
 export type PluginCreateResponse = PluginCreateResponses[keyof PluginCreateResponses];
@@ -8515,7 +9233,12 @@ export type PluginDataCreateData = {
     manifest: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/plugin.data.create';
 };
 
@@ -8565,7 +9288,12 @@ export type PluginDataDeleteData = {
     id: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/plugin.data.delete';
 };
 
@@ -8723,7 +9451,12 @@ export type PluginDataUpdateData = {
     id: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/plugin.data.update';
 };
 
@@ -8770,7 +9503,12 @@ export type PluginDeleteData = {
     name?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/plugin.delete';
 };
 
@@ -8799,9 +9537,17 @@ export type PluginDeleteResponses = {
    */
   200: {
     /**
+     * The plugin's own `plug__<id>__*` tables, now dropped.
+     */
+    droppedTables?: Array<string>;
+    /**
      * True if a file was deleted from the install dir.
      */
     removedFromDisk: boolean;
+    /**
+     * Secret grants held by the plugin, now revoked.
+     */
+    revokedGrants?: Array<string>;
     /**
      * The plugin removed.
      */
@@ -9014,6 +9760,11 @@ export type PluginServeAssetResponses = {
    */
   200: {
     asset_b64: string;
+    /**
+     * The release's `<asset>.minisig`, unchecked by the holder; the caller
+     * verifies it before installing. Absent from older holders.
+     */
+    minisig?: string | null;
     sha256: string;
     version: string;
   };
@@ -9026,6 +9777,11 @@ export type PluginUpdateData = {
    * PluginUpdateArgs
    */
   body: {
+    /**
+     * Accept a release published without a `.minisig` signature. Development
+     * builds only.
+     */
+    allowUnsigned?: boolean;
     /**
      * Actually install the resolved target version. DRY RUN by default: a bare
      * `orca plugin update <name>` resolves installed→newest and reports whether
@@ -9048,7 +9804,12 @@ export type PluginUpdateData = {
     version?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/plugin.update';
 };
 
@@ -9094,6 +9855,7 @@ export type PluginUpdateResponses = {
     note: string;
     /**
      * The version an `--execute` would move to (newest, or the pinned tag).
+     * Empty when the plugin has no catalog release source.
      */
     targetVersion: string;
     /**
@@ -9120,7 +9882,12 @@ export type ScheduleCreateData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/schedule.create';
 };
 
@@ -9264,6 +10031,49 @@ export type ScheduleListResponses = {
 
 export type ScheduleListResponse = ScheduleListResponses[keyof ScheduleListResponses];
 
+export type ScheduleOwnerListData = {
+  /**
+   * ScheduleOwnerListArgs
+   */
+  body: {
+    [key: string]: unknown;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/schedule.owner.list';
+};
+
+export type ScheduleOwnerListErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type ScheduleOwnerListError = ScheduleOwnerListErrors[keyof ScheduleOwnerListErrors];
+
+export type ScheduleOwnerListResponses = {
+  /**
+   * ScheduleOwnerListOutput
+   *
+   * Tool result
+   */
+  200: {
+    ownerless: Array<OwnerlessSchedule>;
+  };
+};
+
+export type ScheduleOwnerListResponse =
+  ScheduleOwnerListResponses[keyof ScheduleOwnerListResponses];
+
 export type SchemaCreateData = {
   /**
    * AddSchemaArgs
@@ -9279,7 +10089,12 @@ export type SchemaCreateData = {
     user: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/schema.create';
 };
 
@@ -9322,7 +10137,12 @@ export type SchemaDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/schema.delete';
 };
 
@@ -9466,7 +10286,12 @@ export type SecretsDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/secrets.delete';
 };
 
@@ -9544,6 +10369,162 @@ export type SecretsDetailResponses = {
 };
 
 export type SecretsDetailResponse = SecretsDetailResponses[keyof SecretsDetailResponses];
+
+export type SecretsGrantCreateData = {
+  /**
+   * SecretGrantArgs
+   */
+  body: {
+    /**
+     * Plugin id that may read the secret.
+     */
+    holder: string;
+    /**
+     * Name of an existing secret outside the holder's namespace.
+     */
+    name: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/secrets.grant.create';
+};
+
+export type SecretsGrantCreateErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SecretsGrantCreateError = SecretsGrantCreateErrors[keyof SecretsGrantCreateErrors];
+
+export type SecretsGrantCreateResponses = {
+  /**
+   * SecretGrantReport
+   *
+   * Tool result
+   */
+  200: {
+    changed: boolean;
+    holder: string;
+    name: string;
+  };
+};
+
+export type SecretsGrantCreateResponse =
+  SecretsGrantCreateResponses[keyof SecretsGrantCreateResponses];
+
+export type SecretsGrantDeleteData = {
+  /**
+   * SecretGrantArgs
+   */
+  body: {
+    /**
+     * Plugin id that may read the secret.
+     */
+    holder: string;
+    /**
+     * Name of an existing secret outside the holder's namespace.
+     */
+    name: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/secrets.grant.delete';
+};
+
+export type SecretsGrantDeleteErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SecretsGrantDeleteError = SecretsGrantDeleteErrors[keyof SecretsGrantDeleteErrors];
+
+export type SecretsGrantDeleteResponses = {
+  /**
+   * SecretGrantReport
+   *
+   * Tool result
+   */
+  200: {
+    changed: boolean;
+    holder: string;
+    name: string;
+  };
+};
+
+export type SecretsGrantDeleteResponse =
+  SecretsGrantDeleteResponses[keyof SecretsGrantDeleteResponses];
+
+export type SecretsGrantListData = {
+  /**
+   * SecretGrantListArgs
+   */
+  body: {
+    holder?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/secrets.grant.list';
+};
+
+export type SecretsGrantListErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SecretsGrantListError = SecretsGrantListErrors[keyof SecretsGrantListErrors];
+
+export type SecretsGrantListResponses = {
+  /**
+   * SecretGrantListReport
+   *
+   * Tool result
+   */
+  200: {
+    grants: Array<SecretGrantEntry>;
+  };
+};
+
+export type SecretsGrantListResponse = SecretsGrantListResponses[keyof SecretsGrantListResponses];
 
 export type SecretsListData = {
   /**
@@ -9631,7 +10612,12 @@ export type SecretsUpsertData = {
     valueStdin?: boolean;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/secrets.upsert';
 };
 
@@ -9677,9 +10663,19 @@ export type ServiceCreateData = {
      */
     action?: ServiceCreateAction | null;
     endpoint?: EndpointArgs & unknown;
+    /**
+     * `deploy`: UUID of the deploy target to launch on (see `deploy.list`).
+     * Absent = the single target matching `--host` + `--runtime`.
+     */
+    targetId?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/service.create';
 };
 
@@ -9857,7 +10853,12 @@ export type ServiceInstanceCreateData = {
     runtime: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/service.instance.create';
 };
 
@@ -9901,7 +10902,12 @@ export type ServiceInstanceDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/service.instance.delete';
 };
 
@@ -10057,7 +11063,12 @@ export type ServiceInstanceUpdateData = {
     runtime?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/service.instance.update';
 };
 
@@ -10172,7 +11183,12 @@ export type ServiceUpdateData = {
     from?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/service.update';
 };
 
@@ -10215,7 +11231,12 @@ export type SpecCreateData = {
     url: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/spec.create';
 };
 
@@ -10262,7 +11283,12 @@ export type SpecDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/spec.delete';
 };
 
@@ -10441,7 +11467,12 @@ export type SpecUpdateData = {
     variables?: unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/spec.update';
 };
 
@@ -10525,6 +11556,120 @@ export type StorageDetailResponses = {
 };
 
 export type StorageDetailResponse = StorageDetailResponses[keyof StorageDetailResponses];
+
+export type StorageExportDeleteData = {
+  /**
+   * StorageExportDeleteArgs
+   */
+  body: {
+    path?: string;
+    provider?: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/storage.export.delete';
+};
+
+export type StorageExportDeleteErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type StorageExportDeleteError = StorageExportDeleteErrors[keyof StorageExportDeleteErrors];
+
+export type StorageExportDeleteResponses = {
+  /**
+   * StorageExportWriteOutput
+   *
+   * Tool result
+   */
+  200: {
+    after?: ExportRow | null;
+    before?: ExportRow | null;
+    dryRun: boolean;
+    path: string;
+    provider: string;
+  };
+};
+
+export type StorageExportDeleteResponse =
+  StorageExportDeleteResponses[keyof StorageExportDeleteResponses];
+
+export type StorageExportUpdateData = {
+  /**
+   * StorageExportUpdateArgs
+   */
+  body: {
+    /**
+     * DANGEROUS: permits `no_root_squash`, `insecure`, `no_all_squash`, fsid `0`/`root`
+     * and clients wider than /24 (v4) or /64 (v6).
+     */
+    allowUnsafe?: boolean;
+    clients?: Array<string>;
+    fsid?: string | null;
+    options?: Array<string>;
+    path?: string;
+    provider?: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/storage.export.update';
+};
+
+export type StorageExportUpdateErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type StorageExportUpdateError = StorageExportUpdateErrors[keyof StorageExportUpdateErrors];
+
+export type StorageExportUpdateResponses = {
+  /**
+   * StorageExportWriteOutput
+   *
+   * Tool result
+   */
+  200: {
+    after?: ExportRow | null;
+    before?: ExportRow | null;
+    dryRun: boolean;
+    path: string;
+    provider: string;
+  };
+};
+
+export type StorageExportUpdateResponse =
+  StorageExportUpdateResponses[keyof StorageExportUpdateResponses];
 
 export type StorageExportsData = {
   /**
@@ -10654,13 +11799,13 @@ export type StorageMountCreateData = {
      */
     guest?: string | null;
     /**
-     * Target host (peer id) — the host whose convergence loop materializes it.
+     * Target host (system id) — the host whose convergence loop materializes it.
      */
-    host?: string;
+    host: string;
     /**
      * Per-host `name` label for the placement (unique per `host`).
      */
-    name?: string;
+    name: string;
     /**
      * Serialized remount policy (per-placement host behaviour).
      */
@@ -10668,14 +11813,19 @@ export type StorageMountCreateData = {
     /**
      * The `shares.id` this placement mounts.
      */
-    shareId?: string;
+    shareId: string;
     /**
      * Absolute mountpoint on `host`.
      */
-    target?: string;
+    target: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.mount.create';
 };
 
@@ -10739,10 +11889,15 @@ export type StorageMountDeleteData = {
     /**
      * Placement uuidv7 `id` to remove.
      */
-    id?: string;
+    id: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.mount.delete';
 };
 
@@ -10784,7 +11939,7 @@ export type StorageMountDetailData = {
    */
   body: {
     /**
-     * Host (peer id) — with `--name`, resolves the per-host-unique placement.
+     * Host (system id) — with `--name`, resolves the per-host-unique placement.
      */
     host?: string | null;
     /**
@@ -10859,7 +12014,7 @@ export type StorageMountListData = {
    */
   body: {
     /**
-     * Restrict to placements targeting a single host (peer id). Empty = all.
+     * Restrict to placements targeting a single host (system id). Omit for all.
      */
     host?: string | null;
   };
@@ -10914,7 +12069,7 @@ export type StorageMountUpdateData = {
      */
     healthTimeoutSecs?: number | null;
     /**
-     * New target host (peer id) for this placement.
+     * New target host (system id) for this placement.
      */
     host?: string | null;
     /**
@@ -10953,7 +12108,12 @@ export type StorageMountUpdateData = {
     trigger?: boolean | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.mount.update';
 };
 
@@ -11003,7 +12163,12 @@ export type StorageReplicationCreateData = {
     routes?: Array<Route>;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.replication.create';
 };
 
@@ -11047,7 +12212,12 @@ export type StorageReplicationDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.replication.delete';
 };
 
@@ -11212,7 +12382,12 @@ export type StorageReplicationUpdateData = {
     routes?: Array<Route>;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.replication.update';
 };
 
@@ -11269,7 +12444,12 @@ export type StorageShareCreateData = {
     routes?: Array<Route>;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.share.create';
 };
 
@@ -11312,7 +12492,12 @@ export type StorageShareDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.share.delete';
 };
 
@@ -11490,7 +12675,12 @@ export type StorageShareRepairPermissionsData = {
     uid?: number | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.share.repair-permissions';
 };
 
@@ -11616,7 +12806,12 @@ export type StorageShareUpdateData = {
     waitSecs?: number | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/storage.share.update';
 };
 
@@ -11695,7 +12890,12 @@ export type SystemBuildData = {
     plgUrl?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.build';
 };
 
@@ -11793,14 +12993,252 @@ export type SystemCertsListResponses = {
 
 export type SystemCertsListResponse = SystemCertsListResponses[keyof SystemCertsListResponses];
 
+export type SystemCronDiffData = {
+  /**
+   * CronEditArgs
+   */
+  body: {
+    /**
+     * Edit to make: `enable`, `disable`, `add` or `remove`.
+     */
+    action?: CronAction | null;
+    /**
+     * `enable`/`disable`/`remove`: select the job whose command is exactly
+     * this. `add`: the command to run.
+     */
+    command?: string | null;
+    /**
+     * `update`: hash from `system.cron.list`/`diff`; the edit is refused if
+     * the live crontab no longer matches it.
+     */
+    expectedCurrent?: string | null;
+    /**
+     * `enable`/`disable`/`remove`: select the job on this 1-based line.
+     */
+    line?: number | null;
+    /**
+     * `disable`: comment line written above the disabled job.
+     */
+    marker?: string | null;
+    /**
+     * `add`: five time fields or an `@keyword`.
+     */
+    schedule?: string | null;
+    /**
+     * Login name whose crontab to edit.
+     */
+    user?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/system.cron.diff';
+};
+
+export type SystemCronDiffErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SystemCronDiffError = SystemCronDiffErrors[keyof SystemCronDiffErrors];
+
+export type SystemCronDiffResponses = {
+  /**
+   * CronChangeOutput
+   *
+   * Tool result
+   */
+  200: {
+    after: string;
+    /**
+     * True only when the new crontab was installed and read back identical.
+     */
+    applied: boolean;
+    before: string;
+    /**
+     * False when the edit was a no-op.
+     */
+    changed: boolean;
+    /**
+     * Changed lines, `-` removed / `+` added.
+     */
+    diff: Array<string>;
+    /**
+     * sha256 of `before`.
+     */
+    expectedCurrent: string;
+    user: string;
+  };
+};
+
+export type SystemCronDiffResponse = SystemCronDiffResponses[keyof SystemCronDiffResponses];
+
+export type SystemCronListData = {
+  /**
+   * SystemCronListArgs
+   */
+  body: {
+    /**
+     * Login name whose crontab to read.
+     */
+    user?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/system.cron.list';
+};
+
+export type SystemCronListErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SystemCronListError = SystemCronListErrors[keyof SystemCronListErrors];
+
+export type SystemCronListResponses = {
+  /**
+   * SystemCronListOutput
+   *
+   * Tool result
+   */
+  200: {
+    /**
+     * Job lines, enabled and commented out. Env, comment and blank lines are
+     * only in `raw`.
+     */
+    entries: Array<CronEntry>;
+    /**
+     * sha256 of `raw`; pass as `expectedCurrent` to `system.cron.update`.
+     */
+    hash: string;
+    raw: string;
+    user: string;
+  };
+};
+
+export type SystemCronListResponse = SystemCronListResponses[keyof SystemCronListResponses];
+
+export type SystemCronUpdateData = {
+  /**
+   * CronEditArgs
+   */
+  body: {
+    /**
+     * Edit to make: `enable`, `disable`, `add` or `remove`.
+     */
+    action?: CronAction | null;
+    /**
+     * `enable`/`disable`/`remove`: select the job whose command is exactly
+     * this. `add`: the command to run.
+     */
+    command?: string | null;
+    /**
+     * `update`: hash from `system.cron.list`/`diff`; the edit is refused if
+     * the live crontab no longer matches it.
+     */
+    expectedCurrent?: string | null;
+    /**
+     * `enable`/`disable`/`remove`: select the job on this 1-based line.
+     */
+    line?: number | null;
+    /**
+     * `disable`: comment line written above the disabled job.
+     */
+    marker?: string | null;
+    /**
+     * `add`: five time fields or an `@keyword`.
+     */
+    schedule?: string | null;
+    /**
+     * Login name whose crontab to edit.
+     */
+    user?: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/system.cron.update';
+};
+
+export type SystemCronUpdateErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SystemCronUpdateError = SystemCronUpdateErrors[keyof SystemCronUpdateErrors];
+
+export type SystemCronUpdateResponses = {
+  /**
+   * CronChangeOutput
+   *
+   * Tool result
+   */
+  200: {
+    after: string;
+    /**
+     * True only when the new crontab was installed and read back identical.
+     */
+    applied: boolean;
+    before: string;
+    /**
+     * False when the edit was a no-op.
+     */
+    changed: boolean;
+    /**
+     * Changed lines, `-` removed / `+` added.
+     */
+    diff: Array<string>;
+    /**
+     * sha256 of `before`.
+     */
+    expectedCurrent: string;
+    user: string;
+  };
+};
+
+export type SystemCronUpdateResponse = SystemCronUpdateResponses[keyof SystemCronUpdateResponses];
+
 export type SystemDetailData = {
   /**
    * SystemDetailArgs
    */
   body: {
     /**
-     * Report on ONE system, by its id (the stable `machineId`) or its display
-     * name. Omit to report on this system.
+     * Report on ONE system, by its id (the stable `machineId` UUID). Omit to
+     * report on this system.
      *
      * The system is the RESOURCE, never a host selector: this names the thing
      * being asked about and orca resolves it to a route internally, the same
@@ -11856,8 +13294,8 @@ export type SystemHealthData = {
    */
   body: {
     /**
-     * Report on ONE system, by its id (the stable `machineId`) or its display
-     * name. Omit to report on EVERY system in the mesh.
+     * Report on ONE system, by its id (the stable `machineId` UUID). Omit to
+     * report on EVERY system in the mesh.
      */
     id?: string | null;
   };
@@ -12123,7 +13561,12 @@ export type SystemInstallData = {
     serviceUser?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.install';
 };
 
@@ -12182,7 +13625,12 @@ export type SystemJoinData = {
     port?: number | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.join';
 };
 
@@ -12365,12 +13813,17 @@ export type SystemMeshDeleteData = {
   body: {
     action?: MeshDeleteAction & unknown;
     /**
-     * (kick/forget) Peer to remove.
+     * (kick/forget) System to remove.
      */
-    peerId?: string | null;
+    id?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.mesh.delete';
 };
 
@@ -12416,6 +13869,10 @@ export type SystemMeshUpdateData = {
      */
     addr?: string | null;
     /**
+     * (trust/recover/unpin) Target system.
+     */
+    id?: string | null;
+    /**
      * (trust) New trust value.
      */
     on?: boolean | null;
@@ -12423,10 +13880,6 @@ export type SystemMeshUpdateData = {
      * (sync) Optional source-peer filter (hostname / peer_id / addr).
      */
     peer?: string | null;
-    /**
-     * (trust/recover) Target peer.
-     */
-    peerId?: string | null;
     /**
      * (trust) Execute on the remote peer so THEY trust US.
      */
@@ -12438,7 +13891,12 @@ export type SystemMeshUpdateData = {
     selfSecure?: boolean | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.mesh.update';
 };
 
@@ -12470,7 +13928,8 @@ export type SystemMeshUpdateResponses = {
     | MeshTrustOutput
     | MeshSyncOutput
     | MeshRecoverOutput
-    | MeshCancelOfferOutput;
+    | MeshCancelOfferOutput
+    | MeshUnpinOutput;
 };
 
 export type SystemMeshUpdateResponse = SystemMeshUpdateResponses[keyof SystemMeshUpdateResponses];
@@ -12491,7 +13950,12 @@ export type SystemProfileData = {
     plugin?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.profile';
 };
 
@@ -12598,7 +14062,12 @@ export type SystemRemediationSetData = {
     policy: RemediationPolicy & unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.remediation.set';
 };
 
@@ -12711,7 +14180,12 @@ export type SystemServiceRestartData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.service.restart';
 };
 
@@ -12766,16 +14240,15 @@ export type SystemTelemetryListData = {
    */
   body: {
     /**
+     * Read ONE system's telemetry, by its id (the stable `machineId` UUID).
+     * Omit for this system.
+     */
+    id?: string | null;
+    /**
      * Maximum rows to return. Defaults to 256 — a day at 1/min with room to
      * spare; pass lower for sparkline-style queries.
      */
     limit?: number | null;
-    /**
-     * Peer whose snapshots to read. `local` (default) reads this host's own
-     * rows; target another host with the top-level `--peer` flag, which
-     * dispatches this verb to that host.
-     */
-    peerId?: string | null;
     /**
      * Return only rows with `snapshot_at_unix > since_unix`. Omit for the
      * full retained history (capped in storage).
@@ -12868,7 +14341,12 @@ export type SystemUninstallData = {
     action?: SystemDeleteAction & unknown;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.uninstall';
 };
 
@@ -12973,7 +14451,7 @@ export type SystemUpdateData = {
      * a bare `orca system update` probes current→latest and reports whether an
      * update is available WITHOUT applying it. Pass `--execute` to apply. An
      * explicit `--version` already implies apply (a deliberate operator action)
-     * and does not need this flag.
+     * and does not need this flag; `dryRun: true` overrides both.
      */
     execute?: boolean;
     /**
@@ -13050,6 +14528,13 @@ export type SystemUpdateData = {
      * mesh-dispatch flag (#455); the serde/MCP field stays `peer`.
      */
     peer?: string | null;
+    /**
+     * Set the fleet plugin signature policy: `enforce` refuses a plugin
+     * release published without a `.minisig`; `warn` (the default) installs it
+     * with a warning, untrusted for privileged ops. A signature that does not
+     * verify is refused under both.
+     */
+    plugin_signatures?: string | null;
     /**
      * Fleet scope only: resolve plugins to their newest PRERELEASE (`-rc`)
      * rather than newest stable. Unset defaults to the daemon's update
@@ -13141,7 +14626,12 @@ export type SystemUpdateData = {
     versions_per_page?: number | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/system.update';
 };
 
@@ -13253,7 +14743,12 @@ export type UnitIdentityCreateData = {
     uuid: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/unit.identity.create';
 };
 
@@ -13296,7 +14791,12 @@ export type UnitIdentityDeleteData = {
     name: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/unit.identity.delete';
 };
 
@@ -13447,7 +14947,12 @@ export type UnitIdentityUpdateData = {
     uuid?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/unit.identity.update';
 };
 
@@ -13499,7 +15004,12 @@ export type WebUpdateData = {
     path?: string | null;
   };
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
   url: '/api/v1/web.update';
 };
 

@@ -91,6 +91,30 @@ export const zBackupOutput = z.object({
 });
 
 /**
+ * A reference to a configured backup TARGET — the WHERE axis, orthogonal to the
+ * provider KIND (the WHAT). A target is named by its `kind` (a target kind in
+ * the target-provider registry) plus a `name` that disambiguates multiple
+ * targets of the same kind. The target kind's plugin owns the target's typed
+ * settings; this ref names the kind and instance, and the target provider
+ * resolves it to concrete storage
+ * ([[orca-core-generic-plugins-expose-functionality]], [[no-kind-owned-by-plugin]]).
+ */
+export const zBackupTargetRef = z.object({
+  kind: z.string(),
+  kinds: z.array(z.string()).nullish(),
+  name: z.string().optional().default('default'),
+  shared: z.boolean().optional(),
+});
+
+/**
+ * The host that produced a backup. Distinguishes writers sharing one pool.
+ */
+export const zBackupWriter = z.object({
+  host: z.string(),
+  machineId: z.string().optional(),
+});
+
+/**
  * A produced, listable backup — the unit a restore selects by date.
  *
  * Carries the identity a caller needs to *list* a kind's backups and *pick one
@@ -119,7 +143,7 @@ export const zBackupRecord = z.object({
   instance: z.string(),
   kind: z.string(),
   note: z.string().nullish(),
-  path: z.string(),
+  path: z.string().optional().default(''),
   sizeBytes: z.coerce
     .bigint()
     .gte(BigInt(0))
@@ -129,20 +153,7 @@ export const zBackupRecord = z.object({
     .optional()
     .default(BigInt(0)),
   system: z.string().optional(),
-});
-
-/**
- * A reference to a configured backup TARGET — the WHERE axis, orthogonal to the
- * provider KIND (the WHAT). A target is named by its `kind` (a target kind in
- * the target-provider registry) plus a `name` that disambiguates multiple
- * targets of the same kind. The target kind's plugin owns the target's typed
- * settings; this ref names the kind and instance, and the target provider
- * resolves it to concrete storage
- * ([[orca-core-generic-plugins-expose-functionality]], [[no-kind-owned-by-plugin]]).
- */
-export const zBackupTargetRef = z.object({
-  kind: z.string(),
-  name: z.string().optional().default('default'),
+  writer: zBackupWriter.nullish(),
 });
 
 export const zBinaryStatus = z.object({
@@ -425,6 +436,24 @@ export const zController = z.object({
   providerInstance: z.string(),
 });
 
+export const zCronAction = z.union([
+  z.literal('enable'),
+  z.literal('disable'),
+  z.literal('add'),
+  z.literal('remove'),
+]);
+
+/**
+ * One job line, enabled or commented out.
+ */
+export const zCronEntry = z.object({
+  command: z.string(),
+  enabled: z.boolean(),
+  lineNo: z.int().gte(0),
+  raw: z.string(),
+  schedule: z.string(),
+});
+
 /**
  * Runtime snapshot of the orca daemon (pid/port/uptime + liveness).
  *
@@ -547,6 +576,25 @@ export const zDbUpdateAction = z.union([
 ]);
 
 /**
+ * A capability a target supports. Consumers check these before invoking an
+ * operation so an unsupported call fails fast rather than at the transport.
+ */
+export const zDeployCapability = z.union([
+  z.literal('launch'),
+  z.literal('stop'),
+  z.literal('restart'),
+  z.literal('logs'),
+  z.literal('shell'),
+  z.literal('metrics'),
+  z.literal('snapshot'),
+  z.literal('migrate'),
+  z.literal('provision'),
+  z.literal('destroy'),
+  z.literal('adopt'),
+  z.literal('status'),
+]);
+
+/**
  * Outcome of a [`DeployTarget::launch`] / `stop` / `restart` operation.
  */
 export const zDeployOutcome = z.object({
@@ -595,7 +643,7 @@ export const zDrainMode = z.union([z.literal('lazy'), z.literal('force')]);
 export const zDrain = z.object({
   enabled: z.boolean().optional().default(true),
   mode: zDrainMode.and(z.unknown()).optional(),
-  settleSecs: z
+  settle_secs: z
     .int()
     .gte(0)
     .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
@@ -640,38 +688,6 @@ export const zFixView = z.object({
   repairId: z.string().nullish(),
   unit: z.string().nullish(),
   url: z.string().nullish(),
-});
-
-export const zFleetPluginResult = z.object({
-  error: z.string().nullish(),
-  host: z.string(),
-  installed: z.string().nullish(),
-  name: z.string(),
-  note: z.string().nullish(),
-  target: z.string().nullish(),
-  updateAvailable: z.boolean(),
-  updated: z.boolean(),
-});
-
-export const zFleetSystemResult = z.object({
-  applied: z.string().nullish(),
-  blocked: z.boolean(),
-  blockedReason: z.string().nullish(),
-  current: z.string().nullish(),
-  error: z.string().nullish(),
-  host: z.string(),
-  id: z.string(),
-  target: z.string().nullish(),
-  updateAvailable: z.boolean(),
-});
-
-export const zFleetUpdateOutput = z.object({
-  dryRun: z.boolean(),
-  errors: z.array(z.string()),
-  notes: z.array(z.string()),
-  plugins: z.array(zFleetPluginResult),
-  runRecord: z.string().nullish(),
-  systems: z.array(zFleetSystemResult),
 });
 
 export const zFsNodeKind = z.enum(['file', 'dir']);
@@ -759,16 +775,16 @@ export const zGpuInfo = z.object({
  */
 export const zGpuPoint = z.object({
   name: z.string(),
-  temperatureC: z.number().nullish(),
-  utilizationPercent: z.number().nullish(),
-  vramTotalMb: z.coerce
+  temperature_c: z.number().nullish(),
+  utilization_percent: z.number().nullish(),
+  vram_total_mb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     })
     .nullish(),
-  vramUsedMb: z.coerce
+  vram_used_mb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
@@ -866,6 +882,30 @@ export const zHealthReport = z.object({
   version: z.string(),
 });
 
+/**
+ * The Claude Code lifecycle events a hook can bind to. Typed — never a raw
+ * string — so composition can validate and group by event.
+ */
+export const zHookEvent = z.enum([
+  'PreToolUse',
+  'PostToolUse',
+  'PreCompact',
+  'PostCompact',
+  'Stop',
+  'Notification',
+  'SessionStart',
+  'UserPromptSubmit',
+]);
+
+export const zHookEntry = z.object({
+  approved: z.boolean(),
+  command: z.string(),
+  event: zHookEvent,
+  hash: z.string(),
+  matcher: z.string(),
+  origin: z.string(),
+});
+
 export const zHostChannel = z.object({
   kind: z.string(),
   last_seen_at: z.coerce
@@ -902,6 +942,13 @@ export const zJobStatus = z.object({
   lastRunOk: z.boolean().nullish(),
   lastRunStarted: z.string().nullish(),
 });
+
+/**
+ * Opaque JSON passthrough wrapper for genuinely free-form upstream payloads
+ * (e.g. Home Assistant entity dumps, Proxmox cluster listings, MCP structuredContent).
+ * Using `Value` here is intentional — the upstream schema is not owned by orca.
+ */
+export const zJsonAny = z.unknown();
 
 /**
  * Where bytes physically live — a reference into the storage domain. The same
@@ -1050,32 +1097,6 @@ export const zMeshDeleteAction = z.union([
   z.literal('leave'),
   z.literal('forget'),
 ]);
-
-export const zMeshDiscoveryRowDto = z.object({
-  addr: z.string(),
-  can_invite: z.boolean(),
-  discovery_state: z.string(),
-  first_seen_at: z.coerce
-    .bigint()
-    .min(BigInt('-9223372036854775808'), {
-      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
-    })
-    .max(BigInt('9223372036854775807'), {
-      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
-    }),
-  hostname: z.string(),
-  last_seen_at: z.coerce
-    .bigint()
-    .min(BigInt('-9223372036854775808'), {
-      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
-    })
-    .max(BigInt('9223372036854775807'), {
-      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
-    }),
-  peer_id: z.string().nullish(),
-  port: z.int().gte(0).lte(65535),
-  pubkey_fp: z.string(),
-});
 
 export const zMeshForgetNotice = z.object({
   peerId: z.string(),
@@ -1255,6 +1276,11 @@ export const zMeshTrustOutput = z.object({
   peer_secure: z.boolean(),
 });
 
+export const zMeshUnpinOutput = z.object({
+  cleared: z.boolean(),
+  id: z.string(),
+});
+
 /**
  * Operation selector for `system.mesh.update`.
  */
@@ -1264,6 +1290,7 @@ export const zMeshUpdateAction = z.union([
   z.literal('sync'),
   z.literal('recover'),
   z.literal('cancel_offer'),
+  z.literal('unpin'),
 ]);
 
 export const zModelRow = z.object({
@@ -1433,6 +1460,12 @@ export const zOwnerCandidate = z.object({
     .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' }),
 });
 
+export const zOwnerlessSchedule = z.object({
+  job: z.string(),
+  name: z.string(),
+  reason: z.string(),
+});
+
 export const zPackageFormat = z.union([
   z.literal('deb'),
   z.literal('rpm'),
@@ -1550,6 +1583,34 @@ export const zPlacement = z.object({
 });
 
 /**
+ * One thing a verb would do. `target` is the addressable thing being changed
+ * (a host, a container, a datastore path), `action` what would happen to it.
+ */
+export const zPlannedChange = z.object({
+  action: z.string(),
+  detail: z.string().nullish(),
+  target: z.string(),
+});
+
+/**
+ * What a gated verb WOULD do. Returned in place of the tool's own output when
+ * the caller asked for a dry run.
+ *
+ * `dryRun` is always `true` here — it exists so a caller that cannot tell the
+ * two response shapes apart structurally still has one unambiguous field to
+ * branch on. A response without it applied changes.
+ */
+export const zExecutionPlan = z.object({
+  changes: z.array(zPlannedChange).optional(),
+  detailed: z.boolean(),
+  dryRun: z.boolean(),
+  howToExecute: z.string(),
+  inputs: zJsonAny.and(z.unknown()),
+  summary: z.string(),
+  tool: z.string(),
+});
+
+/**
  * The `plugin.create` action.
  */
 export const zPluginCreateAction = z.union([z.literal('install'), z.literal('invoke')]);
@@ -1568,6 +1629,7 @@ export const zPluginDeleteAction = z.literal('uninstall');
 export const zPluginInstallOutput = z.object({
   installedPath: z.string(),
   loadedLive: z.boolean(),
+  signed: z.boolean().optional().default(false),
   software: z.string(),
   tools: z.array(z.string()),
   version: z.string(),
@@ -1987,6 +2049,13 @@ export const zSecretEntry = z.object({
   updatedAt: z.string(),
 });
 
+export const zSecretGrantEntry = z.object({
+  createdAt: z.string(),
+  grantedBy: z.string(),
+  holder: z.string(),
+  secretName: z.string(),
+});
+
 /**
  * A series/sequence position, tying a unit to the cross-format reading-order
  * convergence (e.g. Stormlight #1). Kept generic across media types.
@@ -2291,7 +2360,7 @@ export const zSourceProbe = z.union([z.literal('tcp'), z.literal('nfs'), z.liter
  * Fail-over / fail-back policy between a mount's ordered sources.
  */
 export const zFailover = z.object({
-  confirmTicks: z
+  confirm_ticks: z
     .int()
     .gte(0)
     .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
@@ -2299,7 +2368,7 @@ export const zFailover = z.object({
     .default(2),
   enabled: z.boolean().optional().default(true),
   probe: zSourceProbe.and(z.unknown()).optional(),
-  returnToPrimary: z.boolean().optional().default(true),
+  return_to_primary: z.boolean().optional().default(true),
 });
 
 /**
@@ -2652,6 +2721,17 @@ export const zStorageSharesOutput = z.object({
   shares: z.array(zShareRow),
 });
 
+/**
+ * What `backup.sync` did for one instance.
+ */
+export const zSyncInstanceOutcome = z.object({
+  errors: z.array(z.string()).optional(),
+  instance: z.string(),
+  produced: z.array(zBackupRecord),
+  restored: zBackupRecord.nullish(),
+  unchanged: z.array(z.string()).optional(),
+});
+
 export const zSyncMcpSpecsResult = z.object({
   errors: z.array(z.string()),
   server: z.string(),
@@ -2705,15 +2785,29 @@ export const zSystemDetailView = z.union([
  * tick by the daemon, read back as `SystemInfoReport.history`.
  */
 export const zSystemHistoryPoint = z.object({
-  cpuPercent: z.number().nullish(),
-  fsTotalGb: z.coerce
+  cpu_percent: z.number().nullish(),
+  fs_total_gb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     })
     .nullish(),
-  fsUsedGb: z.coerce
+  fs_total_mb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    })
+    .nullish(),
+  fs_used_gb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    })
+    .nullish(),
+  fs_used_mb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
@@ -2721,21 +2815,21 @@ export const zSystemHistoryPoint = z.object({
     })
     .nullish(),
   gpus: z.array(zGpuPoint).optional(),
-  memTotalMb: z.coerce
+  mem_total_mb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     })
     .nullish(),
-  memUsedMb: z.coerce
+  mem_used_mb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     })
     .nullish(),
-  processRssMb: z.coerce
+  process_rss_mb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
@@ -2798,6 +2892,30 @@ export const zDbStatsReport = z.object({
     .max(BigInt('9223372036854775807'), {
       error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
     }),
+});
+
+/**
+ * How orca provisions and manages a workload on a given [`Runtime`]. Orthogonal
+ * to the runtime: e.g. a `Docker` runtime can be driven via `Dockge`, a raw
+ * `Compose` file, or the plain `Cli`. An `Lxc`/`Vm` runtime is driven via
+ * `Proxmox`. Kept open-ended so new management surfaces don't force a runtime
+ * change.
+ */
+export const zTargetKind = z.union([
+  z.literal('cli'),
+  z.literal('dockge'),
+  z.literal('compose'),
+  z.literal('proxmox'),
+  z.literal('quadlet'),
+]);
+
+export const zDeployTargetRow = z.object({
+  capabilities: z.array(zDeployCapability),
+  endpoint: z.string(),
+  host: z.string(),
+  id: z.uuid(),
+  kind: zTargetKind,
+  runtime: zRuntime,
 });
 
 /**
@@ -2963,7 +3081,21 @@ export const zSystemInfoReport = z.object({
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     })
     .nullish(),
+  orcaFsAvailMb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    })
+    .nullish(),
   orcaFsTotalGb: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    })
+    .nullish(),
+  orcaFsTotalMb: z.coerce
     .bigint()
     .gte(BigInt(0))
     .max(BigInt('18446744073709551615'), {
@@ -3047,7 +3179,6 @@ export const zSystemInfoReport = z.object({
 });
 
 export const zTelemetrySnapshotRow = z.object({
-  peerId: z.string(),
   receivedAtUnix: z.coerce
     .bigint()
     .min(BigInt('-9223372036854775808'), {
@@ -3066,6 +3197,7 @@ export const zTelemetrySnapshotRow = z.object({
     }),
   source: z.string(),
   system: zSystemInfoReport.nullish(),
+  systemId: z.string(),
 });
 
 /**
@@ -3092,49 +3224,6 @@ export const zTopologyFacts = z.object({
   virtualization: z.string().nullish(),
 });
 
-export const zMeshPeerDto = z.object({
-  channel: z.string().nullish(),
-  frontend: z.string().nullish(),
-  hostname: z.string(),
-  last_seen_at: z.coerce
-    .bigint()
-    .min(BigInt('-9223372036854775808'), {
-      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
-    })
-    .max(BigInt('9223372036854775807'), {
-      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
-    }),
-  latency_ms: z
-    .int()
-    .gte(0)
-    .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
-    .nullish(),
-  local: z.boolean().optional().default(false),
-  local_secure: z.boolean(),
-  mode: z.string().nullish(),
-  peer_id: z.string(),
-  peer_secure: z.boolean(),
-  pinned_to: z.string().nullish(),
-  port: z.int().gte(0).lte(65535),
-  probe_error: z.string().nullish(),
-  pubkey_fp: z.string().nullish(),
-  reachable: z.boolean().nullish(),
-  routes: zRoutes.and(z.unknown()).optional(),
-  status: z.string(),
-  system: zTopologyFacts.nullish(),
-  target: z.string().nullish(),
-  update_available: z.boolean().nullish(),
-  update_checked_secs: z.coerce
-    .bigint()
-    .gte(BigInt(0))
-    .max(BigInt('18446744073709551615'), {
-      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-    })
-    .nullish(),
-  update_latest: z.string().nullish(),
-  version: z.string().nullish(),
-});
-
 /**
  * Unified mesh-membership view. Every row carries a `state` discriminant so
  * callers see joined members, in-flight handshakes, and mDNS-discovered
@@ -3143,21 +3232,80 @@ export const zMeshPeerDto = z.object({
  * consolidation).
  */
 export const zMeshMember = z.union([
-  zMeshPeerDto.and(
-    z.object({
-      state: z.literal('joined'),
-    }),
-  ),
+  z.object({
+    channel: z.string().nullish(),
+    frontend: z.string().nullish(),
+    hostname: z.string(),
+    id: z.string(),
+    last_seen_at: z.coerce
+      .bigint()
+      .min(BigInt('-9223372036854775808'), {
+        error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+      })
+      .max(BigInt('9223372036854775807'), {
+        error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+      }),
+    latency_ms: z
+      .int()
+      .gte(0)
+      .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
+      .nullish(),
+    local: z.boolean().optional().default(false),
+    local_secure: z.boolean(),
+    mode: z.string().nullish(),
+    peer_secure: z.boolean(),
+    pinned_to: z.string().nullish(),
+    port: z.int().gte(0).lte(65535),
+    probe_error: z.string().nullish(),
+    pubkey_fp: z.string().nullish(),
+    reachable: z.boolean().nullish(),
+    routes: zRoutes.and(z.unknown()).optional(),
+    state: z.literal('joined'),
+    status: z.string(),
+    system: zTopologyFacts.nullish(),
+    target: z.string().nullish(),
+    update_available: z.boolean().nullish(),
+    update_checked_secs: z.coerce
+      .bigint()
+      .gte(BigInt(0))
+      .max(BigInt('18446744073709551615'), {
+        error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+      })
+      .nullish(),
+    update_latest: z.string().nullish(),
+    version: z.string().nullish(),
+  }),
   zMeshPendingOfferDto.and(
     z.object({
       state: z.literal('handshaking'),
     }),
   ),
-  zMeshDiscoveryRowDto.and(
-    z.object({
-      state: z.literal('discovered'),
-    }),
-  ),
+  z.object({
+    addr: z.string(),
+    can_invite: z.boolean(),
+    discovery_state: z.string(),
+    first_seen_at: z.coerce
+      .bigint()
+      .min(BigInt('-9223372036854775808'), {
+        error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+      })
+      .max(BigInt('9223372036854775807'), {
+        error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+      }),
+    hostname: z.string(),
+    id: z.string().nullish(),
+    last_seen_at: z.coerce
+      .bigint()
+      .min(BigInt('-9223372036854775808'), {
+        error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+      })
+      .max(BigInt('9223372036854775807'), {
+        error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+      }),
+    port: z.int().gte(0).lte(65535),
+    pubkey_fp: z.string(),
+    state: z.literal('discovered'),
+  }),
 ]);
 
 export const zMeshListOutput = z.object({
@@ -3196,11 +3344,63 @@ export const zTrack = z.object({
   location: zLocation.nullish().default(null),
 });
 
+/**
+ * A `(kind, instance)` whose backup reported nothing new, so no slot was
+ * committed.
+ */
+export const zUnchangedBackup = z.object({
+  instance: z.string(),
+  kind: z.string(),
+  system: z.string().optional(),
+  target: z.string().nullish(),
+});
+
 export const zUnitIdentityEntry = z.object({
   enabled: z.boolean(),
   name: z.string(),
   routes: zRoutes,
   uuid: z.string(),
+});
+
+/**
+ * Outcome of one fleet-update row, daemon or plugin.
+ */
+export const zUpdateRowStatus = z.union([
+  z.literal('up_to_date'),
+  z.literal('failed'),
+  z.literal('update_available'),
+  z.literal('updated'),
+  z.literal('blocked'),
+  z.literal('unknown'),
+]);
+
+export const zFleetPluginResult = z.object({
+  applied: z.string().nullish(),
+  host: z.string(),
+  installed: z.string().nullish(),
+  name: z.string(),
+  reason: z.string().nullish(),
+  status: zUpdateRowStatus.and(z.unknown()).optional(),
+  target: z.string().nullish(),
+});
+
+export const zFleetSystemResult = z.object({
+  applied: z.string().nullish(),
+  current: z.string().nullish(),
+  host: z.string(),
+  id: z.string(),
+  reason: z.string().nullish(),
+  status: zUpdateRowStatus.and(z.unknown()).optional(),
+  target: z.string().nullish(),
+});
+
+export const zFleetUpdateOutput = z.object({
+  dryRun: z.boolean(),
+  errors: z.array(z.string()),
+  notes: z.array(z.string()),
+  plugins: z.array(zFleetPluginResult),
+  runRecord: z.string().nullish(),
+  systems: z.array(zFleetSystemResult),
 });
 
 /**
@@ -3393,50 +3593,6 @@ export const zWebRouteStatus = z.object({
   path: z.string(),
 });
 
-export const zMeshPeerDtoWritable = z.object({
-  addr: z.string().optional(),
-  channel: z.string().nullish(),
-  frontend: z.string().nullish(),
-  hostname: z.string(),
-  last_seen_at: z.coerce
-    .bigint()
-    .min(BigInt('-9223372036854775808'), {
-      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
-    })
-    .max(BigInt('9223372036854775807'), {
-      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
-    }),
-  latency_ms: z
-    .int()
-    .gte(0)
-    .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
-    .nullish(),
-  local: z.boolean().optional().default(false),
-  local_secure: z.boolean(),
-  mode: z.string().nullish(),
-  peer_id: z.string(),
-  peer_secure: z.boolean(),
-  pinned_to: z.string().nullish(),
-  port: z.int().gte(0).lte(65535),
-  probe_error: z.string().nullish(),
-  pubkey_fp: z.string().nullish(),
-  reachable: z.boolean().nullish(),
-  routes: zRoutes.and(z.unknown()).optional(),
-  status: z.string(),
-  system: zTopologyFacts.nullish(),
-  target: z.string().nullish(),
-  update_available: z.boolean().nullish(),
-  update_checked_secs: z.coerce
-    .bigint()
-    .gte(BigInt(0))
-    .max(BigInt('18446744073709551615'), {
-      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
-    })
-    .nullish(),
-  update_latest: z.string().nullish(),
-  version: z.string().nullish(),
-});
-
 /**
  * Unified mesh-membership view. Every row carries a `state` discriminant so
  * callers see joined members, in-flight handshakes, and mDNS-discovered
@@ -3445,21 +3601,81 @@ export const zMeshPeerDtoWritable = z.object({
  * consolidation).
  */
 export const zMeshMemberWritable = z.union([
-  zMeshPeerDtoWritable.and(
-    z.object({
-      state: z.literal('joined'),
-    }),
-  ),
+  z.object({
+    addr: z.string().optional(),
+    channel: z.string().nullish(),
+    frontend: z.string().nullish(),
+    hostname: z.string(),
+    id: z.string(),
+    last_seen_at: z.coerce
+      .bigint()
+      .min(BigInt('-9223372036854775808'), {
+        error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+      })
+      .max(BigInt('9223372036854775807'), {
+        error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+      }),
+    latency_ms: z
+      .int()
+      .gte(0)
+      .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
+      .nullish(),
+    local: z.boolean().optional().default(false),
+    local_secure: z.boolean(),
+    mode: z.string().nullish(),
+    peer_secure: z.boolean(),
+    pinned_to: z.string().nullish(),
+    port: z.int().gte(0).lte(65535),
+    probe_error: z.string().nullish(),
+    pubkey_fp: z.string().nullish(),
+    reachable: z.boolean().nullish(),
+    routes: zRoutes.and(z.unknown()).optional(),
+    state: z.literal('joined'),
+    status: z.string(),
+    system: zTopologyFacts.nullish(),
+    target: z.string().nullish(),
+    update_available: z.boolean().nullish(),
+    update_checked_secs: z.coerce
+      .bigint()
+      .gte(BigInt(0))
+      .max(BigInt('18446744073709551615'), {
+        error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+      })
+      .nullish(),
+    update_latest: z.string().nullish(),
+    version: z.string().nullish(),
+  }),
   zMeshPendingOfferDto.and(
     z.object({
       state: z.literal('handshaking'),
     }),
   ),
-  zMeshDiscoveryRowDto.and(
-    z.object({
-      state: z.literal('discovered'),
-    }),
-  ),
+  z.object({
+    addr: z.string(),
+    can_invite: z.boolean(),
+    discovery_state: z.string(),
+    first_seen_at: z.coerce
+      .bigint()
+      .min(BigInt('-9223372036854775808'), {
+        error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+      })
+      .max(BigInt('9223372036854775807'), {
+        error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+      }),
+    hostname: z.string(),
+    id: z.string().nullish(),
+    last_seen_at: z.coerce
+      .bigint()
+      .min(BigInt('-9223372036854775808'), {
+        error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+      })
+      .max(BigInt('9223372036854775807'), {
+        error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+      }),
+    port: z.int().gte(0).lte(65535),
+    pubkey_fp: z.string(),
+    state: z.literal('discovered'),
+  }),
 ]);
 
 export const zMeshListOutputWritable = z.object({
@@ -3523,6 +3739,10 @@ export const zAgentCreateBody = z.object({
   prompt: z.string(),
 });
 
+export const zAgentCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * AgentRunOutput
  *
@@ -3581,6 +3801,43 @@ export const zAgentListResponse = z.object({
 });
 
 /**
+ * ApproveHookArgs
+ */
+export const zAgentHookApproveBody = z.object({
+  hash: z.string(),
+  origin: z.string(),
+});
+
+export const zAgentHookApproveQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * ApproveHookOutput
+ *
+ * Tool result
+ */
+export const zAgentHookApproveResponse = z.object({
+  command: z.string(),
+  hash: z.string(),
+  origin: z.string(),
+});
+
+/**
+ * ListHooksArgs
+ */
+export const zAgentHookListBody = z.record(z.string(), z.unknown());
+
+/**
+ * ListHooksOutput
+ *
+ * Tool result
+ */
+export const zAgentHookListResponse = z.object({
+  hooks: z.array(zHookEntry),
+});
+
+/**
  * LoginArgs
  */
 export const zAuthLoginBody = z.object({
@@ -3622,6 +3879,10 @@ export const zAuthSessionCreateBody = z.object({
   provider: z.string(),
 });
 
+export const zAuthSessionCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * AuthLoginOutput
  *
@@ -3638,6 +3899,10 @@ export const zAuthSessionCreateResponse = z.object({
  */
 export const zAuthSessionDeleteBody = z.object({
   provider: z.string(),
+});
+
+export const zAuthSessionDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -3678,6 +3943,10 @@ export const zAuthTokenCreateBody = z.object({
   role: z.string(),
 });
 
+export const zAuthTokenCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * TokenCreateOutput
  *
@@ -3693,7 +3962,11 @@ export const zAuthTokenCreateResponse = z.object({
  * TokenRevokeArgs
  */
 export const zAuthTokenDeleteBody = z.object({
-  id: z.string(),
+  id: z.uuid(),
+});
+
+export const zAuthTokenDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -3739,6 +4012,10 @@ export const zAuthTokenListResponse = z.object({
  * BackupCheckArgs
  */
 export const zBackupCheckBody = z.record(z.string(), z.unknown());
+
+export const zBackupCheckQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
 
 /**
  * BackupCheckOutput
@@ -3809,6 +4086,10 @@ export const zBackupRestoreBody = z.object({
   localOnly: z.boolean().optional(),
 });
 
+export const zBackupRestoreQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * BackupRestoreOutput
  *
@@ -3837,6 +4118,10 @@ export const zBackupRunBody = z.object({
   localOnly: z.boolean().optional(),
 });
 
+export const zBackupRunQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * BackupRunOutput
  *
@@ -3847,6 +4132,31 @@ export const zBackupRunResponse = z.object({
   produced: z.array(zBackupRecord),
   systemErrors: z.array(z.string()).optional(),
   targets: z.array(z.string()),
+  unchanged: z.array(zUnchangedBackup).optional(),
+});
+
+/**
+ * BackupSyncArgs
+ */
+export const zBackupSyncBody = z.object({
+  instance: z.string().nullish().default(null),
+  kind: z.string().optional().default(''),
+});
+
+export const zBackupSyncQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * BackupSyncOutput
+ *
+ * Tool result
+ */
+export const zBackupSyncResponse = z.object({
+  errors: z.array(z.string()).optional(),
+  instances: z.array(zSyncInstanceOutcome),
+  kind: z.string(),
+  targets: z.array(z.string()),
 });
 
 /**
@@ -3856,6 +4166,10 @@ export const zConfigDeleteBody = z.object({
   host: z.string().nullish(),
   name: z.string(),
   noun: z.string(),
+});
+
+export const zConfigDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -3881,6 +4195,8 @@ export const zConfigDetailBody = z.object({
  * Tool result
  */
 export const zConfigDetailResponse = z.object({
+  cspRestartPending: z.boolean().nullish(),
+  effectiveCsp: z.string().nullish(),
   row: zConfigRowOut.nullish(),
 });
 
@@ -3919,6 +4235,10 @@ export const zConfigListResponse = z.object({
  * NotImplementedArgs
  */
 export const zConfigSourceApplyBody = z.record(z.string(), z.unknown());
+
+export const zConfigSourceApplyQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
 
 /**
  * NotImplementedOutput
@@ -3959,6 +4279,10 @@ export const zConfigSourceDiffResponse = z.object({
  */
 export const zConfigSourcePullBody = z.record(z.string(), z.unknown());
 
+export const zConfigSourcePullQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * NotImplementedOutput
  *
@@ -3974,6 +4298,10 @@ export const zConfigSourcePullResponse = z.object({
  * NotImplementedArgs
  */
 export const zConfigSourcePushBody = z.record(z.string(), z.unknown());
+
+export const zConfigSourcePushQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
 
 /**
  * NotImplementedOutput
@@ -4014,6 +4342,10 @@ export const zConfigSourceStatusResponse = z.object({
  */
 export const zConfigSourceSyncBody = z.record(z.string(), z.unknown());
 
+export const zConfigSourceSyncQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * NotImplementedOutput
  *
@@ -4033,6 +4365,10 @@ export const zConfigUpsertBody = z.object({
   json: z.string(),
   name: z.string(),
   noun: z.string(),
+});
+
+export const zConfigUpsertQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4056,6 +4392,10 @@ export const zContainerCreateBody = z.object({
   id: z.string().optional().default(''),
   runtime: z.string().nullish().default(null),
   stdin: z.string().nullish().default(null),
+});
+
+export const zContainerCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4162,6 +4502,10 @@ export const zContainerUpdateBody = z.object({
   runtime: z.string().nullish().default(null),
 });
 
+export const zContainerUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * ContainerUpdateOutput
  *
@@ -4208,6 +4552,10 @@ export const zDbUpdateBody = z.object({
   table: z.string().nullish().default(null),
 });
 
+export const zDbUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * DbUpdateOutput
  *
@@ -4216,12 +4564,30 @@ export const zDbUpdateBody = z.object({
 export const zDbUpdateResponse = z.union([zDbMigrateReport, zDbSweepReport, zDbCompactReport]);
 
 /**
+ * DeployListArgs
+ */
+export const zDeployListBody = z.record(z.string(), z.unknown());
+
+/**
+ * DeployListOutput
+ *
+ * Tool result
+ */
+export const zDeployListResponse = z.object({
+  targets: z.array(zDeployTargetRow),
+});
+
+/**
  * FsDeleteArgs
  */
 export const zFilesDeleteBody = z.object({
   path: z.string().nullish().default(null),
   removeIgnorePattern: z.string().nullish().default(null),
   unregisterRoot: z.string().nullish().default(null),
+});
+
+export const zFilesDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4361,6 +4727,10 @@ export const zFilesUpdateBody = z.object({
   registerRootPath: z.string().nullish().default(null),
 });
 
+export const zFilesUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * FsUpdateOutput
  *
@@ -4386,6 +4756,10 @@ export const zGuestExecBody = z.object({
     })
     .nullish()
     .default(null),
+});
+
+export const zGuestExecQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4433,6 +4807,10 @@ export const zGuestWriteFileBody = z.object({
   scope: z.string().nullish().default(null),
 });
 
+export const zGuestWriteFileQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * null
  *
@@ -4458,6 +4836,36 @@ export const zIdentityPrivilegeAuditResponse = z.object({
   host: z.string(),
   rules: z.array(zPrivilegeRule),
   unreadable: z.array(z.string()),
+});
+
+/**
+ * IdentityPrivilegeRepairArgs
+ */
+export const zIdentityPrivilegeRepairBody = z.object({
+  serviceUser: z.string().nullish().default(null),
+});
+
+export const zIdentityPrivilegeRepairQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * SudoersRepairPlan
+ *
+ * Tool result
+ */
+export const zIdentityPrivilegeRepairResponse = z.object({
+  current: z.string().nullish(),
+  diff: z.array(z.string()),
+  executed: z.boolean(),
+  flashCopyCurrent: z.boolean(),
+  goBlockCurrent: z.boolean(),
+  path: z.string(),
+  privilegedCopyCurrent: z.boolean(),
+  rendered: z.string(),
+  unraid: z.boolean(),
+  upToDate: z.boolean(),
+  user: z.string(),
 });
 
 /**
@@ -4573,6 +4981,10 @@ export const zMediaUnitRescanBody = z.object({
   title: z.string().nullish().default(null),
 });
 
+export const zMediaUnitRescanQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * MediaUnitRescanOutput
  *
@@ -4614,6 +5026,10 @@ export const zModelCreateBody = z.object({
   provider: z.string(),
 });
 
+export const zModelCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * ModelCreateOutput
  *
@@ -4628,6 +5044,10 @@ export const zModelCreateResponse = z.object({
  */
 export const zModelDeleteBody = z.object({
   id: z.string(),
+});
+
+export const zModelDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4710,6 +5130,10 @@ export const zModelUpdateBody = z.object({
   provider: z.string().nullish(),
 });
 
+export const zModelUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * ModelRow
  *
@@ -4736,6 +5160,10 @@ export const zNamespaceAccessCreateBody = z.object({
   user: z.string(),
 });
 
+export const zNamespaceAccessCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * NamespaceMutationResult
  *
@@ -4753,6 +5181,10 @@ export const zNamespaceAccessCreateResponse = z.object({
 export const zNamespaceAccessDeleteBody = z.object({
   spec: z.string(),
   user: z.string(),
+});
+
+export const zNamespaceAccessDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4806,6 +5238,10 @@ export const zNamespaceCreateBody = z.object({
   name: z.string(),
 });
 
+export const zNamespaceCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * NamespaceDetail
  *
@@ -4825,6 +5261,10 @@ export const zNamespaceCreateResponse = z.object({
  */
 export const zNamespaceDeleteBody = z.object({
   spec: z.string(),
+});
+
+export const zNamespaceDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4896,6 +5336,10 @@ export const zNamespaceUseBody = z.object({
   spec: z.string(),
 });
 
+export const zNamespaceUseQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * NamespaceMutationResult
  *
@@ -4923,7 +5367,11 @@ export const zNotifyCreateBody = z.object({
   source: z.string().nullish().default(null),
   sourceRef: z.string().nullish().default(null),
   title: z.string().nullish().default(null),
-  userId: z.string().nullish().default(null),
+  userId: z.uuid().nullish().default(null),
+});
+
+export const zNotifyCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -4973,6 +5421,10 @@ export const zNotifyUpdateBody = z.object({
   key: z.string().nullish().default(null),
 });
 
+export const zNotifyUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * NotifyUpdateOutput
  *
@@ -4987,6 +5439,10 @@ export const zPkiCreateBody = z.object({
   capability: z.string().nullish().default(null),
   kind: zPkiKind.and(z.unknown()).optional(),
   pluginId: z.string().nullish().default(null),
+});
+
+export const zPkiCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5039,10 +5495,13 @@ export const zPkiListResponse = z.object({
  */
 export const zPluginCreateBody = z.object({
   action: zPluginCreateAction.and(z.unknown()),
+  allowUnsigned: z.boolean().optional().default(false),
   args: z.unknown().optional().default(null),
+  execute: z.boolean().optional().default(false),
   file: z.string().nullish().default(null),
   name: z.string().nullish().default(null),
   prerelease: z.boolean().optional().default(false),
+  replace: z.boolean().optional().default(false),
   tool: z.string().nullish().default(null),
   version: z.string().nullish().default(null),
 });
@@ -5052,7 +5511,11 @@ export const zPluginCreateBody = z.object({
  *
  * `plugin.create` payload — one variant per `action`.
  */
-export const zPluginCreateResponse = z.union([zPluginInstallOutput, zPluginInvokeOutput]);
+export const zPluginCreateResponse = z.union([
+  zPluginInstallOutput,
+  zPluginInvokeOutput,
+  zExecutionPlan,
+]);
 
 /**
  * PluginCreateArgs
@@ -5060,6 +5523,10 @@ export const zPluginCreateResponse = z.union([zPluginInstallOutput, zPluginInvok
 export const zPluginDataCreateBody = z.object({
   instanceId: z.string().nullish(),
   manifest: z.string(),
+});
+
+export const zPluginDataCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5078,6 +5545,10 @@ export const zPluginDataDeleteBody = z.object({
   credKey: z.string().nullish(),
   dataKey: z.string().nullish(),
   id: z.string(),
+});
+
+export const zPluginDataDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5136,6 +5607,10 @@ export const zPluginDataUpdateBody = z.object({
   id: z.string(),
 });
 
+export const zPluginDataUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * PluginUpdateOutput
  *
@@ -5154,13 +5629,19 @@ export const zPluginDeleteBody = z.object({
   name: z.string().optional().default(''),
 });
 
+export const zPluginDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * PluginUninstallOutput
  *
  * Tool result
  */
 export const zPluginDeleteResponse = z.object({
+  droppedTables: z.array(z.string()).optional().default([]),
   removedFromDisk: z.boolean(),
+  revokedGrants: z.array(z.string()).optional().default([]),
   software: z.string(),
   unloaded: z.boolean(),
 });
@@ -5242,6 +5723,7 @@ export const zPluginServeAssetBody = z.object({
  */
 export const zPluginServeAssetResponse = z.object({
   asset_b64: z.string(),
+  minisig: z.string().nullish(),
   sha256: z.string(),
   version: z.string(),
 });
@@ -5250,10 +5732,15 @@ export const zPluginServeAssetResponse = z.object({
  * PluginUpdateArgs
  */
 export const zPluginUpdateBody = z.object({
+  allowUnsigned: z.boolean().optional().default(false),
   execute: z.boolean().optional().default(false),
   name: z.string().optional().default(''),
   prerelease: z.boolean().optional().default(false),
   version: z.string().nullish().default(null),
+});
+
+export const zPluginUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5276,6 +5763,10 @@ export const zPluginUpdateResponse = z.object({
 export const zScheduleCreateBody = z.object({
   action: zScheduleCreateAction.and(z.unknown()).optional(),
   name: z.string(),
+});
+
+export const zScheduleCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5345,6 +5836,20 @@ export const zScheduleListResponse = z.object({
 });
 
 /**
+ * ScheduleOwnerListArgs
+ */
+export const zScheduleOwnerListBody = z.record(z.string(), z.unknown());
+
+/**
+ * ScheduleOwnerListOutput
+ *
+ * Tool result
+ */
+export const zScheduleOwnerListResponse = z.object({
+  ownerless: z.array(zOwnerlessSchedule),
+});
+
+/**
  * AddSchemaArgs
  */
 export const zSchemaCreateBody = z.object({
@@ -5356,6 +5861,10 @@ export const zSchemaCreateBody = z.object({
   password: z.string(),
   port: z.int().gte(0).lte(65535).nullish(),
   user: z.string(),
+});
+
+export const zSchemaCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5373,6 +5882,10 @@ export const zSchemaCreateResponse = z.object({
  */
 export const zSchemaDeleteBody = z.object({
   name: z.string(),
+});
+
+export const zSchemaDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5438,6 +5951,10 @@ export const zSecretsDeleteBody = z.object({
   name: z.string(),
 });
 
+export const zSecretsDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * SecretDeleteReport
  *
@@ -5464,6 +5981,68 @@ export const zSecretsDetailResponse = z.object({
   backend: z.string(),
   name: z.string(),
   value: z.string(),
+});
+
+/**
+ * SecretGrantArgs
+ */
+export const zSecretsGrantCreateBody = z.object({
+  holder: z.string(),
+  name: z.string(),
+});
+
+export const zSecretsGrantCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * SecretGrantReport
+ *
+ * Tool result
+ */
+export const zSecretsGrantCreateResponse = z.object({
+  changed: z.boolean(),
+  holder: z.string(),
+  name: z.string(),
+});
+
+/**
+ * SecretGrantArgs
+ */
+export const zSecretsGrantDeleteBody = z.object({
+  holder: z.string(),
+  name: z.string(),
+});
+
+export const zSecretsGrantDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * SecretGrantReport
+ *
+ * Tool result
+ */
+export const zSecretsGrantDeleteResponse = z.object({
+  changed: z.boolean(),
+  holder: z.string(),
+  name: z.string(),
+});
+
+/**
+ * SecretGrantListArgs
+ */
+export const zSecretsGrantListBody = z.object({
+  holder: z.string().nullish().default(null),
+});
+
+/**
+ * SecretGrantListReport
+ *
+ * Tool result
+ */
+export const zSecretsGrantListResponse = z.object({
+  grants: z.array(zSecretGrantEntry),
 });
 
 /**
@@ -5508,6 +6087,10 @@ export const zSecretsUpsertBody = z.object({
   valueStdin: z.boolean().optional(),
 });
 
+export const zSecretsUpsertQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * SecretMutationReport
  *
@@ -5525,6 +6108,11 @@ export const zSecretsUpsertResponse = z.object({
 export const zServiceCreateBody = z.object({
   action: zServiceCreateAction.nullish().default(null),
   endpoint: zEndpointArgs.and(z.unknown()).optional(),
+  targetId: z.uuid().nullish().default(null),
+});
+
+export const zServiceCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5601,6 +6189,10 @@ export const zServiceInstanceCreateBody = z.object({
   runtime: z.string(),
 });
 
+export const zServiceInstanceCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * ServiceInstanceCreateOutput
  *
@@ -5615,6 +6207,10 @@ export const zServiceInstanceCreateResponse = z.object({
  */
 export const zServiceInstanceDeleteBody = z.object({
   name: z.string(),
+});
+
+export const zServiceInstanceDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5685,6 +6281,10 @@ export const zServiceInstanceUpdateBody = z.object({
   runtime: z.string().nullish().default(null),
 });
 
+export const zServiceInstanceUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * ServiceInstanceUpdateOutput
  *
@@ -5735,6 +6335,10 @@ export const zServiceUpdateBody = z.object({
   from: z.string().nullish().default(null),
 });
 
+export const zServiceUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * OkOutput
  *
@@ -5750,6 +6354,10 @@ export const zServiceUpdateResponse = z.object({
 export const zSpecCreateBody = z.object({
   name: z.string(),
   url: z.string(),
+});
+
+export const zSpecCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5775,6 +6383,10 @@ export const zSpecCreateResponse = z.object({
  */
 export const zSpecDeleteBody = z.object({
   name: z.string(),
+});
+
+export const zSpecDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5847,6 +6459,10 @@ export const zSpecUpdateBody = z.object({
   variables: z.unknown().optional(),
 });
 
+export const zSpecUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * SpecUpdateOutput
  *
@@ -5892,6 +6508,60 @@ export const zStorageDetailResponse = z.object({
     .max(BigInt('18446744073709551615'), {
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     }),
+});
+
+/**
+ * StorageExportDeleteArgs
+ */
+export const zStorageExportDeleteBody = z.object({
+  path: z.string().optional().default(''),
+  provider: z.string().optional().default(''),
+});
+
+export const zStorageExportDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * StorageExportWriteOutput
+ *
+ * Tool result
+ */
+export const zStorageExportDeleteResponse = z.object({
+  after: zExportRow.nullish(),
+  before: zExportRow.nullish(),
+  dryRun: z.boolean(),
+  path: z.string(),
+  provider: z.string(),
+});
+
+/**
+ * StorageExportUpdateArgs
+ */
+export const zStorageExportUpdateBody = z.object({
+  allowUnsafe: z.boolean().optional().default(false),
+  clients: z.array(z.string()).optional().default([]),
+  fsid: z.string().nullish().default(null),
+  options: z.array(z.string()).optional().default([]),
+  path: z.string().optional().default(''),
+  provider: z.string().optional().default(''),
+});
+
+export const zStorageExportUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * StorageExportWriteOutput
+ *
+ * Tool result
+ */
+export const zStorageExportUpdateResponse = z.object({
+  after: zExportRow.nullish(),
+  before: zExportRow.nullish(),
+  dryRun: z.boolean(),
+  path: z.string(),
+  provider: z.string(),
 });
 
 /**
@@ -5947,11 +6617,15 @@ export const zStorageListResponse = z.object({
 export const zStorageMountCreateBody = z.object({
   force: z.boolean().optional().default(false),
   guest: z.string().nullish().default(null),
-  host: z.string().optional().default(''),
-  name: z.string().optional().default(''),
-  remountPolicy: z.string().nullish().default(null),
-  shareId: z.string().optional().default(''),
-  target: z.string().optional().default(''),
+  host: z.uuid(),
+  name: z.string(),
+  remountPolicy: z.string().nullish(),
+  shareId: z.uuid(),
+  target: z.string(),
+});
+
+export const zStorageMountCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5977,7 +6651,11 @@ export const zStorageMountCreateResponse = z.object({
  * StorageMountDeleteArgs
  */
 export const zStorageMountDeleteBody = z.object({
-  id: z.string().optional().default(''),
+  id: z.uuid(),
+});
+
+export const zStorageMountDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -5994,8 +6672,8 @@ export const zStorageMountDeleteResponse = z.object({
  * StorageMountDetailArgs
  */
 export const zStorageMountDetailBody = z.object({
-  host: z.string().nullish().default(null),
-  id: z.string().nullish().default(null),
+  host: z.uuid().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   name: z.string().nullish().default(null),
 });
 
@@ -6022,7 +6700,7 @@ export const zStorageMountDetailResponse = z.object({
  * StorageMountListArgs
  */
 export const zStorageMountListBody = z.object({
-  host: z.string().nullish().default(null),
+  host: z.uuid().nullish().default(null),
 });
 
 /**
@@ -6046,14 +6724,18 @@ export const zStorageMountUpdateBody = z.object({
     })
     .nullish()
     .default(null),
-  host: z.string().nullish().default(null),
-  id: z.string().nullish().default(null),
+  host: z.uuid().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   name: z.string().nullish().default(null),
   provider: z.string().nullish().default(null),
   remountPolicy: z.string().nullish().default(null),
-  shareId: z.string().nullish().default(null),
+  shareId: z.uuid().nullish().default(null),
   target: z.string().nullish().default(null),
   trigger: z.boolean().nullish().default(null),
+});
+
+export const zStorageMountUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6074,10 +6756,14 @@ export const zStorageMountUpdateResponse = z.union([
  */
 export const zStorageReplicationCreateBody = z.object({
   folder: z.string(),
-  id: z.string(),
+  id: z.uuid(),
   name: z.string(),
   provider: z.string(),
   routes: z.array(zRoute).optional().default([]),
+});
+
+export const zStorageReplicationCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6094,6 +6780,10 @@ export const zStorageReplicationCreateResponse = z.object({
  */
 export const zStorageReplicationDeleteBody = z.object({
   name: z.string(),
+});
+
+export const zStorageReplicationDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6159,10 +6849,14 @@ export const zStorageReplicationListResponse = z.object({
 export const zStorageReplicationUpdateBody = z.object({
   enabled: z.boolean().nullish().default(null),
   folder: z.string().nullish().default(null),
-  id: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   name: z.string().optional().default(''),
   provider: z.string().nullish().default(null),
   routes: z.array(zRoute).optional().default([]),
+});
+
+export const zStorageReplicationUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6182,12 +6876,16 @@ export const zStorageShareCreateBody = z.object({
   backend: z.string(),
   credential: z.string().nullish(),
   fstype: z.string(),
-  id: z.string(),
+  id: z.uuid(),
   name: z.string(),
   options: z.string(),
   optionsRendered: z.string(),
   replication: z.string().nullish(),
   routes: z.array(zRoute).optional().default([]),
+});
+
+export const zStorageShareCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6204,6 +6902,10 @@ export const zStorageShareCreateResponse = z.object({
  */
 export const zStorageShareDeleteBody = z.object({
   name: z.string(),
+});
+
+export const zStorageShareDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6281,6 +6983,10 @@ export const zStorageShareRepairPermissionsBody = z.object({
     .default(null),
 });
 
+export const zStorageShareRepairPermissionsQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * StorageShareRepairPermsOutput
  *
@@ -6307,7 +7013,7 @@ export const zStorageShareUpdateBody = z.object({
   credential: z.string().nullish().default(null),
   enabled: z.boolean().nullish().default(null),
   fstype: z.string().nullish().default(null),
-  id: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   name: z.string().optional().default(''),
   options: z.string().nullish().default(null),
   optionsRendered: z.string().nullish().default(null),
@@ -6324,6 +7030,10 @@ export const zStorageShareUpdateBody = z.object({
     })
     .nullish()
     .default(null),
+});
+
+export const zStorageShareUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6349,6 +7059,10 @@ export const zSystemBuildBody = z.object({
   pkgSignIdentity: z.string().nullish(),
   plgBinaryUrl: z.string().nullish(),
   plgUrl: z.string().nullish(),
+});
+
+export const zSystemBuildQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6387,10 +7101,89 @@ export const zSystemCertsListResponse = z.object({
 });
 
 /**
+ * CronEditArgs
+ */
+export const zSystemCronDiffBody = z.object({
+  action: zCronAction.nullish().default(null),
+  command: z.string().nullish().default(null),
+  expectedCurrent: z.string().nullish().default(null),
+  line: z.int().gte(0).nullish().default(null),
+  marker: z.string().nullish().default(null),
+  schedule: z.string().nullish().default(null),
+  user: z.string().optional().default(''),
+});
+
+/**
+ * CronChangeOutput
+ *
+ * Tool result
+ */
+export const zSystemCronDiffResponse = z.object({
+  after: z.string(),
+  applied: z.boolean(),
+  before: z.string(),
+  changed: z.boolean(),
+  diff: z.array(z.string()),
+  expectedCurrent: z.string(),
+  user: z.string(),
+});
+
+/**
+ * SystemCronListArgs
+ */
+export const zSystemCronListBody = z.object({
+  user: z.string().optional().default(''),
+});
+
+/**
+ * SystemCronListOutput
+ *
+ * Tool result
+ */
+export const zSystemCronListResponse = z.object({
+  entries: z.array(zCronEntry),
+  hash: z.string(),
+  raw: z.string(),
+  user: z.string(),
+});
+
+/**
+ * CronEditArgs
+ */
+export const zSystemCronUpdateBody = z.object({
+  action: zCronAction.nullish().default(null),
+  command: z.string().nullish().default(null),
+  expectedCurrent: z.string().nullish().default(null),
+  line: z.int().gte(0).nullish().default(null),
+  marker: z.string().nullish().default(null),
+  schedule: z.string().nullish().default(null),
+  user: z.string().optional().default(''),
+});
+
+export const zSystemCronUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * CronChangeOutput
+ *
+ * Tool result
+ */
+export const zSystemCronUpdateResponse = z.object({
+  after: z.string(),
+  applied: z.boolean(),
+  before: z.string(),
+  changed: z.boolean(),
+  diff: z.array(z.string()),
+  expectedCurrent: z.string(),
+  user: z.string(),
+});
+
+/**
  * SystemDetailArgs
  */
 export const zSystemDetailBody = z.object({
-  id: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   view: zSystemDetailView.and(z.unknown()).optional(),
 });
 
@@ -6417,7 +7210,7 @@ export const zSystemDetailResponse = z.union([
  * no way — and no need — for a caller to say *where* to run the probe (#647).
  */
 export const zSystemHealthBody = z.object({
-  id: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
 });
 
 /**
@@ -6555,6 +7348,10 @@ export const zSystemInstallBody = z.object({
   serviceUser: z.string().nullish(),
 });
 
+export const zSystemInstallQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * InstallReport
  *
@@ -6577,6 +7374,10 @@ export const zSystemJoinBody = z.object({
   addr: z.string().nullish().default(null),
   code: z.string().nullish().default(null),
   port: z.int().gte(0).lte(65535).nullish().default(null),
+});
+
+export const zSystemJoinQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6652,7 +7453,11 @@ export const zSystemLogsResponse = z.object({
  */
 export const zSystemMeshDeleteBody = z.object({
   action: zMeshDeleteAction.and(z.unknown()).optional(),
-  peerId: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
+});
+
+export const zSystemMeshDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6675,11 +7480,15 @@ export const zSystemMeshDeleteResponse = z.union([
 export const zSystemMeshUpdateBody = z.object({
   action: zMeshUpdateAction.and(z.unknown()).optional(),
   addr: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   on: z.boolean().nullish().default(null),
   peer: z.string().nullish().default(null),
-  peerId: z.string().nullish().default(null),
   push: z.boolean().optional().default(false),
   selfSecure: z.boolean().nullish().default(null),
+});
+
+export const zSystemMeshUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6693,6 +7502,7 @@ export const zSystemMeshUpdateResponse = z.union([
   zMeshSyncOutput,
   zMeshRecoverOutput,
   zMeshCancelOfferOutput,
+  zMeshUnpinOutput,
 ]);
 
 /**
@@ -6701,6 +7511,10 @@ export const zSystemMeshUpdateResponse = z.union([
 export const zSystemProfileBody = z.object({
   off: z.boolean().optional().default(false),
   plugin: z.string().optional().default(''),
+});
+
+export const zSystemProfileQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6735,6 +7549,10 @@ export const zSystemRemediationGetResponse = z.object({
  */
 export const zSystemRemediationSetBody = z.object({
   policy: zRemediationPolicy.and(z.unknown()),
+});
+
+export const zSystemRemediationSetQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6778,6 +7596,10 @@ export const zSystemServiceRestartBody = z.object({
   name: z.string(),
 });
 
+export const zSystemServiceRestartQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * ServiceRestartOutput
  *
@@ -6795,13 +7617,13 @@ export const zSystemServiceRestartResponse = z.object({
  * SystemTelemetryListArgs
  */
 export const zSystemTelemetryListBody = z.object({
+  id: z.uuid().nullish().default(null),
   limit: z
     .int()
     .gte(0)
     .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
     .nullish()
     .default(null),
-  peerId: z.string().nullish().default(null),
   sinceUnix: z.coerce
     .bigint()
     .min(BigInt('-9223372036854775808'), {
@@ -6844,6 +7666,10 @@ export const zSystemUninstallBody = z.object({
   action: zSystemDeleteAction.and(z.unknown()).optional(),
 });
 
+export const zSystemUninstallQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * SystemDeleteOutput
  *
@@ -6876,7 +7702,7 @@ export const zSystemUpdateBody = z.object({
   execute: z.boolean().optional().default(false),
   fqdn: z.string().nullish(),
   hostname: z.string().nullish(),
-  id: z.string().nullish(),
+  id: z.uuid().nullish(),
   include_edge: z.boolean().optional().default(false),
   lan_v4: z.string().nullish(),
   lan_v6: z.string().nullish(),
@@ -6895,7 +7721,8 @@ export const zSystemUpdateBody = z.object({
     .default(null),
   name: z.string().nullish(),
   os_packages: z.boolean().optional().default(false),
-  peer: z.string().nullish().default(null),
+  peer: z.string().nullish(),
+  plugin_signatures: z.string().nullish(),
   prerelease: z.boolean().optional().default(false),
   reason: z.string().nullish(),
   refresh_host: z.boolean().optional().default(false),
@@ -6928,6 +7755,10 @@ export const zSystemUpdateBody = z.object({
   version: z.string().nullish(),
   versions_page: z.int().gte(0).nullish(),
   versions_per_page: z.int().gte(0).nullish(),
+});
+
+export const zSystemUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -6977,6 +7808,10 @@ export const zUnitIdentityCreateBody = z.object({
   uuid: z.string(),
 });
 
+export const zUnitIdentityCreateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * UnitIdentityCreateOutput
  *
@@ -6991,6 +7826,10 @@ export const zUnitIdentityCreateResponse = z.object({
  */
 export const zUnitIdentityDeleteBody = z.object({
   name: z.string(),
+});
+
+export const zUnitIdentityDeleteQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**
@@ -7059,6 +7898,10 @@ export const zUnitIdentityUpdateBody = z.object({
   uuid: z.string().nullish().default(null),
 });
 
+export const zUnitIdentityUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
 /**
  * UnitIdentityUpdateOutput
  *
@@ -7075,6 +7918,10 @@ export const zUnitIdentityUpdateResponse = z.object({
 export const zWebUpdateBody = z.object({
   owner: z.string().nullish(),
   path: z.string().nullish(),
+});
+
+export const zWebUpdateQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
 });
 
 /**

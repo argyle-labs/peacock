@@ -9,6 +9,12 @@ import type {
   AgentDetailData,
   AgentDetailErrors,
   AgentDetailResponses,
+  AgentHookApproveData,
+  AgentHookApproveErrors,
+  AgentHookApproveResponses,
+  AgentHookListData,
+  AgentHookListErrors,
+  AgentHookListResponses,
   AgentListData,
   AgentListErrors,
   AgentListResponses,
@@ -67,6 +73,9 @@ import type {
   BackupRunData,
   BackupRunErrors,
   BackupRunResponses,
+  BackupSyncData,
+  BackupSyncErrors,
+  BackupSyncResponses,
   ConfigDeleteData,
   ConfigDeleteErrors,
   ConfigDeleteResponses,
@@ -115,6 +124,9 @@ import type {
   DbUpdateData,
   DbUpdateErrors,
   DbUpdateResponses,
+  DeployListData,
+  DeployListErrors,
+  DeployListResponses,
   FilesDeleteData,
   FilesDeleteErrors,
   FilesDeleteResponses,
@@ -145,6 +157,9 @@ import type {
   IdentityPrivilegeAuditData,
   IdentityPrivilegeAuditErrors,
   IdentityPrivilegeAuditResponses,
+  IdentityPrivilegeRepairData,
+  IdentityPrivilegeRepairErrors,
+  IdentityPrivilegeRepairResponses,
   MediaDetailData,
   MediaDetailErrors,
   MediaDetailResponses,
@@ -259,6 +274,9 @@ import type {
   ScheduleListData,
   ScheduleListErrors,
   ScheduleListResponses,
+  ScheduleOwnerListData,
+  ScheduleOwnerListErrors,
+  ScheduleOwnerListResponses,
   SchemaCreateData,
   SchemaCreateErrors,
   SchemaCreateResponses,
@@ -277,6 +295,15 @@ import type {
   SecretsDetailData,
   SecretsDetailErrors,
   SecretsDetailResponses,
+  SecretsGrantCreateData,
+  SecretsGrantCreateErrors,
+  SecretsGrantCreateResponses,
+  SecretsGrantDeleteData,
+  SecretsGrantDeleteErrors,
+  SecretsGrantDeleteResponses,
+  SecretsGrantListData,
+  SecretsGrantListErrors,
+  SecretsGrantListResponses,
   SecretsListData,
   SecretsListErrors,
   SecretsListResponses,
@@ -331,9 +358,15 @@ import type {
   StorageDetailData,
   StorageDetailErrors,
   StorageDetailResponses,
+  StorageExportDeleteData,
+  StorageExportDeleteErrors,
+  StorageExportDeleteResponses,
   StorageExportsData,
   StorageExportsErrors,
   StorageExportsResponses,
+  StorageExportUpdateData,
+  StorageExportUpdateErrors,
+  StorageExportUpdateResponses,
   StorageListData,
   StorageListErrors,
   StorageListResponses,
@@ -391,6 +424,15 @@ import type {
   SystemCertsListData,
   SystemCertsListErrors,
   SystemCertsListResponses,
+  SystemCronDiffData,
+  SystemCronDiffErrors,
+  SystemCronDiffResponses,
+  SystemCronListData,
+  SystemCronListErrors,
+  SystemCronListResponses,
+  SystemCronUpdateData,
+  SystemCronUpdateErrors,
+  SystemCronUpdateResponses,
   SystemDetailData,
   SystemDetailErrors,
   SystemDetailResponses,
@@ -663,6 +705,54 @@ export const agentList = <ThrowOnError extends boolean = false>(
       },
     ],
     url: '/api/v1/agent.list',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * agent_hook.approve
+ *
+ * Approve a plugin hook so it is materialized into Claude settings. Must name a currently registered `(origin, hash)` pair.
+ */
+export const agentHookApprove = <ThrowOnError extends boolean = false>(
+  options: Options<AgentHookApproveData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<AgentHookApproveResponses, AgentHookApproveErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/agent_hook.approve',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * agent_hook.list
+ *
+ * List every plugin-contributed hook with its hash and approval state. Unapproved hooks are never materialized into Claude settings.
+ */
+export const agentHookList = <ThrowOnError extends boolean = false>(
+  options: Options<AgentHookListData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<AgentHookListResponses, AgentHookListErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/agent_hook.list',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -973,7 +1063,7 @@ export const backupRestore = <ThrowOnError extends boolean = false>(
 /**
  * backup.run
  *
- * Run backups. `--kind` backs up that kind; `--all` fans out over every registered kind (log-and-skip on failure). All-kinds is opt-in: with neither, the run refuses and lists the kinds so the caller chooses explicitly. Backups are written to EVERY configured target (the `backup`/`targets` config, or the built-in `local` fallback); old backups beyond the retention policy are pruned per instance, per target.
+ * Run backups. `--kind` backs up that kind; `--all` fans out over every registered kind (log-and-skip on failure). All-kinds is opt-in: with neither, the run refuses and lists the kinds so the caller chooses explicitly. Each kind is written to every configured target that accepts it (this host's `backup`/`targets` config, or the built-in `local` fallback); old backups beyond the retention policy are pruned per instance, per target.
  */
 export const backupRun = <ThrowOnError extends boolean = false>(
   options: Options<BackupRunData, ThrowOnError>,
@@ -987,6 +1077,30 @@ export const backupRun = <ThrowOnError extends boolean = false>(
       },
     ],
     url: '/api/v1/backup.run',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * backup.sync
+ *
+ * Sync one opted-in kind with the other hosts sharing its targets, on THIS host only. For each instance: pull the targets, restore the newest backup if another host wrote it, back up (a kind reporting nothing changed commits nothing), prune, then push the targets that changed. Restoring overwrites live state, so only kinds advertising `syncable` run, never `host`. A failing instance is reported and the rest still sync.
+ */
+export const backupSync = <ThrowOnError extends boolean = false>(
+  options: Options<BackupSyncData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<BackupSyncResponses, BackupSyncErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/backup.sync',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1387,6 +1501,30 @@ export const dbUpdate = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * deploy.list
+ *
+ * Every registered deploy target, addressed by its stable UUID.
+ */
+export const deployList = <ThrowOnError extends boolean = false>(
+  options: Options<DeployListData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<DeployListResponses, DeployListErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/deploy.list',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * files.delete
  *
  * Combine any of: delete a file (`path`), unregister a root (`unregister_root`), remove a global ignore pattern (`remove_ignore_pattern`).
@@ -1623,6 +1761,34 @@ export const identityPrivilegeAudit = <ThrowOnError extends boolean = false>(
       },
     ],
     url: '/api/v1/identity.privilege.audit',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * identity.privilege.repair
+ *
+ * Rewrite only `/etc/sudoers.d/orca` (and its Unraid flash copy and boot block) for the service user. `dryRun` returns the current and rendered bodies and their line diff without writing.
+ */
+export const identityPrivilegeRepair = <ThrowOnError extends boolean = false>(
+  options: Options<IdentityPrivilegeRepairData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    IdentityPrivilegeRepairResponses,
+    IdentityPrivilegeRepairErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/identity.privilege.repair',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2559,6 +2725,34 @@ export const scheduleList = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * schedule.owner.list
+ *
+ * List this host's schedules that the scheduler refuses to run for want of a valid local owner. Re-save each one to take ownership; nothing is assigned.
+ */
+export const scheduleOwnerList = <ThrowOnError extends boolean = false>(
+  options: Options<ScheduleOwnerListData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    ScheduleOwnerListResponses,
+    ScheduleOwnerListErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/schedule.owner.list',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * schema.create
  *
  * Add or update a schema database in orca.db. Use container OR host/port, not both.
@@ -2695,6 +2889,86 @@ export const secretsDetail = <ThrowOnError extends boolean = false>(
       },
     ],
     url: '/api/v1/secrets.detail',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * secrets.grant.create
+ *
+ * Grant a plugin read access to an existing secret outside its namespace.
+ */
+export const secretsGrantCreate = <ThrowOnError extends boolean = false>(
+  options: Options<SecretsGrantCreateData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    SecretsGrantCreateResponses,
+    SecretsGrantCreateErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/secrets.grant.create',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * secrets.grant.delete
+ *
+ * Revoke a plugin's grant on a secret.
+ */
+export const secretsGrantDelete = <ThrowOnError extends boolean = false>(
+  options: Options<SecretsGrantDeleteData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    SecretsGrantDeleteResponses,
+    SecretsGrantDeleteErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/secrets.grant.delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * secrets.grant.list
+ *
+ * List secret grants, optionally for one holder. Never returns values.
+ */
+export const secretsGrantList = <ThrowOnError extends boolean = false>(
+  options: Options<SecretsGrantListData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SecretsGrantListResponses, SecretsGrantListErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/secrets.grant.list',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -3147,6 +3421,62 @@ export const storageDetail = <ThrowOnError extends boolean = false>(
       },
     ],
     url: '/api/v1/storage.detail',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * storage.export.delete
+ *
+ * Withdraw the export at `path` on `provider`; the data is left untouched. `dryRun` returns the before/after without writing.
+ */
+export const storageExportDelete = <ThrowOnError extends boolean = false>(
+  options: Options<StorageExportDeleteData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    StorageExportDeleteResponses,
+    StorageExportDeleteErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/storage.export.delete',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * storage.export.update
+ *
+ * Create or replace the export at `path` on `provider`. Clients must be IP addresses or CIDRs no wider than /24 (v4) or /64 (v6) unless `allowUnsafe`; options come from an allowlist. `dryRun` returns the before/after without writing.
+ */
+export const storageExportUpdate = <ThrowOnError extends boolean = false>(
+  options: Options<StorageExportUpdateData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    StorageExportUpdateResponses,
+    StorageExportUpdateErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/storage.export.update',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -3691,6 +4021,78 @@ export const systemCertsList = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * system.cron.diff
+ *
+ * Preview a crontab edit: the before/after text and diff, plus the `expectedCurrent` hash to hand to `system.cron.update`. Changes nothing.
+ */
+export const systemCronDiff = <ThrowOnError extends boolean = false>(
+  options: Options<SystemCronDiffData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SystemCronDiffResponses, SystemCronDiffErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/system.cron.diff',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * system.cron.list
+ *
+ * Read a user's crontab on this host.
+ */
+export const systemCronList = <ThrowOnError extends boolean = false>(
+  options: Options<SystemCronListData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SystemCronListResponses, SystemCronListErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/system.cron.list',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * system.cron.update
+ *
+ * Edit a user's crontab: enable, disable, add or remove a job. Requires `expectedCurrent` (from `system.cron.list`/`diff`) and refuses if the crontab changed since. Installs via `crontab -`, reads it back, and reinstalls the previous crontab if the read-back differs. Users other than the daemon's own must be listed in `/etc/orca/cron-users`; root never is.
+ */
+export const systemCronUpdate = <ThrowOnError extends boolean = false>(
+  options: Options<SystemCronUpdateData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SystemCronUpdateResponses, SystemCronUpdateErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/system.cron.update',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * system.detail
  *
  * Snapshot of orca's installation and state. `view=summary` (default) reports the lean install/state/config snapshot: binary, ~/.claude/CLAUDE.md, vault dir, agents symlink, PKI init, MCP registration, plus runtime/daemon state and lean topology facts. `view=capabilities` / `view=retention` surface the host capability registry and retention policy. Lean, peer-dispatchable host liveness now lives on its own verb `system.health`. The fat host snapshot (hardware/process/ interfaces/history) and SVG chart projections live on `system.info.detail`; the paginated log/metric streams stay on `system.logs` / `system.history`.
@@ -3913,7 +4315,7 @@ export const systemLogs = <ThrowOnError extends boolean = false>(
 /**
  * system.mesh.delete
  *
- * Remove mesh membership. `action` selects the target: - `kick`   — evict a paired peer: best-effort notify, then drop its `mesh_peers` + `mesh_trust` rows (needs `peer_id`). Default. - `leave`  — voluntary self exit: notify every paired peer, then drop all `mesh_peers` + `mesh_trust` rows on this host. LOCAL-ONLY: rejected for remote callers by the mesh listener. - `forget` — hard-delete a stale/orphan `peer_id` here AND fan a one-way forget notice to every live member (needs `peer_id`).
+ * Remove mesh membership. `action` selects the target: - `kick`   — evict a paired peer: best-effort notify, then drop its `mesh_peers` + `mesh_trust` rows (needs `id`). Default. - `leave`  — voluntary self exit: notify every paired peer, then drop all `mesh_peers` + `mesh_trust` rows on this host. LOCAL-ONLY: rejected for remote callers by the mesh listener. - `forget` — hard-delete a stale/orphan `peer_id` here AND fan a one-way forget notice to every live member (needs `id`).
  */
 export const systemMeshDelete = <ThrowOnError extends boolean = false>(
   options: Options<SystemMeshDeleteData, ThrowOnError>,
@@ -3937,7 +4339,7 @@ export const systemMeshDelete = <ThrowOnError extends boolean = false>(
 /**
  * system.mesh.update
  *
- * Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — toggle `self_secure` (Tier-2 secrets-storage). Default. - `trust`        — set trust for a paired peer (needs `peer_id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr`.
+ * Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — toggle `self_secure` (Tier-2 secrets-storage). Default. - `trust`        — set trust for a paired peer (needs `id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name.
  */
 export const systemMeshUpdate = <ThrowOnError extends boolean = false>(
   options: Options<SystemMeshUpdateData, ThrowOnError>,
