@@ -1075,6 +1075,7 @@ export const zMeshCandidate = z.object({
   addr: z.string(),
   can_invite: z.boolean(),
   hostname: z.string(),
+  id: z.string().nullish(),
   peer_id: z.string().nullish(),
   port: z.int().gte(0).lte(65535),
   pubkey_fp: z.string(),
@@ -1254,6 +1255,7 @@ export const zMeshSettingsOutput = z.object({
 export const zMeshStaleRow = z.object({
   addr: z.string(),
   hostname: z.string(),
+  id: z.string(),
   last_seen_at: z.coerce
     .bigint()
     .min(BigInt('-9223372036854775808'), {
@@ -2911,6 +2913,7 @@ export const zTargetKind = z.union([
 
 export const zDeployTargetRow = z.object({
   capabilities: z.array(zDeployCapability),
+  dataRoots: z.array(z.string()),
   endpoint: z.string(),
   host: z.string(),
   id: z.uuid(),

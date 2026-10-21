@@ -893,6 +893,7 @@ export type DeployOutcome = {
 
 export type DeployTargetRow = {
   capabilities: Array<DeployCapability>;
+  dataRoots: Array<string>;
   endpoint: string;
   host: string;
   id: string;
@@ -1615,6 +1616,7 @@ export type MeshCandidate = {
   addr: string;
   can_invite: boolean;
   hostname: string;
+  id?: string | null;
   peer_id?: string | null;
   port: number;
   pubkey_fp: string;
@@ -1715,7 +1717,8 @@ export type MeshInstance = {
   id: string;
   label: string;
   /**
-   * Wall-clock millis when this row was assembled.
+   * Unix seconds when this row was assembled, the unit every other
+   * `system.list` timestamp uses.
    */
   last_checked?: number | null;
   mode?: string | null;
@@ -1999,6 +2002,7 @@ export type MeshSnapshotOutput = {
 export type MeshStaleRow = {
   addr: string;
   hostname: string;
+  id: string;
   last_seen_at?: number | null;
   peer_id: string;
   port: number;

@@ -27,7 +27,7 @@ function member(over: Partial<MeshInstance>): MeshInstance {
     addresses: [],
     available_versions: [],
     health: 'up',
-    id: 'r',
+    id: 'peer',
     label: 'host',
     origin: '',
     peer_id: 'peer',
@@ -56,6 +56,7 @@ function staleRow(over: Partial<MeshStaleRow>): MeshStaleRow {
   return {
     addr: '10.0.0.50',
     hostname: 'stale',
+    id: 'stale-peer',
     last_seen_at: NOW_S,
     peer_id: 'stale-peer',
     port: 12000,
@@ -66,7 +67,7 @@ function staleRow(over: Partial<MeshStaleRow>): MeshStaleRow {
 
 const members: MeshInstance[] = [
   member({
-    id: 'r1',
+    id: 'peer-healthy',
     peer_id: 'peer-healthy',
     label: 'bravo',
     origin: '10.0.0.2:12000',
@@ -74,17 +75,17 @@ const members: MeshInstance[] = [
     addresses: [{ kind: 'lan', kind_label: 'LAN', value: '10.0.0.2' }],
   }),
   member({
-    id: 'r2',
+    id: 'peer-sick',
     peer_id: 'peer-sick',
     label: 'charlie',
     origin: '10.0.0.9:12000',
     reachable_addrs: ['10.0.0.3:12000'],
   }),
-  member({ id: 'r3', peer_id: 'peer-down', label: 'delta' }),
-  member({ id: 'r4', peer_id: 'peer-disk', label: 'echo' }),
-  member({ id: 'r5', peer_id: 'peer-noprobe', label: 'foxtrot' }),
+  member({ id: 'peer-down', peer_id: 'peer-down', label: 'delta' }),
+  member({ id: 'peer-disk', peer_id: 'peer-disk', label: 'echo' }),
+  member({ id: 'peer-noprobe', peer_id: 'peer-noprobe', label: 'foxtrot' }),
   member({
-    id: '',
+    id: 'local-machine',
     peer_id: 'local-machine',
     role: 'local',
     label: 'alpha',
@@ -94,10 +95,20 @@ const members: MeshInstance[] = [
 ];
 
 const stale: MeshStaleRow[] = [
-  staleRow({ peer_id: 'peer-healthy', hostname: 'bravo' }),
-  staleRow({ peer_id: 'peer-ghost', hostname: 'golf', last_seen_at: NOW_S - 1000 }),
-  staleRow({ peer_id: 'peer-ghost', hostname: 'golf', last_seen_at: NOW_S - 10 }),
-  staleRow({ peer_id: 'old-self', hostname: 'alpha', reason: 'stale self identity' }),
+  staleRow({ id: 'peer-healthy', peer_id: 'peer-healthy', hostname: 'bravo' }),
+  staleRow({
+    id: 'peer-ghost',
+    peer_id: 'peer-ghost',
+    hostname: 'golf',
+    last_seen_at: NOW_S - 1000,
+  }),
+  staleRow({ id: 'peer-ghost', peer_id: 'peer-ghost', hostname: 'golf', last_seen_at: NOW_S - 10 }),
+  staleRow({
+    id: 'old-self',
+    peer_id: 'old-self',
+    hostname: 'alpha',
+    reason: 'stale self identity',
+  }),
 ];
 
 const healthRows: MeshHealthRow[] = [

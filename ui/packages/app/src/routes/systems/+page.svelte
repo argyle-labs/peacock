@@ -63,10 +63,10 @@
   type StaleRow = { kind: 'stale'; key: string; s: MeshStaleRow; selfIdentity: boolean };
   type UnifiedRow = MemberRow | StaleRow;
 
-  // Every `system.health` row is keyed by peer id; the local row's machine id
-  // is its peer id.
+  // Every `system.health` row is keyed by system id; the local row's machine id
+  // is its system id.
   function healthRowFor(m: MeshInstance): MeshHealthRow | undefined {
-    return health.get(m.peer_id);
+    return health.get(m.id);
   }
 
   // The roster's `health` is "up" for every active remote and "unknown" for the
@@ -188,7 +188,7 @@
       const out = await unwrap(
         systemInfoDetail({
           body: {},
-          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.peer_id),
+          headers: peerHeader(r.m.role === 'local' ? 'local' : r.m.id),
           signal: ctrl.signal,
         }),
       );
@@ -259,21 +259,21 @@
   // recently seen copy wins). Local system first, otherwise API order, so rows
   // never jump between polls.
   const unifiedRows = $derived.by((): UnifiedRow[] => {
-    const memberPeers = new Set(members.map(m => m.peer_id));
+    const memberPeers = new Set(members.map(m => m.id));
     const staleByPeer = new Map<string, MeshStaleRow>();
     for (const s of stale) {
-      if (memberPeers.has(s.peer_id)) continue;
-      const prev = staleByPeer.get(s.peer_id);
-      if (!prev || (s.last_seen_at ?? 0) > (prev.last_seen_at ?? 0)) staleByPeer.set(s.peer_id, s);
+      if (memberPeers.has(s.id)) continue;
+      const prev = staleByPeer.get(s.id);
+      if (!prev || (s.last_seen_at ?? 0) > (prev.last_seen_at ?? 0)) staleByPeer.set(s.id, s);
     }
     const memberRows: UnifiedRow[] = members.map(m => ({
       kind: 'member',
-      key: `member:${m.id}:${m.peer_id}`,
+      key: `member:${m.id}`,
       m,
     }));
     const staleRows: UnifiedRow[] = [...staleByPeer.values()].map(s => ({
       kind: 'stale',
-      key: `stale:${s.peer_id}`,
+      key: `stale:${s.id}`,
       s,
       selfIdentity: s.reason === 'stale self identity',
     }));
