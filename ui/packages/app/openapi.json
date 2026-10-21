@@ -1662,6 +1662,12 @@
             },
             "type": "array"
           },
+          "dataRoots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "endpoint": {
             "type": "string"
           },
@@ -1685,7 +1691,8 @@
           "runtime",
           "kind",
           "endpoint",
-          "capabilities"
+          "capabilities",
+          "dataRoots"
         ],
         "type": "object"
       },
@@ -3336,6 +3343,12 @@
           "hostname": {
             "type": "string"
           },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "peer_id": {
             "type": [
               "string",
@@ -3576,7 +3589,7 @@
             "type": "string"
           },
           "last_checked": {
-            "description": "Wall-clock millis when this row was assembled.",
+            "description": "Unix seconds when this row was assembled, the unit every other\n`system.list` timestamp uses.",
             "format": "int64",
             "type": [
               "integer",
@@ -4295,6 +4308,9 @@
           "hostname": {
             "type": "string"
           },
+          "id": {
+            "type": "string"
+          },
           "last_seen_at": {
             "format": "int64",
             "type": [
@@ -4317,6 +4333,7 @@
           }
         },
         "required": [
+          "id",
           "peer_id",
           "hostname",
           "addr",
