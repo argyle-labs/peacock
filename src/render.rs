@@ -13,6 +13,7 @@ use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as B64;
 use contract::web::{WebRequest, WebResponse};
 use derive::orca_tool;
+use std::path::{Path, PathBuf};
 
 /// The built frontend (`@peacock/app`) assets, embedded at compile time.
 ///
@@ -26,18 +27,66 @@ use derive::orca_tool;
 #[folder = "ui/dist/"]
 struct Assets;
 
-/// Serve one request from the embedded asset tree. An extensionless path whose
-/// `<path>/index.html` exists gets a 308 to `<path>/` so relative asset URLs
-/// resolve. Any other path that maps to no asset returns a bare 404 (no body) so orca applies SPA fallback (re-render as
-/// `/index.html`) for client-side routing.
+/// Serve one request. `/storybook` paths come from the separately installed
+/// Storybook artifact on disk; everything else from the embedded asset tree.
+/// An unmatched app path returns a bare 404 so orca applies SPA fallback.
 #[orca_tool(domain = "peacock", verb = "render", cli = skip)]
 async fn render(req: WebRequest, _ctx: &contract::ToolCtx) -> anyhow::Result<WebResponse> {
+    if is_storybook(&req.path) {
+        return Ok(respond_storybook(&req.path, storybook_dir().as_deref()));
+    }
     Ok(respond(&req.path, |rel| {
         Assets::get(rel).map(|a| a.data.into_owned())
     }))
 }
 
-/// Map a request path to a response using `lookup` to fetch asset bytes.
+const STORYBOOK_PREFIX: &str = "storybook";
+
+fn storybook_dir() -> Option<PathBuf> {
+    contract::config::state_dir()
+        .ok()
+        .map(|d| d.join("plugins").join("peacock").join(STORYBOOK_PREFIX))
+}
+
+fn is_storybook(path: &str) -> bool {
+    let rel = path.trim_start_matches('/');
+    rel == STORYBOOK_PREFIX || rel.starts_with("storybook/")
+}
+
+fn respond_storybook(path: &str, root: Option<&Path>) -> WebResponse {
+    let Some(root) = root.and_then(|r| r.canonicalize().ok()) else {
+        return storybook_not_found();
+    };
+    let resp = respond(path, |rel| {
+        let sub = rel.strip_prefix("storybook/")?;
+        read_under(&root, sub)
+    });
+    if resp.status == 404 {
+        storybook_not_found()
+    } else {
+        resp
+    }
+}
+
+fn read_under(root: &Path, sub: &str) -> Option<Vec<u8>> {
+    if sub.contains('\\') {
+        return None;
+    }
+    let file = root.join(sub).canonicalize().ok()?;
+    if !file.starts_with(root) || !file.is_file() {
+        return None;
+    }
+    std::fs::read(file).ok()
+}
+
+fn storybook_not_found() -> WebResponse {
+    WebResponse {
+        status: 404,
+        headers: vec![("content-type".to_string(), "text/plain".to_string())],
+        body_b64: B64.encode("storybook not installed or not found"),
+    }
+}
+
 fn respond(path: &str, lookup: impl Fn(&str) -> Option<Vec<u8>>) -> WebResponse {
     let rel = path.trim_start_matches('/');
     let rel = if rel.is_empty() || rel.ends_with('/') {
@@ -61,11 +110,7 @@ fn respond(path: &str, lookup: impl Fn(&str) -> Option<Vec<u8>>) -> WebResponse 
 }
 
 fn directory_redirect(rel: &str, lookup: &impl Fn(&str) -> Option<Vec<u8>>) -> Option<WebResponse> {
-    if rel.is_empty()
-        || rel.ends_with("index.html")
-        || rel.contains('\\')
-        || std::path::Path::new(rel).extension().is_some()
-    {
+    if rel.is_empty() || rel.ends_with("index.html") || rel.contains('\\') {
         return None;
     }
     lookup(&format!("{rel}/index.html"))?;
@@ -87,6 +132,7 @@ mod tests {
             "style.css" => Some(b"body{}".to_vec()),
             "blob.unknownext" => Some(vec![0, 1, 2]),
             "storybook/index.html" => Some(b"<html>sb</html>".to_vec()),
+            "docs/v1.2/index.html" => Some(b"<html>v12</html>".to_vec()),
             _ => None,
         }
     }
@@ -135,6 +181,110 @@ mod tests {
         assert_eq!(respond("//evil", any_dir).headers[0].1, "/evil/");
         assert_eq!(respond("/\\evil", any_dir).status, 404);
         assert_eq!(respond("/storybook.js", fixture).status, 404);
+    }
+
+    #[test]
+    fn dotted_directory_redirects() {
+        let resp = respond("/docs/v1.2", fixture);
+        assert_eq!(resp.status, 308);
+        assert_eq!(resp.headers[0].1, "/docs/v1.2/");
+    }
+
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(name: &str) -> Self {
+            let p = std::env::temp_dir().join(format!("peacock-{name}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&p);
+            std::fs::create_dir_all(&p).unwrap();
+            TempDir(p)
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn installed(name: &str) -> (TempDir, PathBuf) {
+        let tmp = TempDir::new(name);
+        let sb = tmp.0.join("storybook");
+        std::fs::create_dir_all(sb.join("assets")).unwrap();
+        std::fs::write(sb.join("index.html"), "<html>sb</html>").unwrap();
+        std::fs::write(sb.join("assets/app.js"), "export {}").unwrap();
+        std::fs::write(tmp.0.join("secret.txt"), "secret").unwrap();
+        (tmp, sb)
+    }
+
+    #[test]
+    fn storybook_paths_are_routed() {
+        assert!(is_storybook("/storybook"));
+        assert!(is_storybook("/storybook/"));
+        assert!(is_storybook("//storybook/assets/a.js"));
+        assert!(!is_storybook("/storybook.js"));
+        assert!(!is_storybook("/storybooks"));
+    }
+
+    #[test]
+    fn storybook_not_installed_is_404_without_spa_fallback() {
+        let missing = std::env::temp_dir().join("peacock-sb-missing-xyz");
+        for root in [None, Some(missing.as_path())] {
+            for path in ["/storybook", "/storybook/", "/storybook/index.html"] {
+                let resp = respond_storybook(path, root);
+                assert_eq!(resp.status, 404);
+                assert!(!resp.body_b64.is_empty());
+            }
+        }
+    }
+
+    #[test]
+    fn storybook_installed_serves_index_and_assets() {
+        let (_tmp, sb) = installed("serve");
+        let resp = respond_storybook("/storybook/", Some(&sb));
+        assert_eq!(resp.status, 200);
+        assert_eq!(content_type(&resp), "text/html");
+        assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"<html>sb</html>");
+        let resp = respond_storybook("/storybook/assets/app.js", Some(&sb));
+        assert_eq!(resp.status, 200);
+        assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"export {}");
+    }
+
+    #[test]
+    fn storybook_installed_redirects_bare_path() {
+        let (_tmp, sb) = installed("redirect");
+        let resp = respond_storybook("/storybook", Some(&sb));
+        assert_eq!(resp.status, 308);
+        assert_eq!(resp.headers[0].1, "/storybook/");
+    }
+
+    #[test]
+    fn storybook_refuses_traversal() {
+        let (_tmp, sb) = installed("traversal");
+        for path in [
+            "/storybook/../secret.txt",
+            "/storybook/assets/../../secret.txt",
+            "/storybook/..\\secret.txt",
+            "/storybook/assets",
+        ] {
+            assert_eq!(respond_storybook(path, Some(&sb)).status, 404, "{path}");
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn storybook_refuses_symlink_escape() {
+        let (tmp, sb) = installed("symlink");
+        std::os::unix::fs::symlink(tmp.0.join("secret.txt"), sb.join("leak.txt")).unwrap();
+        std::os::unix::fs::symlink(&tmp.0, sb.join("up")).unwrap();
+        assert_eq!(
+            respond_storybook("/storybook/leak.txt", Some(&sb)).status,
+            404
+        );
+        assert_eq!(
+            respond_storybook("/storybook/up/secret.txt", Some(&sb)).status,
+            404
+        );
     }
 
     #[test]

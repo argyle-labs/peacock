@@ -33,7 +33,7 @@ jobs:
         uses: argyle-labs/.github/.github/actions/job-vite-build@main
         # ui/ is an npm-workspaces root; scripts delegate to packages/app.
         with:
-          command: npm run build
+          command: npm run build && npm run build:storybook
 
   build:
     needs: build-ui
