@@ -26,8 +26,9 @@ use derive::orca_tool;
 #[folder = "ui/dist/"]
 struct Assets;
 
-/// Serve one request from the embedded asset tree. A path that maps to no asset
-/// returns a bare 404 (no body) so orca applies SPA fallback (re-render as
+/// Serve one request from the embedded asset tree. An extensionless path whose
+/// `<path>/index.html` exists gets a 308 to `<path>/` so relative asset URLs
+/// resolve. Any other path that maps to no asset returns a bare 404 (no body) so orca applies SPA fallback (re-render as
 /// `/index.html`) for client-side routing.
 #[orca_tool(domain = "peacock", verb = "render", cli = skip)]
 async fn render(req: WebRequest, _ctx: &contract::ToolCtx) -> anyhow::Result<WebResponse> {
@@ -55,9 +56,24 @@ fn respond(path: &str, lookup: impl Fn(&str) -> Option<Vec<u8>>) -> WebResponse 
                 body_b64: B64.encode(data),
             }
         }
-        // Bare 404 → orca's SPA fallback re-requests `/index.html`.
-        None => WebResponse::not_found(),
+        None => directory_redirect(rel, &lookup).unwrap_or_else(WebResponse::not_found),
     }
+}
+
+fn directory_redirect(rel: &str, lookup: &impl Fn(&str) -> Option<Vec<u8>>) -> Option<WebResponse> {
+    if rel.is_empty()
+        || rel.ends_with("index.html")
+        || rel.contains('\\')
+        || std::path::Path::new(rel).extension().is_some()
+    {
+        return None;
+    }
+    lookup(&format!("{rel}/index.html"))?;
+    Some(WebResponse {
+        status: 308,
+        headers: vec![("location".to_string(), format!("/{rel}/"))],
+        body_b64: String::new(),
+    })
 }
 
 #[cfg(test)]
@@ -99,6 +115,26 @@ mod tests {
         assert_eq!(resp.status, 200);
         assert_eq!(content_type(&resp), "text/html");
         assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"<html>sb</html>");
+    }
+
+    #[test]
+    fn directory_without_slash_redirects() {
+        for path in ["/storybook", "//storybook"] {
+            let resp = respond(path, fixture);
+            assert_eq!(resp.status, 308);
+            assert_eq!(
+                resp.headers,
+                vec![("location".to_string(), "/storybook/".to_string())]
+            );
+        }
+    }
+
+    #[test]
+    fn redirect_never_leaves_origin() {
+        let any_dir = |rel: &str| rel.ends_with("/index.html").then(Vec::new);
+        assert_eq!(respond("//evil", any_dir).headers[0].1, "/evil/");
+        assert_eq!(respond("/\\evil", any_dir).status, 404);
+        assert_eq!(respond("/storybook.js", fixture).status, 404);
     }
 
     #[test]

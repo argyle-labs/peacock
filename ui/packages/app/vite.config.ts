@@ -21,7 +21,7 @@ export default defineConfig({
     // Matches DEV_UPSTREAM in src/main.rs.
     proxy: {
       '/api': { target: 'http://127.0.0.1:12000', changeOrigin: false, ws: true },
-      '/storybook': {
+      '^/storybook(/|$)': {
         target: 'http://127.0.0.1:6006',
         ws: true,
         rewrite: path => path.replace(/^\/storybook/, '') || '/',

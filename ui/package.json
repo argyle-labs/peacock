@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @peacock/app",
-    "build": "npm run build -w @peacock/app",
+    "build": "npm run build -w @peacock/app && npm run build-storybook -w @peacock/ui-kit",
     "preview": "npm run preview -w @peacock/app",
     "check": "npm run check -w @peacock/ui-kit && npm run check -w @peacock/app",
     "test": "npm run test -w @peacock/app",
