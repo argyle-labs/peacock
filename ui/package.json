@@ -24,8 +24,7 @@
     "gen:spec": "npm run gen:spec -w @peacock/app",
     "gen:client": "npm run gen:client -w @peacock/app",
     "gen:check": "npm run gen:check -w @peacock/app",
-    "storybook": "npm run storybook -w @peacock/ui-kit",
-    "build-storybook": "npm run build-storybook -w @peacock/ui-kit"
+    "storybook": "npm run storybook -w @peacock/ui-kit"
   },
   "overrides": {
     "glob": "^13.0.0"
