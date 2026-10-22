@@ -17,5 +17,7 @@ const config: StorybookConfig = {
     '@storybook/addon-docs',
   ],
   framework: '@storybook/svelte-vite',
+  viteFinal: (config, { configType }) =>
+    configType === 'DEVELOPMENT' ? { ...config, base: '/storybook/' } : config,
 };
 export default config;
