@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vitest/config';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
+import viteConfig from './vite.config';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 // npm hoists dependencies to the workspace root (ui/node_modules), which is
@@ -17,36 +17,38 @@ const workspaceRoot = path.resolve(dirname, '../..');
 //   storybook — every story rendered in a real browser, with addon-a11y's
 //               checks. Storybook is the vocabulary's contract, so a primitive
 //               with no story is not considered part of the catalog.
-export default defineConfig({
-  plugins: [svelte()],
-  resolve: { conditions: ['browser'] },
-  test: {
-    projects: [
-      {
-        extends: true,
-        test: {
-          name: 'unit',
-          environment: 'jsdom',
-          globals: true,
-          include: ['src/**/*.{test,spec}.ts'],
-          exclude: ['node_modules/**'],
-          setupFiles: ['src/vitest-setup.ts'],
-        },
-      },
-      {
-        extends: true,
-        plugins: [storybookTest({ configDir: path.join(dirname, '.storybook') })],
-        server: { fs: { allow: [workspaceRoot] } },
-        test: {
-          name: 'storybook',
-          browser: {
-            enabled: true,
-            headless: true,
-            provider: playwright({}),
-            instances: [{ browser: 'chromium' }],
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    resolve: { conditions: ['browser'] },
+    test: {
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'unit',
+            environment: 'jsdom',
+            globals: true,
+            include: ['src/**/*.{test,spec}.ts'],
+            exclude: ['node_modules/**'],
+            setupFiles: ['src/vitest-setup.ts'],
           },
         },
-      },
-    ],
-  },
-});
+        {
+          extends: true,
+          plugins: [storybookTest({ configDir: path.join(dirname, '.storybook') })],
+          server: { fs: { allow: [workspaceRoot] } },
+          test: {
+            name: 'storybook',
+            browser: {
+              enabled: true,
+              headless: true,
+              provider: playwright({}),
+              instances: [{ browser: 'chromium' }],
+            },
+          },
+        },
+      ],
+    },
+  }),
+);

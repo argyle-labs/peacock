@@ -89,6 +89,39 @@ jobs:
           registry-token: ${{ secrets.CI_REGISTRY_TOKEN }}
           github-token: ${{ secrets.GH_TOKEN }}
 
+  storybook:
+    needs: publish
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ vars.CI_REGISTRY || 'gitea.scottkey.me' }}/argyle-labs/ci-rust:1.95.0
+      credentials:
+        username: ${{ secrets.CI_REGISTRY_USER }}
+        password: ${{ secrets.CI_REGISTRY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Storybook
+        working-directory: ui
+        run: |
+          npm ci
+          npm run build:storybook
+      - name: Package and upload
+        env:
+          GITEA_TOKEN: ${{ secrets.ORCA_RELEASE_TOKEN }}
+          API_URL: ${{ github.api_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          asset="peacock-storybook-${TAG}.tar.zst"
+          tar -C ui/storybook-dist --zstd -cf "$asset" .
+          sha256sum "$asset" > "$asset.sha256"
+          auth=(-H "Authorization: token ${GITEA_TOKEN}")
+          id=$(curl -fsS "${auth[@]}" "${API_URL}/repos/${REPO}/releases/tags/${TAG}" | jq -r .id)
+          for f in "$asset" "$asset.sha256"; do
+            old=$(curl -fsS "${auth[@]}" "${API_URL}/repos/${REPO}/releases/${id}/assets" | jq -r --arg n "$f" '.[] | select(.name == $n) | .id')
+            [ -n "$old" ] && curl -fsS -X DELETE "${auth[@]}" "${API_URL}/repos/${REPO}/releases/${id}/assets/${old}"
+            curl -fsS "${auth[@]}" -F "attachment=@${f}" "${API_URL}/repos/${REPO}/releases/${id}/assets?name=${f}" > /dev/null
+          done
+
   stable-draft:
     needs: publish
     runs-on: ubuntu-latest

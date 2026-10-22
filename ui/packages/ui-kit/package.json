@@ -13,7 +13,7 @@
     "test:run": "vitest run --reporter=verbose --project=unit",
     "test:storybook": "vitest run --reporter=verbose --project=storybook",
     "storybook": "storybook dev -p 6006 --host 127.0.0.1 --no-open",
-    "build-storybook": "storybook build -o ../../dist/storybook"
+    "build-storybook": "storybook build -o ../../storybook-dist"
   },
   "peerDependencies": {
     "svelte": "^5.56.3"
