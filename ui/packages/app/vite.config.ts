@@ -21,6 +21,13 @@ export default defineConfig({
     // Matches DEV_UPSTREAM in src/main.rs.
     proxy: {
       '/api': { target: 'http://127.0.0.1:12000', changeOrigin: false, ws: true },
+      '/storybook': {
+        target: 'http://127.0.0.1:6006',
+        ws: true,
+        rewrite: path => path.replace(/^\/storybook/, '') || '/',
+      },
+      '/vite-inject-mocker-entry.js': 'http://127.0.0.1:6006',
+      '/@id/__x00__virtual:/@storybook/': 'http://127.0.0.1:6006',
     },
     // Pre-transform critical first-paint modules on dev server boot so the
     // browser doesn't pay per-module transform latency on a cold reload.

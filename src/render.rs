@@ -39,7 +39,12 @@ async fn render(req: WebRequest, _ctx: &contract::ToolCtx) -> anyhow::Result<Web
 /// Map a request path to a response using `lookup` to fetch asset bytes.
 fn respond(path: &str, lookup: impl Fn(&str) -> Option<Vec<u8>>) -> WebResponse {
     let rel = path.trim_start_matches('/');
-    let rel = if rel.is_empty() { "index.html" } else { rel };
+    let rel = if rel.is_empty() || rel.ends_with('/') {
+        format!("{rel}index.html")
+    } else {
+        rel.to_string()
+    };
+    let rel = rel.as_str();
 
     match lookup(rel) {
         Some(data) => {
@@ -65,6 +70,7 @@ mod tests {
             "_app/app.js" => Some(b"export {}".to_vec()),
             "style.css" => Some(b"body{}".to_vec()),
             "blob.unknownext" => Some(vec![0, 1, 2]),
+            "storybook/index.html" => Some(b"<html>sb</html>".to_vec()),
             _ => None,
         }
     }
@@ -85,6 +91,14 @@ mod tests {
             assert_eq!(content_type(&resp), "text/html");
             assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"<html></html>");
         }
+    }
+
+    #[test]
+    fn directory_path_serves_its_index() {
+        let resp = respond("/storybook/", fixture);
+        assert_eq!(resp.status, 200);
+        assert_eq!(content_type(&resp), "text/html");
+        assert_eq!(B64.decode(&resp.body_b64).unwrap(), b"<html>sb</html>");
     }
 
     #[test]
