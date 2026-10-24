@@ -42,10 +42,8 @@ fn main() -> Result<()> {
     let mut spec = PluginSpec::default();
     spec.name = "peacock".to_string();
     spec.version = env!("CARGO_PKG_VERSION").to_string();
-    // Owns the `peacock.` tool namespace (just `peacock.render`).
     spec.prefixes = vec!["peacock.".to_string()];
     spec.backends_json = backends_json();
-    // No plugin-scoped SQL tables.
     spec.schema_json = r#"{"namespace":"","tables":[]}"#.to_string();
     serve(spec)
 }
