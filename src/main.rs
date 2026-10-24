@@ -39,18 +39,13 @@ fn main() -> Result<()> {
         None
     };
 
-    serve(PluginSpec {
-        name: "peacock".to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        // Owns the `peacock.` tool namespace (just `peacock.render`).
-        prefixes: vec!["peacock.".to_string()],
-        backends_json: backends_json(),
-        // No plugin-scoped SQL tables.
-        schema_json: r#"{"namespace":"","tables":[]}"#.to_string(),
-        // Pure tool plugin: no bespoke hybrid backend ops, so every call routes
-        // through the `#[orca_tool]` dispatch surface (`peacock.render`).
-        backend_dispatch: None,
-    })
+    let mut spec = PluginSpec::default();
+    spec.name = "peacock".to_string();
+    spec.version = env!("CARGO_PKG_VERSION").to_string();
+    spec.prefixes = vec!["peacock.".to_string()];
+    spec.backends_json = backends_json();
+    spec.schema_json = r#"{"namespace":"","tables":[]}"#.to_string();
+    serve(spec)
 }
 
 /// The single `web`-domain backend peacock declares. Per orca's "route rides
