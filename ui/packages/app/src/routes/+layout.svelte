@@ -76,6 +76,9 @@
 <Notification />
 
 <style>
+  :global(.sveltekit-body) {
+    display: contents;
+  }
   .app {
     display: flex;
     flex-direction: column;

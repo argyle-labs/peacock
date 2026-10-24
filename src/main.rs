@@ -62,9 +62,22 @@ fn backends_json() -> String {
     // A fixed, single-element `abi::BackendDef` array. Written as a literal
     // (not a `serde_json::Value`) so no opaque-JSON escape hatch appears in
     // plugin logic; orca's loader parses it into its own typed `BackendDef`.
+    let csp: String = csp_hashes::CSP_SCRIPT_HASHES
+        .iter()
+        .map(|h| format!(r#","csp_script_hash={h}""#))
+        .chain(
+            csp_hashes::CSP_STYLE_ATTR_HASHES
+                .iter()
+                .map(|h| format!(r#","csp_style_attr_hash={h}""#)),
+        )
+        .collect();
     format!(
-        r#"[{{"domain":"web","name":"peacock","endpoint":"/","capabilities":["spa_fallback","dev_upstream={DEV_UPSTREAM}"],"invoke_prefix":"peacock"}}]"#
+        r#"[{{"domain":"web","name":"peacock","endpoint":"/","capabilities":["spa_fallback","dev_upstream={DEV_UPSTREAM}"{csp}],"invoke_prefix":"peacock"}}]"#
     )
+}
+
+mod csp_hashes {
+    include!(concat!(env!("OUT_DIR"), "/csp_hashes.rs"));
 }
 
 /// Spawn `npm run dev` in the `ui/` project. Best-effort: a failure to spawn
@@ -109,8 +122,23 @@ mod tests {
             .map(|c| c.as_str().unwrap())
             .collect();
         assert_eq!(
-            caps,
+            caps[..2],
             ["spa_fallback", "dev_upstream=http://127.0.0.1:12004"]
         );
+        let declared: Vec<&str> = csp_hashes::CSP_SCRIPT_HASHES
+            .iter()
+            .map(|h| h.to_owned())
+            .collect();
+        let script_caps: Vec<&str> = caps
+            .iter()
+            .filter_map(|c| c.strip_prefix("csp_script_hash="))
+            .collect();
+        assert_eq!(script_caps, declared);
+        for h in script_caps {
+            assert!(
+                h.starts_with("'sha256-") && h.ends_with('\'') && h.len() == 53,
+                "{h}"
+            );
+        }
     }
 }
