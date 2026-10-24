@@ -66,6 +66,11 @@ fn backends_json() -> String {
         .iter()
         .map(|h| format!(r#","csp_script_hash={h}""#))
         .chain(
+            csp_hashes::CSP_STYLE_HASHES
+                .iter()
+                .map(|h| format!(r#","csp_style_hash={h}""#)),
+        )
+        .chain(
             csp_hashes::CSP_STYLE_ATTR_HASHES
                 .iter()
                 .map(|h| format!(r#","csp_style_attr_hash={h}""#)),
@@ -75,6 +80,9 @@ fn backends_json() -> String {
         r#"[{{"domain":"web","name":"peacock","endpoint":"/","capabilities":["spa_fallback","dev_upstream={DEV_UPSTREAM}"{csp}],"invoke_prefix":"peacock"}}]"#
     )
 }
+
+#[cfg(test)]
+mod csp_scan;
 
 mod csp_hashes {
     include!(concat!(env!("OUT_DIR"), "/csp_hashes.rs"));
@@ -125,20 +133,50 @@ mod tests {
             caps[..2],
             ["spa_fallback", "dev_upstream=http://127.0.0.1:12004"]
         );
-        let declared: Vec<&str> = csp_hashes::CSP_SCRIPT_HASHES
+        let caps_for = |prefix: &str| -> Vec<&str> {
+            caps.iter().filter_map(|c| c.strip_prefix(prefix)).collect()
+        };
+        assert_eq!(caps_for("csp_script_hash="), csp_hashes::CSP_SCRIPT_HASHES);
+        assert_eq!(caps_for("csp_style_hash="), csp_hashes::CSP_STYLE_HASHES);
+        assert_eq!(
+            caps_for("csp_style_attr_hash="),
+            csp_hashes::CSP_STYLE_ATTR_HASHES
+        );
+        for h in caps
             .iter()
-            .map(|h| h.to_owned())
-            .collect();
-        let script_caps: Vec<&str> = caps
-            .iter()
-            .filter_map(|c| c.strip_prefix("csp_script_hash="))
-            .collect();
-        assert_eq!(script_caps, declared);
-        for h in script_caps {
+            .filter_map(|c| c.split_once("_hash=").map(|(_, h)| h))
+        {
             assert!(
                 h.starts_with("'sha256-") && h.ends_with('\'') && h.len() == 53,
                 "{h}"
             );
         }
+    }
+
+    #[test]
+    fn declared_hashes_match_shipped_html() {
+        let html =
+            std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/ui/dist/index.html"))
+                .unwrap();
+        let found = csp_scan::inline_hashes(&html);
+        assert_eq!(found.scripts, csp_hashes::CSP_SCRIPT_HASHES);
+        assert_eq!(found.styles, csp_hashes::CSP_STYLE_HASHES);
+        assert_eq!(found.style_attrs, csp_hashes::CSP_STYLE_ATTR_HASHES);
+    }
+
+    #[test]
+    fn scan_hashes_executable_scripts_styles_and_attrs_only() {
+        let found = csp_scan::inline_hashes(
+            r#"<html><head><style>a{}</style><script>x()</script><script type="module">y()</script><script type="application/json">{}</script><script type="importmap">{}</script><script type="application/ld+json">{}</script><script src="/a.js"></script></head><body><div style="color: red"></div></body></html>"#,
+        );
+        assert_eq!(found.executable_scripts, 2);
+        assert_eq!(found.scripts.len(), 2);
+        assert_eq!(found.styles.len(), 1);
+        assert_eq!(found.style_attrs.len(), 1);
+        assert!(
+            found
+                .scripts
+                .contains(&"'sha256-D6IGS8VMvCoyaR/l0h9tERrBTATY01CoPS7l6xDv0kI='".to_string())
+        );
     }
 }
