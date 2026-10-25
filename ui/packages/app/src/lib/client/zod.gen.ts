@@ -199,14 +199,6 @@ export const zCapabilityListOutput = z.object({
   capabilities: z.array(zCapabilityRow),
 });
 
-/**
- * One first-party plugin known to orca. Installability is NOT read from
- * `status`: `plugin.install --name` is release-derived — it resolves the repo's
- * actual release asset for this target triple and succeeds iff the plugin has
- * published one, so a plugin declares itself installable by cutting a release.
- * `status` is descriptive metadata only (a coarse hint for `plugin.list`); it
- * no longer gates install and may lag the repo's real release state.
- */
 export const zCatalogEntry = z.object({
   docsUrl: z.string(),
   name: z.string(),
@@ -1060,7 +1052,7 @@ export const zMeshAcceptOutput = z.object({
   inviterPeerId: z.string(),
   inviterPort: z.int().gte(0).lte(65535),
   meshId: z.string(),
-  selfSecure: z.boolean(),
+  secure: z.boolean(),
 });
 
 export const zMeshCancelOfferOutput = z.object({
@@ -1075,7 +1067,7 @@ export const zMeshCandidate = z.object({
   addr: z.string(),
   can_invite: z.boolean(),
   hostname: z.string(),
-  id: z.string().nullish(),
+  id: z.string(),
   peer_id: z.string().nullish(),
   port: z.int().gte(0).lte(65535),
   pubkey_fp: z.string(),
@@ -1140,6 +1132,7 @@ export const zMeshInboundOffer = z.object({
     .max(BigInt('9223372036854775807'), {
       error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
     }),
+  inviter_id: z.string().nullish(),
   inviter_peer_id: z.string().nullish(),
   offer_id: z.string(),
   peer_addr: z.string(),
@@ -1164,6 +1157,18 @@ export const zMeshInstanceAddress = z.object({
 export const zMeshInstanceSecure = z.object({
   local: z.boolean(),
   peer: z.boolean(),
+});
+
+export const zMeshJoinTokenOutput = z.object({
+  expiresAt: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  token: z.string(),
 });
 
 export const zMeshLeaveOutput = z.object({
@@ -1249,7 +1254,7 @@ export const zMeshRecoverOutput = z.object({
  * Result of `system.mesh.update action=settings`.
  */
 export const zMeshSettingsOutput = z.object({
-  self_secure: z.boolean(),
+  secure: z.boolean(),
 });
 
 export const zMeshStaleRow = z.object({
@@ -1293,6 +1298,8 @@ export const zMeshUpdateAction = z.union([
   z.literal('recover'),
   z.literal('cancel_offer'),
   z.literal('unpin'),
+  z.literal('join_token'),
+  z.literal('promote'),
 ]);
 
 export const zModelRow = z.object({
@@ -1698,6 +1705,31 @@ export const zPrivilegeRule = z.object({
   system: z.string(),
 });
 
+/**
+ * Single-use promotion grant signed by the mesh CA over
+ * `<target>:<issued_at>:<expires_at>:<nonce>`.
+ */
+export const zPromotionGrant = z.object({
+  expiresAt: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  issuedAt: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  nonce: z.string(),
+  signature: z.string(),
+});
+
 export const zProviderInfo = z.object({
   instances: z.array(z.string()),
   kind: z.string(),
@@ -1953,6 +1985,16 @@ export const zRuntimeKind = z.union([
 export const zAdapterFailure = z.object({
   message: z.string(),
   runtime: zRuntimeKind,
+});
+
+export const zScannerOutcome = z.object({
+  error: z.string().nullish(),
+  new: z.int().gte(0),
+  ok: z.boolean(),
+  reopened: z.int().gte(0),
+  resolved: z.int().gte(0),
+  scanner: z.string(),
+  updated: z.int().gte(0),
 });
 
 /**
@@ -2216,6 +2258,65 @@ export const zSessionOk = z.object({
   role: z.string(),
   user_id: z.string(),
   username: z.string(),
+});
+
+export const zSeverity = z.enum(['unknown', 'low', 'medium', 'high', 'critical']);
+
+/**
+ * One finding as a scanner reports it for a unit. `id` is a CVE or check id;
+ * `package`/`file` name what it was found in.
+ */
+export const zFinding = z.object({
+  file: z.string().nullish(),
+  firstSeenMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  fixedVersion: z.string().nullish(),
+  id: z.string(),
+  installedVersion: z.string().nullish(),
+  lastSeenMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  memberId: z.string(),
+  package: z.string().nullish(),
+  reopenCount: z
+    .int()
+    .gte(0)
+    .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
+    .optional()
+    .default(0),
+  reopenedMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    })
+    .nullish(),
+  resolvedMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    })
+    .nullish(),
+  scanner: z.string(),
+  severity: zSeverity,
+  title: z.string().nullish(),
+  unitId: z.uuid(),
 });
 
 /**
@@ -2682,7 +2783,6 @@ export const zStorageShareEntry = z.object({
   id: z.string(),
   name: z.string(),
   options: z.string(),
-  optionsRendered: z.string(),
   replication: z.string().nullish(),
   routes: zRoutes,
 });
@@ -3144,7 +3244,7 @@ export const zSystemInfoReport = z.object({
       error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
     })
     .nullish(),
-  selfSecure: z.boolean().nullish(),
+  secure: z.boolean().nullish(),
   snapshotAtUnix: z.coerce
     .bigint()
     .min(BigInt('-9223372036854775808'), {
@@ -6106,6 +6206,133 @@ export const zSecretsUpsertResponse = z.object({
 });
 
 /**
+ * SecurityFindingsDetailArgs
+ */
+export const zSecurityFindingsDetailBody = z.object({
+  id: z.string(),
+  package: z.string().nullish(),
+  scanner: z.string(),
+  unitId: z.uuid(),
+});
+
+/**
+ * Finding
+ *
+ * One finding as a scanner reports it for a unit. `id` is a CVE or check id;
+ * `package`/`file` name what it was found in.
+ */
+export const zSecurityFindingsDetailResponse = z.object({
+  file: z.string().nullish(),
+  firstSeenMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  fixedVersion: z.string().nullish(),
+  id: z.string(),
+  installedVersion: z.string().nullish(),
+  lastSeenMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    }),
+  memberId: z.string(),
+  package: z.string().nullish(),
+  reopenCount: z
+    .int()
+    .gte(0)
+    .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
+    .optional()
+    .default(0),
+  reopenedMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    })
+    .nullish(),
+  resolvedMs: z.coerce
+    .bigint()
+    .min(BigInt('-9223372036854775808'), {
+      error: 'Invalid value: Expected int64 to be >= -9223372036854775808',
+    })
+    .max(BigInt('9223372036854775807'), {
+      error: 'Invalid value: Expected int64 to be <= 9223372036854775807',
+    })
+    .nullish(),
+  scanner: z.string(),
+  severity: zSeverity,
+  title: z.string().nullish(),
+  unitId: z.uuid(),
+});
+
+/**
+ * SecurityFindingsListArgs
+ */
+export const zSecurityFindingsListBody = z.object({
+  cursor: z.string().nullish(),
+  includeResolved: z.boolean().optional().default(false),
+  limit: z
+    .int()
+    .gte(0)
+    .max(4294967295, { error: 'Invalid value: Expected uint32 to be <= 4294967295' })
+    .nullish(),
+  minSeverity: z.string().nullish(),
+  scanner: z.string().nullish(),
+  unitId: z.uuid().nullish(),
+});
+
+/**
+ * Page
+ *
+ * One page of a `list` response. `items` holds the thin rows; `next_cursor` is
+ * `Some` when more rows remain (pass it back to fetch the next page) and `None`
+ * on the last page.
+ */
+export const zSecurityFindingsListResponse = z.object({
+  items: z.array(zFinding),
+  nextCursor: z.string().nullish(),
+  total: z.coerce
+    .bigint()
+    .gte(BigInt(0))
+    .max(BigInt('18446744073709551615'), {
+      error: 'Invalid value: Expected uint64 to be <= 18446744073709551615',
+    })
+    .nullish(),
+});
+
+/**
+ * SecurityScanArgs
+ */
+export const zSecurityScanBody = z.object({
+  scanner: z.string().nullish(),
+  unitId: z.uuid(),
+});
+
+export const zSecurityScanQuery = z.object({
+  dryRun: z.boolean().optional().default(false),
+});
+
+/**
+ * ScanSummary
+ *
+ * Tool result
+ */
+export const zSecurityScanResponse = z.object({
+  memberId: z.string(),
+  scanners: z.array(zScannerOutcome),
+  unitId: z.uuid(),
+});
+
+/**
  * ServiceCreateArgs
  */
 export const zServiceCreateBody = z.object({
@@ -6882,7 +7109,6 @@ export const zStorageShareCreateBody = z.object({
   id: z.uuid(),
   name: z.string(),
   options: z.string(),
-  optionsRendered: z.string(),
   replication: z.string().nullish(),
   routes: z.array(zRoute).optional().default([]),
 });
@@ -7099,7 +7325,7 @@ export const zSystemCertsListResponse = z.object({
   leafServer: zCertInfo.nullish(),
   member: z.boolean(),
   meshCa: zCertInfo.nullish(),
-  selfSecure: z.boolean().optional().default(false),
+  secure: z.boolean().optional().default(false),
   version: z.string().optional().default(''),
 });
 
@@ -7376,7 +7602,9 @@ export const zSystemJoinBody = z.object({
   action: zMeshCreateAction.and(z.unknown()).optional(),
   addr: z.string().nullish().default(null),
   code: z.string().nullish().default(null),
+  id: z.uuid().nullish().default(null),
   port: z.int().gte(0).lte(65535).nullish().default(null),
+  token: z.string().nullish().default(null),
 });
 
 export const zSystemJoinQuery = z.object({
@@ -7483,11 +7711,12 @@ export const zSystemMeshDeleteResponse = z.union([
 export const zSystemMeshUpdateBody = z.object({
   action: zMeshUpdateAction.and(z.unknown()).optional(),
   addr: z.string().nullish().default(null),
+  grant: zPromotionGrant.nullish().default(null),
   id: z.uuid().nullish().default(null),
   on: z.boolean().nullish().default(null),
   peer: z.string().nullish().default(null),
   push: z.boolean().optional().default(false),
-  selfSecure: z.boolean().nullish().default(null),
+  secure: z.boolean().nullish().default(null),
 });
 
 export const zSystemMeshUpdateQuery = z.object({
@@ -7506,6 +7735,7 @@ export const zSystemMeshUpdateResponse = z.union([
   zMeshRecoverOutput,
   zMeshCancelOfferOutput,
   zMeshUnpinOutput,
+  zMeshJoinTokenOutput,
 ]);
 
 /**

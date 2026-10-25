@@ -310,6 +310,15 @@ import type {
   SecretsUpsertData,
   SecretsUpsertErrors,
   SecretsUpsertResponses,
+  SecurityFindingsDetailData,
+  SecurityFindingsDetailErrors,
+  SecurityFindingsDetailResponses,
+  SecurityFindingsListData,
+  SecurityFindingsListErrors,
+  SecurityFindingsListResponses,
+  SecurityScanData,
+  SecurityScanErrors,
+  SecurityScanResponses,
   ServiceCreateData,
   ServiceCreateErrors,
   ServiceCreateResponses,
@@ -3025,6 +3034,86 @@ export const secretsUpsert = <ThrowOnError extends boolean = false>(
   });
 
 /**
+ * security.findings.detail
+ *
+ * One security finding by unit, scanner, CVE/check id and package.
+ */
+export const securityFindingsDetail = <ThrowOnError extends boolean = false>(
+  options: Options<SecurityFindingsDetailData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    SecurityFindingsDetailResponses,
+    SecurityFindingsDetailErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/security.findings.detail',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * security.findings.list
+ *
+ * Security findings recorded on this system, open by default, highest severity first.
+ */
+export const securityFindingsList = <ThrowOnError extends boolean = false>(
+  options: Options<SecurityFindingsListData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<
+    SecurityFindingsListResponses,
+    SecurityFindingsListErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/security.findings.list',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * security.scan
+ *
+ * Run registered security scanners against one unit and record their findings on this system. Requires the daemon.
+ */
+export const securityScan = <ThrowOnError extends boolean = false>(
+  options: Options<SecurityScanData, ThrowOnError>,
+) =>
+  (options.client ?? client).post<SecurityScanResponses, SecurityScanErrors, ThrowOnError>({
+    security: [
+      {
+        in: 'cookie',
+        name: 'orca_session',
+        type: 'apiKey',
+      },
+    ],
+    url: '/api/v1/security.scan',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
  * service.create
  *
  * Create a service artifact. `action=deploy` builds the backend's `WorkloadSpec` and places it on a matching deploy target — the service backend describes *what* to run; the deploy target runs it (composition, not duplication). `action=backup` snapshots a service instance's config/data, delegating to the backend's own backup engine (no duplicate logic here).
@@ -3999,7 +4088,7 @@ export const systemBuild = <ThrowOnError extends boolean = false>(
 /**
  * system.certs.list
  *
- * Mesh cert inventory + trust/secrets status for the host this runs on. Pure filesystem read of the PKI dir, plus the DB-backed `self_secure` flag layered on top.
+ * Mesh cert inventory + trust/secrets status for the host this runs on. Pure filesystem read of the PKI dir, plus the DB-backed `secure` flag layered on top.
  */
 export const systemCertsList = <ThrowOnError extends boolean = false>(
   options: Options<SystemCertsListData, ThrowOnError>,
@@ -4243,7 +4332,7 @@ export const systemInstall = <ThrowOnError extends boolean = false>(
 /**
  * system.join
  *
- * Establish mesh membership. `action` selects the pairing path: - `join`   — dial the inviter DIRECTLY over the bootstrap channel (no mDNS required) and auto-accept in one call (needs `addr`, optional `port`). - `offer`  — push a membership offer to a joiner discovered via mDNS (needs `addr`, optional `port`); returns a pairing code to show the operator. - `accept` — complete an out-of-band offer by its 6-char code (needs `code`).
+ * Establish mesh membership. `action` selects the pairing path: - `join`   — dial the inviter DIRECTLY over the bootstrap channel (no mDNS required) and accept in one call (needs `addr` + `token`, optional `port`). - `offer`  — push a membership offer to a joiner discovered via mDNS (needs `addr`, optional `port`); returns a pairing code to show the operator. - `accept` — complete an out-of-band offer by its 6-char code (needs `code`).
  */
 export const systemJoin = <ThrowOnError extends boolean = false>(
   options: Options<SystemJoinData, ThrowOnError>,
@@ -4339,7 +4428,7 @@ export const systemMeshDelete = <ThrowOnError extends boolean = false>(
 /**
  * system.mesh.update
  *
- * Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — toggle `self_secure` (Tier-2 secrets-storage). Default. - `trust`        — set trust for a paired peer (needs `id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name.
+ * Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — read/set this member's tier (`secure`). Default. - `trust`        — set trust for a paired peer (needs `id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr` or `id`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name. - `join_token`   — issue a single-use, short-lived join token. - `promote`      — promote member `id` to secure (mesh-CA-signed grant).
  */
 export const systemMeshUpdate = <ThrowOnError extends boolean = false>(
   options: Options<SystemMeshUpdateData, ThrowOnError>,

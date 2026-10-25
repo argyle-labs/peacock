@@ -469,26 +469,20 @@
         "type": "object"
       },
       "CatalogEntry": {
-        "description": "One first-party plugin known to orca. Installability is NOT read from\n`status`: `plugin.install --name` is release-derived — it resolves the repo's\nactual release asset for this target triple and succeeds iff the plugin has\npublished one, so a plugin declares itself installable by cutting a release.\n`status` is descriptive metadata only (a coarse hint for `plugin.list`); it\nno longer gates install and may lag the repo's real release state.",
         "properties": {
           "docsUrl": {
-            "description": "Where to read about the plugin.",
             "type": "string"
           },
           "name": {
-            "description": "Catalog name, e.g. `\"jellyfin\"`. Matches the plugin's `target_software`.",
             "type": "string"
           },
           "repoUrl": {
-            "description": "Public GitHub repo hosting the plugin's source + release pipeline.",
             "type": "string"
           },
           "status": {
-            "description": "Descriptive hint only — **nothing gates on it**, not `plugin.install`\nand not `plugin.update`. Installability is release-derived: the catalog\ncontract says publish a release, not hand-tune this field.\n\nIt is hand-maintained and therefore drifts. Measured 2026-09-27:\n`agents` and `syncthing` each publish five releases while this field\nstill reads `\"unreleased\"`, so reading it as \"has releases\" is wrong in\npractice as well as in principle.\n\nThis doc previously claimed `plugin.update` gated on it while the code\n~1000 lines below said the opposite in as many words. That contradiction\nwas load-bearing: it is the premise that produced two withdrawn claims on\n#648 (see #650). Keep this aligned with `plugin_update`, which is the\nauthority.",
             "type": "string"
           },
           "targetSoftware": {
-            "description": "External software the plugin integrates, e.g. `\"jellyfin\"`.",
             "type": "string"
           }
         },
@@ -1979,6 +1973,95 @@
         },
         "type": "object"
       },
+      "Finding": {
+        "description": "One finding as a scanner reports it for a unit. `id` is a CVE or check id;\n`package`/`file` name what it was found in.",
+        "properties": {
+          "file": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "firstSeenMs": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "fixedVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "installedVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSeenMs": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "memberId": {
+            "type": "string"
+          },
+          "package": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reopenCount": {
+            "default": 0,
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reopenedMs": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "resolvedMs": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "scanner": {
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "memberId",
+          "unitId",
+          "scanner",
+          "id",
+          "severity",
+          "firstSeenMs",
+          "lastSeenMs"
+        ],
+        "type": "object"
+      },
       "FixView": {
         "properties": {
           "action": {
@@ -3300,7 +3383,7 @@
           "meshId": {
             "type": "string"
           },
-          "selfSecure": {
+          "secure": {
             "type": "boolean"
           }
         },
@@ -3310,7 +3393,7 @@
           "inviterHostname",
           "inviterAddr",
           "inviterPort",
-          "selfSecure"
+          "secure"
         ],
         "type": "object"
       },
@@ -3344,10 +3427,8 @@
             "type": "string"
           },
           "id": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "description": "The system id when announced; otherwise a UUID derived from `pubkey_fp`.",
+            "type": "string"
           },
           "peer_id": {
             "type": [
@@ -3367,6 +3448,7 @@
         },
         "required": [
           "pubkey_fp",
+          "id",
           "hostname",
           "addr",
           "port",
@@ -3379,7 +3461,7 @@
         "oneOf": [
           {
             "const": "join",
-            "description": "Dial the inviter directly and auto-accept (needs `addr`).",
+            "description": "Dial the inviter directly with an admin-issued join token (needs `addr` + `token`).",
             "type": "string"
           },
           {
@@ -3498,7 +3580,7 @@
             "type": "string"
           },
           "id": {
-            "description": "The system's id; empty for the local system, which has no roster row.",
+            "description": "The system's id (the local row carries this host's machine id). Empty\nonly on the row reporting a roster read failure, which names no system.",
             "type": "string"
           }
         },
@@ -3511,8 +3593,15 @@
       "MeshInboundOffer": {
         "properties": {
           "expires_at": {
+            "description": "Unix seconds.",
             "format": "int64",
             "type": "integer"
+          },
+          "inviter_id": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "inviter_peer_id": {
             "type": [
@@ -3769,6 +3858,23 @@
           "candidates",
           "stale",
           "inbound_offers"
+        ],
+        "type": "object"
+      },
+      "MeshJoinTokenOutput": {
+        "properties": {
+          "expiresAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "token": {
+            "description": "Single-use token a joiner passes to `system.join --action join --token`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "expiresAt"
         ],
         "type": "object"
       },
@@ -4236,12 +4342,12 @@
       "MeshSettingsOutput": {
         "description": "Result of `system.mesh.update action=settings`.",
         "properties": {
-          "self_secure": {
+          "secure": {
             "type": "boolean"
           }
         },
         "required": [
-          "self_secure"
+          "secure"
         ],
         "type": "object"
       },
@@ -4312,6 +4418,7 @@
             "type": "string"
           },
           "last_seen_at": {
+            "description": "Unix seconds.",
             "format": "int64",
             "type": [
               "integer",
@@ -4405,7 +4512,7 @@
         "oneOf": [
           {
             "const": "settings",
-            "description": "Toggle `self_secure` (Tier-2 secrets-storage). Default.",
+            "description": "Read or set this member's tier (`secure` or insecure). Default.",
             "type": "string"
           },
           {
@@ -4431,6 +4538,16 @@
           {
             "const": "unpin",
             "description": "Drop this host's identity pin for a peer (needs `id`).",
+            "type": "string"
+          },
+          {
+            "const": "join_token",
+            "description": "Issue a single-use, short-lived join token for one joiner.",
+            "type": "string"
+          },
+          {
+            "const": "promote",
+            "description": "Promote member `id` to secure with a mesh-CA-signed grant. Run on a\nsecure member that holds the mesh CA key.",
             "type": "string"
           }
         ]
@@ -5608,6 +5725,32 @@
         ],
         "type": "object"
       },
+      "PromotionGrant": {
+        "description": "Single-use promotion grant signed by the mesh CA over\n`<target>:<issued_at>:<expires_at>:<nonce>`.",
+        "properties": {
+          "expiresAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "issuedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "signature",
+          "issuedAt",
+          "expiresAt",
+          "nonce"
+        ],
+        "type": "object"
+      },
       "ProviderInfo": {
         "properties": {
           "instances": {
@@ -6384,6 +6527,51 @@
           }
         ]
       },
+      "ScannerOutcome": {
+        "properties": {
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "new": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "reopened": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "resolved": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "scanner": {
+            "type": "string"
+          },
+          "updated": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scanner",
+          "ok",
+          "new",
+          "updated",
+          "resolved",
+          "reopened"
+        ],
+        "type": "object"
+      },
       "ScheduleCreateAction": {
         "description": "The `schedule.create` action. Only `run` today; the discriminant keeps the\nsurface six-verb-uniform.",
         "oneOf": [
@@ -7087,6 +7275,16 @@
           "role"
         ],
         "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "unknown",
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ],
+        "type": "string"
       },
       "ShareRow": {
         "description": "A share/volume tagged with the backend that exposes it. Flat projection of\n[`plugin_toolkit::storage::Share`] so consumers don't depend on the domain type.",
@@ -7912,9 +8110,6 @@
           "options": {
             "type": "string"
           },
-          "optionsRendered": {
-            "type": "string"
-          },
           "replication": {
             "type": [
               "string",
@@ -7931,7 +8126,6 @@
           "backend",
           "fstype",
           "options",
-          "optionsRendered",
           "hasCredential",
           "routes",
           "enabled"
@@ -8578,8 +8772,8 @@
               "null"
             ]
           },
-          "selfSecure": {
-            "description": "Tier-2 secrets-storage permission (`self_secure`) for this host.\n`true` = this host is authorized to hold encrypted secrets replicated\nfrom other mesh members. Surfaced in the host drawer as a SECURE\ntoggle, independent of cert trust.",
+          "secure": {
+            "description": "Tier-2 secrets-storage permission (`secure`) for this host.\n`true` = this host is authorized to hold encrypted secrets replicated\nfrom other mesh members. Surfaced in the host drawer as a SECURE\ntoggle, independent of cert trust.",
             "type": [
               "boolean",
               "null"
@@ -22549,6 +22743,476 @@
         ]
       }
     },
+    "/api/v1/security.findings.detail": {
+      "post": {
+        "description": "One security finding by unit, scanner, CVE/check id and package.",
+        "operationId": "securityFindingsDetail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "package": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scanner": {
+                    "type": "string"
+                  },
+                  "unitId": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "unitId",
+                  "scanner",
+                  "id"
+                ],
+                "title": "SecurityFindingsDetailArgs",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "One finding as a scanner reports it for a unit. `id` is a CVE or check id;\n`package`/`file` name what it was found in.",
+                  "properties": {
+                    "file": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "firstSeenMs": {
+                      "format": "int64",
+                      "type": "integer"
+                    },
+                    "fixedVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "installedVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lastSeenMs": {
+                      "format": "int64",
+                      "type": "integer"
+                    },
+                    "memberId": {
+                      "type": "string"
+                    },
+                    "package": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reopenCount": {
+                      "default": 0,
+                      "format": "uint32",
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "reopenedMs": {
+                      "format": "int64",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "resolvedMs": {
+                      "format": "int64",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "scanner": {
+                      "type": "string"
+                    },
+                    "severity": {
+                      "$ref": "#/components/schemas/Severity"
+                    },
+                    "title": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "unitId": {
+                      "format": "uuid",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "memberId",
+                    "unitId",
+                    "scanner",
+                    "id",
+                    "severity",
+                    "firstSeenMs",
+                    "lastSeenMs"
+                  ],
+                  "title": "Finding",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool result"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unknown tool"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool execution failed"
+          }
+        },
+        "summary": "security.findings.detail",
+        "tags": [
+          "security.findings"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "CLI",
+            "lang": "shell",
+            "source": "orca security findings detail '<args-json>'"
+          },
+          {
+            "label": "MCP",
+            "lang": "json",
+            "source": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"security_findings_detail\",\n    \"arguments\": {}\n  }\n}"
+          }
+        ]
+      }
+    },
+    "/api/v1/security.findings.list": {
+      "post": {
+        "description": "Security findings recorded on this system, open by default, highest severity first.",
+        "operationId": "securityFindingsList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "cursor": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "includeResolved": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "limit": {
+                    "format": "uint32",
+                    "minimum": 0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "minSeverity": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scanner": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "unitId": {
+                    "format": "uuid",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "title": "SecurityFindingsListArgs",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "One page of a `list` response. `items` holds the thin rows; `next_cursor` is\n`Some` when more rows remain (pass it back to fetch the next page) and `None`\non the last page.",
+                  "properties": {
+                    "items": {
+                      "description": "Rows for this page (already limited to the effective page size).",
+                      "items": {
+                        "$ref": "#/components/schemas/Finding"
+                      },
+                      "type": "array"
+                    },
+                    "nextCursor": {
+                      "description": "Opaque cursor for the next page, or `None` if this is the last page.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "total": {
+                      "description": "Total number of rows across all pages, when cheap to compute (in-memory\nlists). `None` when the source can't count without scanning.",
+                      "format": "uint64",
+                      "minimum": 0,
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "title": "Page",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool result"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unknown tool"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool execution failed"
+          }
+        },
+        "summary": "security.findings.list",
+        "tags": [
+          "security.findings"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "CLI",
+            "lang": "shell",
+            "source": "orca security findings list '<args-json>'"
+          },
+          {
+            "label": "MCP",
+            "lang": "json",
+            "source": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"security_findings_list\",\n    \"arguments\": {}\n  }\n}"
+          }
+        ]
+      }
+    },
+    "/api/v1/security.scan": {
+      "post": {
+        "description": "Run registered security scanners against one unit and record their findings on this system. Requires the daemon.",
+        "operationId": "securityScan",
+        "parameters": [
+          {
+            "description": "Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "scanner": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "unitId": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "unitId"
+                ],
+                "title": "SecurityScanArgs",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "memberId": {
+                      "type": "string"
+                    },
+                    "scanners": {
+                      "items": {
+                        "$ref": "#/components/schemas/ScannerOutcome"
+                      },
+                      "type": "array"
+                    },
+                    "unitId": {
+                      "format": "uuid",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "memberId",
+                    "unitId",
+                    "scanners"
+                  ],
+                  "title": "ScanSummary",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool result"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unknown tool"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tool execution failed"
+          }
+        },
+        "summary": "security.scan",
+        "tags": [
+          "security"
+        ],
+        "x-codeSamples": [
+          {
+            "label": "CLI",
+            "lang": "shell",
+            "source": "orca security scan '<args-json>'"
+          },
+          {
+            "label": "MCP",
+            "lang": "json",
+            "source": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"security_scan\",\n    \"arguments\": {}\n  }\n}"
+          }
+        ]
+      }
+    },
     "/api/v1/service.create": {
       "post": {
         "description": "Create a service artifact. `action=deploy` builds the backend's `WorkloadSpec` and places it on a matching deploy target — the service backend describes *what* to run; the deploy target runs it (composition, not duplication). `action=backup` snapshots a service instance's config/data, delegating to the backend's own backup engine (no duplicate logic here).",
@@ -26711,9 +27375,6 @@
                   "options": {
                     "type": "string"
                   },
-                  "optionsRendered": {
-                    "type": "string"
-                  },
                   "replication": {
                     "type": [
                       "string",
@@ -26734,8 +27395,7 @@
                   "id",
                   "backend",
                   "fstype",
-                  "options",
-                  "optionsRendered"
+                  "options"
                 ],
                 "title": "StorageShareCreateArgs",
                 "type": "object"
@@ -27758,7 +28418,7 @@
     },
     "/api/v1/system.certs.list": {
       "post": {
-        "description": "Mesh cert inventory + trust/secrets status for the host this runs on. Pure filesystem read of the PKI dir, plus the DB-backed `self_secure` flag layered on top.",
+        "description": "Mesh cert inventory + trust/secrets status for the host this runs on. Pure filesystem read of the PKI dir, plus the DB-backed `secure` flag layered on top.",
         "operationId": "systemCertsList",
         "requestBody": {
           "content": {
@@ -27834,7 +28494,7 @@
                         }
                       ]
                     },
-                    "selfSecure": {
+                    "secure": {
                       "default": false,
                       "description": "Tier-2 secrets-storage permission. Independent of cert trust — a fully\npaired host can still refuse to be a secrets sink. Left at its default\nby [`mesh_cert_status`]; the caller fills it from the DB policy.",
                       "type": "boolean"
@@ -29188,7 +29848,7 @@
     },
     "/api/v1/system.join": {
       "post": {
-        "description": "Establish mesh membership. `action` selects the pairing path: - `join`   — dial the inviter DIRECTLY over the bootstrap channel (no mDNS required) and auto-accept in one call (needs `addr`, optional `port`). - `offer`  — push a membership offer to a joiner discovered via mDNS (needs `addr`, optional `port`); returns a pairing code to show the operator. - `accept` — complete an out-of-band offer by its 6-char code (needs `code`).",
+        "description": "Establish mesh membership. `action` selects the pairing path: - `join`   — dial the inviter DIRECTLY over the bootstrap channel (no mDNS required) and accept in one call (needs `addr` + `token`, optional `port`). - `offer`  — push a membership offer to a joiner discovered via mDNS (needs `addr`, optional `port`); returns a pairing code to show the operator. - `accept` — complete an out-of-band offer by its 6-char code (needs `code`).",
         "operationId": "systemJoin",
         "parameters": [
           {
@@ -29235,6 +29895,15 @@
                       "null"
                     ]
                   },
+                  "id": {
+                    "default": null,
+                    "description": "(join/offer) Candidate id from `system.list --snapshot`. With `addr`, the two must name the same candidate.",
+                    "format": "uuid",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
                   "port": {
                     "default": null,
                     "description": "(join/offer) Override the mesh port. Defaults to `APP_PLUGIN_PORT`.",
@@ -29243,6 +29912,14 @@
                     "minimum": 0,
                     "type": [
                       "integer",
+                      "null"
+                    ]
+                  },
+                  "token": {
+                    "default": null,
+                    "description": "(join) Single-use join token issued by `system.mesh.update --action join_token` on the inviter.",
+                    "type": [
+                      "string",
                       "null"
                     ]
                   }
@@ -29738,7 +30415,7 @@
     },
     "/api/v1/system.mesh.update": {
       "post": {
-        "description": "Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — toggle `self_secure` (Tier-2 secrets-storage). Default. - `trust`        — set trust for a paired peer (needs `id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name.",
+        "description": "Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — read/set this member's tier (`secure`). Default. - `trust`        — set trust for a paired peer (needs `id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr` or `id`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name. - `join_token`   — issue a single-use, short-lived join token. - `promote`      — promote member `id` to secure (mesh-CA-signed grant).",
         "operationId": "systemMeshUpdate",
         "parameters": [
           {
@@ -29765,21 +30442,33 @@
                       },
                       {
                         "default": "settings",
-                        "description": "`settings` (default), `trust`, `sync`, `recover`, `cancel_offer`, or\n`unpin`."
+                        "description": "`settings` (default), `trust`, `sync`, `recover`, `cancel_offer`,\n`unpin`, or `join_token`."
                       }
                     ]
                   },
                   "addr": {
                     "default": null,
-                    "description": "(cancel_offer) Joiner address whose outbound offer(s) to clear.",
+                    "description": "(cancel_offer) Joiner address whose outbound offer(s) to clear; use `id` when several joiners share it.",
                     "type": [
                       "string",
                       "null"
                     ]
                   },
+                  "grant": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/PromotionGrant"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "(settings) Single-use mesh-CA-signed grant authorising promotion."
+                  },
                   "id": {
                     "default": null,
-                    "description": "(trust/recover/unpin) Target system.",
+                    "description": "(trust/recover/unpin/cancel_offer) Target system.",
                     "format": "uuid",
                     "type": [
                       "string",
@@ -29807,9 +30496,9 @@
                     "description": "(trust) Execute on the remote peer so THEY trust US.",
                     "type": "boolean"
                   },
-                  "selfSecure": {
+                  "secure": {
                     "default": null,
-                    "description": "(settings) Toggle Tier-2 secrets-storage permission. `None` leaves the\ncurrent value unchanged.",
+                    "description": "(settings) Member tier: `true` = secure (may hold other members'\nsecrets), `false` = insecure (holds only its own). `true` needs a\nmesh-CA-signed `grant` (see `promote`); `None` reads the current tier.",
                     "type": [
                       "boolean",
                       "null"
@@ -29846,6 +30535,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/MeshUnpinOutput"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MeshJoinTokenOutput"
                     }
                   ],
                   "description": "Tagged result of `system.mesh.update`, one variant per action.",
@@ -32161,6 +32853,12 @@
       "name": "secrets.grant"
     },
     {
+      "name": "security"
+    },
+    {
+      "name": "security.findings"
+    },
+    {
       "name": "service"
     },
     {
@@ -32341,6 +33039,13 @@
       "tags": [
         "secrets",
         "secrets.grant"
+      ]
+    },
+    {
+      "name": "Security",
+      "tags": [
+        "security",
+        "security.findings"
       ]
     },
     {
