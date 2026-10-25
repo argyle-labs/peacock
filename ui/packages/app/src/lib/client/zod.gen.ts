@@ -7715,7 +7715,6 @@ export const zSystemMeshUpdateBody = z.object({
   id: z.uuid().nullish().default(null),
   on: z.boolean().nullish().default(null),
   peer: z.string().nullish().default(null),
-  push: z.boolean().optional().default(false),
   secure: z.boolean().nullish().default(null),
 });
 

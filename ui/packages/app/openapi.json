@@ -30415,7 +30415,7 @@
     },
     "/api/v1/system.mesh.update": {
       "post": {
-        "description": "Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — read/set this member's tier (`secure`). Default. - `trust`        — set trust for a paired peer (needs `id` + `on`; `push` flips THEIR trust of us over mTLS). - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr` or `id`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name. - `join_token`   — issue a single-use, short-lived join token. - `promote`      — promote member `id` to secure (mesh-CA-signed grant).",
+        "description": "Mutate mesh membership state on this host (or a `--peer` target). `action` selects the operation: - `settings`     — read/set this member's tier (`secure`). Default. - `trust`        — set this host's trust for a paired peer (needs `id` + `on`). LOCAL-ONLY. - `sync`         — force a one-shot replication tick (optional `peer` source filter). - `recover`      — clear a stale `departed_at` flag on THIS host (needs `peer_id`). LOCAL-ONLY: rejected for remote callers by the mesh listener. - `cancel_offer` — clear stuck outbound pairing offer(s) for `addr` or `id`. - `unpin`        — drop this host's identity pin for `peer_id`, so it is accepted again with a cert that carries no identity name. - `join_token`   — issue a single-use, short-lived join token. - `promote`      — promote member `id` to secure (mesh-CA-signed grant). LOCAL-ONLY, as is `settings` with `secure=false`.",
         "operationId": "systemMeshUpdate",
         "parameters": [
           {
@@ -30490,11 +30490,6 @@
                       "string",
                       "null"
                     ]
-                  },
-                  "push": {
-                    "default": false,
-                    "description": "(trust) Execute on the remote peer so THEY trust US.",
-                    "type": "boolean"
                   },
                   "secure": {
                     "default": null,

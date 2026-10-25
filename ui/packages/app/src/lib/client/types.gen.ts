@@ -14099,10 +14099,6 @@ export type SystemMeshUpdateData = {
      */
     peer?: string | null;
     /**
-     * (trust) Execute on the remote peer so THEY trust US.
-     */
-    push?: boolean;
-    /**
      * (settings) Member tier: `true` = secure (may hold other members'
      * secrets), `false` = insecure (holds only its own). `true` needs a
      * mesh-CA-signed `grant` (see `promote`); `None` reads the current tier.
