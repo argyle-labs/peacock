@@ -309,47 +309,11 @@ export type CapabilityRow = {
   state: string;
 };
 
-/**
- * One first-party plugin known to orca. Installability is NOT read from
- * `status`: `plugin.install --name` is release-derived — it resolves the repo's
- * actual release asset for this target triple and succeeds iff the plugin has
- * published one, so a plugin declares itself installable by cutting a release.
- * `status` is descriptive metadata only (a coarse hint for `plugin.list`); it
- * no longer gates install and may lag the repo's real release state.
- */
 export type CatalogEntry = {
-  /**
-   * Where to read about the plugin.
-   */
   docsUrl: string;
-  /**
-   * Catalog name, e.g. `"jellyfin"`. Matches the plugin's `target_software`.
-   */
   name: string;
-  /**
-   * Public GitHub repo hosting the plugin's source + release pipeline.
-   */
   repoUrl: string;
-  /**
-   * Descriptive hint only — **nothing gates on it**, not `plugin.install`
-   * and not `plugin.update`. Installability is release-derived: the catalog
-   * contract says publish a release, not hand-tune this field.
-   *
-   * It is hand-maintained and therefore drifts. Measured 2026-09-27:
-   * `agents` and `syncthing` each publish five releases while this field
-   * still reads `"unreleased"`, so reading it as "has releases" is wrong in
-   * practice as well as in principle.
-   *
-   * This doc previously claimed `plugin.update` gated on it while the code
-   * ~1000 lines below said the opposite in as many words. That contradiction
-   * was load-bearing: it is the premise that produced two withdrawn claims on
-   * #648 (see #650). Keep this aligned with `plugin_update`, which is the
-   * authority.
-   */
   status: string;
-  /**
-   * External software the plugin integrates, e.g. `"jellyfin"`.
-   */
   targetSoftware: string;
 };
 
@@ -1072,6 +1036,28 @@ export type Failover = {
   return_to_primary?: boolean;
 };
 
+/**
+ * One finding as a scanner reports it for a unit. `id` is a CVE or check id;
+ * `package`/`file` name what it was found in.
+ */
+export type Finding = {
+  file?: string | null;
+  firstSeenMs: number;
+  fixedVersion?: string | null;
+  id: string;
+  installedVersion?: string | null;
+  lastSeenMs: number;
+  memberId: string;
+  package?: string | null;
+  reopenCount?: number;
+  reopenedMs?: number | null;
+  resolvedMs?: number | null;
+  scanner: string;
+  severity: Severity;
+  title?: string | null;
+  unitId: string;
+};
+
 export type FixView = {
   action?: string | null;
   provider?: string | null;
@@ -1601,7 +1587,7 @@ export type MeshAcceptOutput = {
   inviterPeerId: string;
   inviterPort: number;
   meshId: string;
-  selfSecure: boolean;
+  secure: boolean;
 };
 
 export type MeshCancelOfferOutput = {
@@ -1616,7 +1602,10 @@ export type MeshCandidate = {
   addr: string;
   can_invite: boolean;
   hostname: string;
-  id?: string | null;
+  /**
+   * The system id when announced; otherwise a UUID derived from `pubkey_fp`.
+   */
+  id: string;
   peer_id?: string | null;
   port: number;
   pubkey_fp: string;
@@ -1681,13 +1670,18 @@ export type MeshHealthRow = {
    */
   host: string;
   /**
-   * The system's id; empty for the local system, which has no roster row.
+   * The system's id (the local row carries this host's machine id). Empty
+   * only on the row reporting a roster read failure, which names no system.
    */
   id: string;
 };
 
 export type MeshInboundOffer = {
+  /**
+   * Unix seconds.
+   */
   expires_at: number;
+  inviter_id?: string | null;
   inviter_peer_id?: string | null;
   offer_id: string;
   peer_addr: string;
@@ -1767,6 +1761,14 @@ export type MeshInstancesOutput = {
   inbound_offers: Array<MeshInboundOffer>;
   members: Array<MeshInstance>;
   stale: Array<MeshStaleRow>;
+};
+
+export type MeshJoinTokenOutput = {
+  expiresAt: number;
+  /**
+   * Single-use token a joiner passes to `system.join --action join --token`.
+   */
+  token: string;
 };
 
 export type MeshLeaveOutput = {
@@ -1966,7 +1968,7 @@ export type MeshRecoverOutput = {
  * Result of `system.mesh.update action=settings`.
  */
 export type MeshSettingsOutput = {
-  self_secure: boolean;
+  secure: boolean;
 };
 
 export type MeshSnapshotOutput = {
@@ -2003,6 +2005,9 @@ export type MeshStaleRow = {
   addr: string;
   hostname: string;
   id: string;
+  /**
+   * Unix seconds.
+   */
   last_seen_at?: number | null;
   peer_id: string;
   port: number;
@@ -2039,7 +2044,8 @@ export type MeshUnpinOutput = {
 /**
  * Operation selector for `system.mesh.update`.
  */
-export type MeshUpdateAction = 'settings' | 'trust' | 'sync' | 'recover' | 'cancel_offer' | 'unpin';
+export type MeshUpdateAction =
+  'settings' | 'trust' | 'sync' | 'recover' | 'cancel_offer' | 'unpin' | 'join_token' | 'promote';
 
 export type ModelRow = {
   /**
@@ -2581,6 +2587,17 @@ export type PrivilegeRule = {
   system: string;
 };
 
+/**
+ * Single-use promotion grant signed by the mesh CA over
+ * `<target>:<issued_at>:<expires_at>:<nonce>`.
+ */
+export type PromotionGrant = {
+  expiresAt: number;
+  issuedAt: number;
+  nonce: string;
+  signature: string;
+};
+
 export type ProviderInfo = {
   instances: Array<string>;
   /**
@@ -2971,6 +2988,16 @@ export type Runtime = 'docker' | 'podman' | 'lxc' | 'vm';
  */
 export type RuntimeKind = 'docker' | 'lxc' | 'podman' | 'nspawn';
 
+export type ScannerOutcome = {
+  error?: string | null;
+  new: number;
+  ok: boolean;
+  reopened: number;
+  resolved: number;
+  scanner: string;
+  updated: number;
+};
+
 /**
  * Invoke the row's job immediately, out-of-band from the loop.
  */
@@ -3263,6 +3290,8 @@ export type SessionOk = {
   user_id: string;
   username: string;
 };
+
+export type Severity = 'unknown' | 'low' | 'medium' | 'high' | 'critical';
 
 /**
  * A share/volume tagged with the backend that exposes it. Flat projection of
@@ -3633,7 +3662,6 @@ export type StorageShareEntry = {
   id: string;
   name: string;
   options: string;
-  optionsRendered: string;
   replication?: string | null;
   routes: Routes;
 };
@@ -3900,12 +3928,12 @@ export type SystemInfoReport = {
   processThreads?: number | null;
   processUptimeSecs?: number | null;
   /**
-   * Tier-2 secrets-storage permission (`self_secure`) for this host.
+   * Tier-2 secrets-storage permission (`secure`) for this host.
    * `true` = this host is authorized to hold encrypted secrets replicated
    * from other mesh members. Surfaced in the host drawer as a SECURE
    * toggle, independent of cert trust.
    */
-  selfSecure?: boolean | null;
+  secure?: boolean | null;
   /**
    * Wall-clock when this snapshot was collected. Cached snapshots may be
    * up to ~30s stale; consumers use this to decide whether to trust a
@@ -10657,6 +10685,181 @@ export type SecretsUpsertResponses = {
 
 export type SecretsUpsertResponse = SecretsUpsertResponses[keyof SecretsUpsertResponses];
 
+export type SecurityFindingsDetailData = {
+  /**
+   * SecurityFindingsDetailArgs
+   */
+  body: {
+    id: string;
+    package?: string | null;
+    scanner: string;
+    unitId: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/security.findings.detail';
+};
+
+export type SecurityFindingsDetailErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SecurityFindingsDetailError =
+  SecurityFindingsDetailErrors[keyof SecurityFindingsDetailErrors];
+
+export type SecurityFindingsDetailResponses = {
+  /**
+   * Finding
+   *
+   * One finding as a scanner reports it for a unit. `id` is a CVE or check id;
+   * `package`/`file` name what it was found in.
+   */
+  200: {
+    file?: string | null;
+    firstSeenMs: number;
+    fixedVersion?: string | null;
+    id: string;
+    installedVersion?: string | null;
+    lastSeenMs: number;
+    memberId: string;
+    package?: string | null;
+    reopenCount?: number;
+    reopenedMs?: number | null;
+    resolvedMs?: number | null;
+    scanner: string;
+    severity: Severity;
+    title?: string | null;
+    unitId: string;
+  };
+};
+
+export type SecurityFindingsDetailResponse =
+  SecurityFindingsDetailResponses[keyof SecurityFindingsDetailResponses];
+
+export type SecurityFindingsListData = {
+  /**
+   * SecurityFindingsListArgs
+   */
+  body: {
+    cursor?: string | null;
+    includeResolved?: boolean;
+    limit?: number | null;
+    minSeverity?: string | null;
+    scanner?: string | null;
+    unitId?: string | null;
+  };
+  path?: never;
+  query?: never;
+  url: '/api/v1/security.findings.list';
+};
+
+export type SecurityFindingsListErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SecurityFindingsListError =
+  SecurityFindingsListErrors[keyof SecurityFindingsListErrors];
+
+export type SecurityFindingsListResponses = {
+  /**
+   * Page
+   *
+   * One page of a `list` response. `items` holds the thin rows; `next_cursor` is
+   * `Some` when more rows remain (pass it back to fetch the next page) and `None`
+   * on the last page.
+   */
+  200: {
+    /**
+     * Rows for this page (already limited to the effective page size).
+     */
+    items: Array<Finding>;
+    /**
+     * Opaque cursor for the next page, or `None` if this is the last page.
+     */
+    nextCursor?: string | null;
+    /**
+     * Total number of rows across all pages, when cheap to compute (in-memory
+     * lists). `None` when the source can't count without scanning.
+     */
+    total?: number | null;
+  };
+};
+
+export type SecurityFindingsListResponse =
+  SecurityFindingsListResponses[keyof SecurityFindingsListResponses];
+
+export type SecurityScanData = {
+  /**
+   * SecurityScanArgs
+   */
+  body: {
+    scanner?: string | null;
+    unitId: string;
+  };
+  path?: never;
+  query?: {
+    /**
+     * Describe the change without applying it. Omitted or false applies the change; only `true` and `false` are accepted. Equivalent to `dryRun` in the body; the two must agree when both are given.
+     */
+    dryRun?: boolean;
+  };
+  url: '/api/v1/security.scan';
+};
+
+export type SecurityScanErrors = {
+  /**
+   * Unknown tool
+   */
+  404: {
+    error: string;
+  };
+  /**
+   * Tool execution failed
+   */
+  500: {
+    error: string;
+  };
+};
+
+export type SecurityScanError = SecurityScanErrors[keyof SecurityScanErrors];
+
+export type SecurityScanResponses = {
+  /**
+   * ScanSummary
+   *
+   * Tool result
+   */
+  200: {
+    memberId: string;
+    scanners: Array<ScannerOutcome>;
+    unitId: string;
+  };
+};
+
+export type SecurityScanResponse = SecurityScanResponses[keyof SecurityScanResponses];
+
 export type ServiceCreateData = {
   /**
    * ServiceCreateArgs
@@ -12439,7 +12642,6 @@ export type StorageShareCreateData = {
     id: string;
     name: string;
     options: string;
-    optionsRendered: string;
     replication?: string | null;
     /**
      * Reachable path(s), tried in order. Repeatable: `--route kind=url`
@@ -12985,7 +13187,7 @@ export type SystemCertsListResponses = {
      * paired host can still refuse to be a secrets sink. Left at its default
      * by [`mesh_cert_status`]; the caller fills it from the DB policy.
      */
-    selfSecure?: boolean;
+    secure?: boolean;
     /**
      * Running orca version of the host this status describes. For a
      * peer-dispatched (`--peer`) call this is the *remote* host's version,
@@ -13624,9 +13826,17 @@ export type SystemJoinData = {
      */
     code?: string | null;
     /**
+     * (join/offer) Candidate id from `system.list --snapshot`. With `addr`, the two must name the same candidate.
+     */
+    id?: string | null;
+    /**
      * (join/offer) Override the mesh port. Defaults to `APP_PLUGIN_PORT`.
      */
     port?: number | null;
+    /**
+     * (join) Single-use join token issued by `system.mesh.update --action join_token` on the inviter.
+     */
+    token?: string | null;
   };
   path?: never;
   query?: {
@@ -13869,11 +14079,15 @@ export type SystemMeshUpdateData = {
   body: {
     action?: MeshUpdateAction & unknown;
     /**
-     * (cancel_offer) Joiner address whose outbound offer(s) to clear.
+     * (cancel_offer) Joiner address whose outbound offer(s) to clear; use `id` when several joiners share it.
      */
     addr?: string | null;
     /**
-     * (trust/recover/unpin) Target system.
+     * (settings) Single-use mesh-CA-signed grant authorising promotion.
+     */
+    grant?: PromotionGrant | null;
+    /**
+     * (trust/recover/unpin/cancel_offer) Target system.
      */
     id?: string | null;
     /**
@@ -13885,14 +14099,11 @@ export type SystemMeshUpdateData = {
      */
     peer?: string | null;
     /**
-     * (trust) Execute on the remote peer so THEY trust US.
+     * (settings) Member tier: `true` = secure (may hold other members'
+     * secrets), `false` = insecure (holds only its own). `true` needs a
+     * mesh-CA-signed `grant` (see `promote`); `None` reads the current tier.
      */
-    push?: boolean;
-    /**
-     * (settings) Toggle Tier-2 secrets-storage permission. `None` leaves the
-     * current value unchanged.
-     */
-    selfSecure?: boolean | null;
+    secure?: boolean | null;
   };
   path?: never;
   query?: {
@@ -13933,7 +14144,8 @@ export type SystemMeshUpdateResponses = {
     | MeshSyncOutput
     | MeshRecoverOutput
     | MeshCancelOfferOutput
-    | MeshUnpinOutput;
+    | MeshUnpinOutput
+    | MeshJoinTokenOutput;
 };
 
 export type SystemMeshUpdateResponse = SystemMeshUpdateResponses[keyof SystemMeshUpdateResponses];
