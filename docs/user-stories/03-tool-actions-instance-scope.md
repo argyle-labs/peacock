@@ -10,6 +10,7 @@ reports per instance.
 
 - Operator is signed in; at least one tool is registered.
 - A tool may have multiple instances (for example radarr and radarr4k).
+- radarr and radarr4k are two instances of ONE tool, each reported separately: `search` and read actions fan out with per-instance results; `add` targets exactly one instance.
 
 ## Screen states
 
@@ -24,6 +25,7 @@ reports per instance.
 - [ ] The tool list shows each tool by name and opens detail by id (equivalent to `orca tool --id <toolId>`).
 - [ ] Detail lists actions with a form generated from the action's parameter schema.
 - [ ] An action marked single-instance (`add`) requires choosing exactly one instance and cannot run without it.
+- [ ] The server rejects an `add` that names no instance or more than one; the UI shows that error and never guesses a default instance.
 - [ ] An action marked fan-out (`search`) defaults to all instances and may be narrowed to one.
 - [ ] After a fan-out run, results are listed per instance with success or error each.
 - [ ] One failing instance does not hide the others' results.
@@ -45,6 +47,6 @@ reports per instance.
 
 ## Logic placement
 
-- Server: action schemas, instance cardinality rules (single vs fan-out), fan-out execution, per-instance results, risk.
+- Server: action schemas, instance cardinality rules (single vs fan-out) and their enforcement (rejecting an `add` with zero or multiple instances), fan-out execution, per-instance results, risk.
 - SDK: schema-driven validation, intent submission, result cache.
-- UI: renders SchemaForm and results from the view-model; forwards `run(toolId, action, params, scope)`.
+- UI: reads the instance requirement from the action schema only; does not enforce or default it. Renders SchemaForm and results from the view-model; forwards `run(toolId, action, params, scope)`.
