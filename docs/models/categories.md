@@ -12,3 +12,7 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 ## Plugins implement many categories
 - A plugin declares every category it implements. Plex, for example, is `media.tv.player`, `media.movies.player`, `media.music.player`, and so on.
 - Grants on any of those categories apply to that plugin's matching actions.
+
+## Top-level areas
+- Names are plural where that reads naturally.
+- `media`, `home`, `network`, `storage`, `compute`, `backups`, `secrets`, `identity`, `notifications`, `security`, `dev`, `models`.
