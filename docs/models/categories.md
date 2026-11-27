@@ -16,3 +16,9 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 ## Top-level areas
 - Names are plural where that reads naturally.
 - `media`, `home`, `network`, `storage`, `compute`, `backups`, `secrets`, `identity`, `notifications`, `security`, `dev`, `models`.
+
+## Actions
+- Orca core defines one standard set of verbs shared by every category: `view`, `create`, `update`, `delete`, `start`, `stop`, `restart`, `backup`, `restore`, `upgrade`, `logs`, `exec`.
+- A category or plugin implements only the verbs it needs. A verb that isn't implemented is not offered, and nothing shows it.
+- Categories add their own verbs only when no standard verb fits (e.g. `request`, `play`).
+- `exec` is a last resort. An operation uses one of the other verbs unless none fits, and `exec` is used only when it is necessary.
