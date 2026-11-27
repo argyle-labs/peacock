@@ -34,3 +34,4 @@
 - `media:viewer`: watch and listen across media.
 - `media:admin`: everything in `media:viewer`, plus managing media services.
 - Area-level grants expand to sets of `area.thing:action` grants, and they also accept scopes (`media:viewer @group:<4k>`).
+- Orca core defines what each area-level grant contains. It is the same on every install and not editable per mesh.
