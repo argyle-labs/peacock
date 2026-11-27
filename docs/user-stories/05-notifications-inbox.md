@@ -35,7 +35,7 @@ approve proposed actions so that I handle each problem once.
 ## Orca tools and events
 
 - notify.list (named in brief)
-- notify resolve tool: TBD
+- notify.update (resolve)
 - proposed-action approve tool: TBD
 - notification event: TBD
 

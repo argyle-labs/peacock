@@ -24,6 +24,7 @@ reports per instance.
 
 - [ ] The tool list shows each tool by name and opens detail by id (equivalent to `orca tool --id <toolId>`).
 - [ ] Detail lists actions with a form generated from the action's parameter schema.
+- [ ] Each action's instance cardinality (single or fan-out) is read from its action schema; the UI never hardcodes it.
 - [ ] An action marked single-instance (`add`) requires choosing exactly one instance and cannot run without it.
 - [ ] The server rejects an `add` that names no instance or more than one; the UI shows that error and never guesses a default instance.
 - [ ] An action marked fan-out (`search`) defaults to all instances and may be narrowed to one.

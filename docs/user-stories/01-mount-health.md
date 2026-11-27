@@ -1,7 +1,7 @@
 # 01 Mount health
 
-As an operator I can see mount health per host, including write failures and
-drift, with the fix proposed or applied, so that I can restore storage without
+As an operator I can see mount health per host, including missing mounts, write
+failures and drift, with the fix proposed or applied, so that I can restore storage without
 shelling into hosts.
 
 ## Preconditions
@@ -15,12 +15,13 @@ shelling into hosts.
 - loading: first snapshot not yet received.
 - populated: every mount healthy.
 - error: mount list request fails.
-- degraded: some mounts have write failures or drift; one host stale or unreachable.
+- degraded: some mounts are missing, have write failures or drift; one host stale or unreachable.
 
 ## Acceptance criteria
 
 - [ ] Mounts are grouped per host, each row showing path, source and status.
 - [ ] A mount that reads but fails writes shows a "write failed" badge distinct from "down".
+- [ ] A configured mount that is not mounted at all shows a "missing" badge, distinct from "write failed" and "drift", with the expected path and source.
 - [ ] A mount whose actual state differs from desired shows a "drift" badge with desired vs actual.
 - [ ] A row with a proposed fix shows the plan in a PlanView and an approve control.
 - [ ] A row with an applied fix shows the result and timestamp, with no approve control.
@@ -38,11 +39,11 @@ shelling into hosts.
 
 - storage.mount.list (named in brief)
 - system.health (named in brief)
-- mount fix propose/apply tool: TBD
+- storage.mount.update (mount fix propose/apply)
 - mount change event: TBD
 
 ## Logic placement
 
-- Server: write-failure detection, drift computation, fix proposal, risk, apply.
+- Server: missing-mount detection, write-failure detection, drift computation, fix proposal, risk, apply.
 - SDK: entity cache keyed by id, WS subscription, optimistic pending state for the approve intent.
 - UI: renders the view-model; forwards `approve_fix(mountId)`.

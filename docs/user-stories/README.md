@@ -12,8 +12,9 @@ orca tools and events; logic placement.
 
 - Primitive/pattern status: `exists` = exported from
   `ui/packages/ui-kit/src/index.ts`; `new` = not yet built.
-- Tool status: a name is listed as given only when it appears in the planning
-  brief; anything unverified is marked `TBD`. Tools are never invented.
+- Tool status: a name is listed only when it appears in the planning brief
+  or in the committed OpenAPI spec (`ui/packages/app/openapi.json`); anything
+  unverified is marked `TBD`. Tools are never invented.
 
 ## Layers
 
@@ -61,8 +62,8 @@ SectionHead, Modal, Drawer, Popover.
 
 | Name | Kind | Needed by |
 | --- | --- | --- |
-| EmptyState | primitive | 01, 03, 04, 05, 06, 07 |
-| Skeleton | primitive | 01, 03, 04, 05, 06, 07 |
+| EmptyState | primitive | 01, 02, 03, 04, 05, 06, 07 |
+| Skeleton | primitive | 01, 02, 03, 04, 05, 06, 07 |
 | Banner (inline alert) | primitive | 01, 02, 04, 05, 06, 07 |
 | TextInput | primitive | 03, 07 |
 | Select | primitive | 03, 07 |
@@ -73,7 +74,7 @@ SectionHead, Modal, Drawer, Popover.
 | Toast | primitive | 02, 03, 05 |
 | Graph (node-link) | primitive | 06 |
 | ViewModelProvider / MSW harness | story infra | all |
-| PlanView | pattern | 01, 02, 04, 07 |
+| PlanView | pattern | 01, 02, 04, 05, 07 |
 | ApprovalGate | pattern | 01, 02, 05 |
 | RiskBadge (Badge variant) | pattern | 02, 03, 05 |
 | HostResultList | pattern | 01, 04 |
