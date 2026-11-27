@@ -27,7 +27,7 @@
 - A grant can be scoped to a group: `media.tv-downloader:* @group:<uuid>`.
 
 ## Groups are shared
-- Resource groups are one orca object, used for grant scope, Inventory filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K group).
+- Resource groups are one orca object, used for grant scope, Systems filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K group).
 - One grant can cover several groups: `@group:<uuid>,<uuid>`.
 
 ## Area-level grants

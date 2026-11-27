@@ -126,3 +126,6 @@ Answers from the user, recorded as given.
 - **Inventory (supersedes separate Containers & VMs / Services screens):** one unified Inventory list. Deploying something is one flow; if the deployment has a service, its functionality appears on the same item.
 - **Inventory and Topology overlap:** merge them. One Inventory screen with List | Tree | Graph views over the same items, the same filters and one shared inspector (detail panel on desktop, sheet on phone). Topology is no longer a separate menu entry.
 - **2FA at first run:** optional for the first (super) account too. An admin can require 2FA later, but only if that admin has 2FA enabled themselves.
+
+## Naming: Systems (2026-11-26)
+- The single screen for everything (hosts, VMs, LXCs, containers, services, apps, routes, mounts) is named **Systems**. It replaces "Inventory" and "Topology"; List, Tree and Graph are views within it.

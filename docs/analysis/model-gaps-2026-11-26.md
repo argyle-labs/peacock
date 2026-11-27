@@ -31,5 +31,5 @@ An independent adversarial review of docs/models/*. These items are open until t
 14. Per-user dashboards and "git wins": silent overwrites, and personal layouts end up in a shared repo.
 15. `update` vs `upgrade` is confusing.
 16. Missing verbs (move/migrate, repair, approve, rotate, report), and the behaviour of a grant on a verb that doesn't exist yet.
-17. The unified screen still needs a new name (not "Inventory").
+17. DECIDED: the unified screen is "Systems" and covers everything.
 18. Risk decided at action time can't be predicted, so the UI can't know in advance whether a button needs re-auth.
