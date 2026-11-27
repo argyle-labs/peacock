@@ -3,7 +3,7 @@
 An independent adversarial review of docs/models/*. These items are open until the user decides each one.
 
 1. DECIDED: every action fits a standard verb; plugins add no actions or grants of their own. Plugin-specific grants are scope only (`@plugin:<uuid>`).
-2. "Group" has two meanings: grants given to people, and resource sets used as a scope. They need two named types.
+2. DECIDED: Groups = people; Collections = resources.
 3. Grant evaluation is undefined:
    - deny vs allow-only;
    - how scopes combine;

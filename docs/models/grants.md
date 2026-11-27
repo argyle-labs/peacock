@@ -22,26 +22,30 @@
 - The set of grantable targets is dynamic: when a plugin is installed, the categories it implements become grantable for it, and they are removed when it is uninstalled.
 - The grant model, matching and enforcement stay in orca core; plugins only declare their actions.
 
-## Resource groups
-- Scopes: mesh ⊇ system ⊇ plugin ⊇ resource, plus **resource groups**.
-- A resource group is a named set of instances (e.g. "4K" = the 4K Sonarr + 4K Radarr; "Regular" = the standard pair). Several instances of the same plugin can sit in different groups.
-- A grant can be scoped to a group: `media.tv-downloader:* @group:<uuid>`.
+## Collections
+- Scopes: mesh ⊇ system ⊇ plugin ⊇ resource, plus **collections**.
+- A collection is a named set of resources (e.g. "4K" = the 4K Sonarr + 4K Radarr; "Regular" = the standard pair). Several instances of the same plugin can sit in different collections.
+- A grant can be scoped to a collection: `media.tv.downloader:* @collection:<uuid>`.
 
-## Groups are shared
-- Resource groups are one orca object, used for grant scope, Systems filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K group).
-- One grant can cover several groups: `@group:<uuid>,<uuid>`.
+## Collections are shared
+- Collections are one orca object, used for grant scope, Systems filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K group).
+- One grant can cover several collections: `@collection:<uuid>,<uuid>`.
 
 ## Area-level grants
 - `media:viewer`: watch and listen across media.
 - `media:admin`: everything in `media:viewer`, plus managing media services.
-- Area-level grants expand to sets of `area.thing:action` grants, and they also accept scopes (`media:viewer @group:<4k>`).
+- Area-level grants expand to sets of `area.thing:action` grants, and they also accept scopes (`media:viewer @collection:<4k>`).
 - Orca core defines what each area-level grant contains. It is the same on every install and not editable per mesh.
 
 ## Plugin uninstall
 - Orca removes only grants scoped to that plugin (`@plugin:<uuid>`) or to its resources.
-- Generic, area-level and group grants stay as they are.
+- Generic, area-level and collection-scoped grants stay as they are.
 
 ## Widget-only widening
 - A widget instance is a principal, like a token, and holds its own grants (e.g. `media.player:restart @resource:<plex>`).
 - A user acting through that widget gets the union of their own grants and the widget's grants, for that widget's actions only.
 - Only a holder of the grant (grant-and-hold rule) can attach it to a widget. Every action through a widget is audited with both the user and the widget.
+
+## Groups vs collections
+- **Groups** are sets of people (and tokens) that hold grants.
+- **Collections** are sets of resources used as a scope and everywhere else (filtering, dashboards, bulk actions, routing).
