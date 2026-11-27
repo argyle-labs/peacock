@@ -3,7 +3,7 @@
 - Grant names: `area.thing:action` (e.g. `inventory.service:restart`, `secrets:view`, `media:request`). `*` is a wildcard in any segment. `super` matches everything.
 - Scope: whole mesh, one system, or one resource (from interview).
 - Optional expiry; default indefinite.
-- Grants bundle into groups; default groups exist that plugins can reference; users with permission can create groups.
+- People get grants through groups. Orca ships default groups, and anyone holding the grant can create more.
 - Granting requires both the permission to grant and holding the access being granted.
 - API tokens are principals and receive grants like users.
 - A widget can widen access for its viewers, applying only through that widget.
@@ -28,7 +28,7 @@
 - A grant can be scoped to a collection: `media.tv.downloader:* @collection:<uuid>`.
 
 ## Collections are shared
-- Collections are one orca object, used for grant scope, Systems filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K group).
+- Collections are one orca object, used for grant scope, Systems filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K collection).
 - One grant can cover several collections: `@collection:<uuid>,<uuid>`.
 
 ## Area-level grants
