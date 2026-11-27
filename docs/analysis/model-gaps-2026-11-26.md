@@ -4,7 +4,7 @@ An independent adversarial review of docs/models/*. These items are open until t
 
 1. DECIDED: every action fits a standard verb; plugins add no actions or grants of their own. Plugin-specific grants are scope only (`@plugin:<uuid>`).
 2. DECIDED: Groups = people; Collections = resources.
-3. Grant evaluation is undefined:
+3. DECIDED: allow-only and additive; `super` is unscoped and reserved for a separate super-admin account. (Original:)
    - deny vs allow-only;
    - how scopes combine;
    - whether `*` matches one segment or many;

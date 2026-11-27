@@ -49,3 +49,9 @@
 ## Groups vs collections
 - **Groups** are sets of people (and tokens) that hold grants.
 - **Collections** are sets of resources used as a scope and everywhere else (filtering, dashboards, bulk actions, routing).
+
+## Evaluation
+- Grants are allow-only and add together. There is no deny grant.
+- `*` matches within a path, and `area.kind:*` covers everything beneath it.
+- `super` always means everything and is never scoped.
+- `super` is meant for a dedicated super-admin account that isn't used day to day. Daily accounts get the specific grants they need, and peacock prompts a `super` holder to create that separate day-to-day account.
