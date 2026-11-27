@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drawer menu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>body{margin:0}a{color:#A9B4FF}a:hover{color:#C9D0FF}</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; background: #0F1115; color: #E6E8EC; font-family: Inter, system-ui, sans-serif; font-size: 15px; overflow: hidden">
+  <div style="position: absolute; inset: 0; background: rgba(0,0,0,.55)"></div>
+  <nav aria-label="Main" style="position: absolute; top: 0; left: 0; bottom: 0; width: 312px; background: #14171D; border-right: 1px solid #262A33; display: flex; flex-direction: column; padding: 20px 12px; box-sizing: border-box; gap: 2px">
+    <button style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 10px; border-radius: 10px; border: 1px solid #262A33; background: #171A21; color: #E6E8EC; font: inherit; text-align: left; margin-bottom: 12px">
+      <span style="width: 24px; height: 24px; border-radius: 6px; background: #7C8CFF"></span>
+      <span style="flex: 1"><span style="display: block; font-weight: 600">home</span><span style="display: block; font-size: 12px; color: #9BA1AD">5 systems · all reachable</span></span>
+      <span style="color: #9BA1AD">⌄</span>
+    </button>
+    <a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; background: #1E222B; color: #E6E8EC; text-decoration: none">Search</a>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9BA1AD; padding: 14px 12px 4px; letter-spacing: .04em"><span>{{g.name}}</span><span>{{g.chev}}</span></div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+          <a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #C3C8D1; text-decoration: none"><span>{{i.n}}</span><span style="font-size: 12px; color: {{i.c}}">{{i.b}}</span></a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #C3C8D1; text-decoration: none">Account</a>
+    <a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #C3C8D1; text-decoration: none">Settings</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const i = (n, b, c) => ({n, b: b || '', c: c || '#9BA1AD'});
+return { groups: [
+{name:'MY DASHBOARDS', chev:'−', items:[i('Home'), i('Media')]},
+{name:'ORCA', chev:'−', items:[i('Topology'), i('Containers & VMs'), i('Services'), i('Plugins','2 updates','#E0A340'), i('Backups'), i('Notifications','3','#E5636B'), i('Jobs','1 running')]},
+{name:'SHARED', chev:'+', items:[]}
+]};
+}
+}
+</script>
+</body>
+</html>

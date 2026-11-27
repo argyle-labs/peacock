@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>First run</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>body{margin:0}a{color:#A9B4FF}a:hover{color:#C9D0FF}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0F1115; color: #E6E8EC; font-family: Inter, system-ui, sans-serif; font-size: 15px; padding: 56px 24px 32px; display: flex; flex-direction: column; gap: 20px">
+  <div style="width: 40px; height: 40px; border-radius: 10px; background: #7C8CFF"></div>
+  <div>
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 600">Set up orca</h1>
+    <div style="color: #9BA1AD; line-height: 1.5">Create the first account. It holds the super grant and can do everything on this mesh.</div>
+  </div>
+  <div style="display: flex; gap: 6px">
+    <div style="flex: 1; height: 4px; border-radius: 2px; background: #7C8CFF"></div>
+    <div style="flex: 1; height: 4px; border-radius: 2px; background: #262A33"></div>
+    <div style="flex: 1; height: 4px; border-radius: 2px; background: #262A33"></div>
+  </div>
+  <form style="display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="code" style="font-size: 13px; color: #C3C8D1">One-time setup code</label>
+      <input id="code" value="K7Q2-9FMX" style="height: 48px; border-radius: 8px; border: 1px solid #333844; background: #171A21; color: #E6E8EC; font: inherit; font-size: 18px; letter-spacing: .12em; padding: 0 14px">
+      <div style="font-size: 12px; color: #9BA1AD">Printed in the setup logs on this machine.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="name" style="font-size: 13px; color: #C3C8D1">Name</label>
+      <input id="name" value="Scott" style="height: 48px; border-radius: 8px; border: 1px solid #333844; background: #171A21; color: #E6E8EC; font: inherit; padding: 0 14px">
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="email" style="font-size: 13px; color: #C3C8D1">Email</label>
+      <input id="email" placeholder="you@example.com" style="height: 48px; border-radius: 8px; border: 1px solid #333844; background: #171A21; color: #E6E8EC; font: inherit; padding: 0 14px">
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="pw" style="font-size: 13px; color: #C3C8D1">Password</label>
+      <input id="pw" type="password" value="xxxxxxxxxxxx" style="height: 48px; border-radius: 8px; border: 1px solid #333844; background: #171A21; color: #E6E8EC; font: inherit; padding: 0 14px">
+    </div>
+  </form>
+  <div style="flex: 1"></div>
+  <button style="height: 50px; border-radius: 10px; border: 0; background: #7C8CFF; color: #0F1115; font: inherit; font-weight: 600">Continue</button>
+  <div style="font-size: 12px; color: #9BA1AD; text-align: center">Next: authenticator app, then join more machines.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

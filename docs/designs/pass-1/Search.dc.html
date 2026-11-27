@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search landing phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>body{margin:0}a{color:#A9B4FF}a:hover{color:#C9D0FF}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0F1115; color: #E6E8EC; font-family: Inter, system-ui, sans-serif; font-size: 15px; display: flex; flex-direction: column">
+  <header style="display: flex; align-items: center; gap: 10px; padding: 16px">
+    <button aria-label="Open menu" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #262A33; background: #171A21; color: #E6E8EC">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+    <label for="q2" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; background: #171A21; border: 1px solid #7C8CFF; border-radius: 10px; padding: 0 12px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9BA1AD" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="q2" value="plex" style="flex: 1; background: transparent; border: 0; color: #E6E8EC; font: inherit; outline: none">
+    </label>
+  </header>
+  <div style="display: flex; gap: 8px; padding: 0 16px 12px; overflow: hidden">
+    <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+      <button style="height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: #E6E8EC; font: inherit; font-size: 13px; white-space: nowrap">{{f.label}}</button>
+    </sc-for>
+  </div>
+  <div style="padding: 8px 16px 4px; font-size: 12px; color: #9BA1AD">ACTIONS</div>
+  <sc-for list="{{actions}}" as="a" hint-placeholder-count="3">
+    <button style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; border: 0; border-top: 1px solid #1C2028; background: transparent; color: #E6E8EC; font: inherit; text-align: left">
+      <span style="width: 28px; height: 28px; border-radius: 6px; background: #232836; display: flex; align-items: center; justify-content: center; color: #A9B4FF; font-size: 13px">›</span>
+      <span style="flex: 1">{{a.label}}</span>
+      <span style="font-size: 12px; color: #9BA1AD">{{a.note}}</span>
+    </button>
+  </sc-for>
+  <div style="padding: 16px 16px 4px; font-size: 12px; color: #9BA1AD">RESULTS</div>
+  <sc-for list="{{results}}" as="r" hint-placeholder-count="4">
+    <div style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 16px; border-top: 1px solid #1C2028">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: {{r.dot}}"></span>
+      <div style="flex: 1"><div>{{r.name}}</div><div style="font-size: 12px; color: #9BA1AD">{{r.kind}}</div></div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const f = (label, on) => ({label, bg: on ? '#232A44' : '#171A21', border: on ? '#7C8CFF' : '#333844'});
+return {
+filters: [f('All', true), f('Services'), f('Media'), f('Systems'), f('Actions')],
+actions: [
+{label:'Restart Plex', note:'mimir'},
+{label:'Rescan media library', note:'Plex · all'},
+{label:'Open Plex dashboard', note:''}
+],
+results: [
+{dot:'#3FB68B', name:'Plex', kind:'Media player · mimir · healthy'},
+{dot:'#3FB68B', name:'Plex', kind:'Media player · njord · healthy'},
+{dot:'#E0A340', name:'plex-config', kind:'Volume · baldur · 92% full'},
+{dot:'#9BA1AD', name:'Plex token', kind:'Secret · value hidden'}
+]
+};
+}
+}
+</script>
+</body>
+</html>

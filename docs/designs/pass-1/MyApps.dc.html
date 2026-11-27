@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My apps</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>body{margin:0}a{color:#A9B4FF}a:hover{color:#C9D0FF}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0F1115; color: #E6E8EC; font-family: Inter, system-ui, sans-serif; font-size: 15px; display: flex; flex-direction: column; padding: 16px; gap: 14px">
+  <header style="display: flex; align-items: center; gap: 10px">
+    <button aria-label="Open menu" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #262A33; background: #171A21; color: #E6E8EC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+    <h1 style="margin: 0; font-size: 18px; font-weight: 600">My apps</h1>
+  </header>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+    <sc-for list="{{apps}}" as="a" hint-placeholder-count="5">
+      <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px; border-radius: 12px; border: 1px solid #262A33; background: #171A21; color: #E6E8EC; text-decoration: none; font-size: 13px">
+        <span style="width: 44px; height: 44px; border-radius: 12px; background: #232836"></span>
+        <span>{{a.n}}</span>
+        <span style="font-size: 11px; color: #9BA1AD">{{a.how}}</span>
+      </a>
+    </sc-for>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 6px; border-radius: 12px; border: 1px dashed #333844; color: #A9B4FF; text-decoration: none; font-size: 13px">+ Request access</a>
+  </div>
+  <div style="font-size: 12px; color: #9BA1AD; letter-spacing: .04em; margin-top: 8px">PLEX · SEPARATE PASSWORD</div>
+  <div style="padding: 12px; border-radius: 10px; border: 1px solid #262A33; background: #171A21; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+    <div style="display: flex; justify-content: space-between"><span style="color: #9BA1AD">Username</span><span>scott.k</span></div>
+    <div style="display: flex; justify-content: space-between"><span style="color: #9BA1AD">Password</span><span style="letter-spacing: .2em">••••••••</span></div>
+    <div style="display: flex; gap: 10px">
+      <button style="flex: 1; height: 44px; border-radius: 8px; border: 1px solid #333844; background: #0F1115; color: #E6E8EC; font: inherit">Copy</button>
+      <button style="flex: 1; height: 44px; border-radius: 8px; border: 1px solid #333844; background: #0F1115; color: #E6E8EC; font: inherit">Rotate</button>
+    </div>
+  </div>
+  <div style="font-size: 13px; color: #9BA1AD; line-height: 1.5">Apps marked "orca sign-in" use your orca password. Plex can't, so orca manages a separate one for you.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { apps: [
+{n:'Audiobooks', how:'orca sign-in'},
+{n:'Home', how:'orca sign-in'},
+{n:'Plex', how:'own password'},
+{n:'Photos', how:'orca sign-in'},
+{n:'Requests', how:'in orca'}
+]};
+}
+}
+</script>
+</body>
+</html>

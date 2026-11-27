@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Topology tree</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>body{margin:0}a{color:#A9B4FF}a:hover{color:#C9D0FF}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0F1115; color: #E6E8EC; font-family: Inter, system-ui, sans-serif; font-size: 15px; display: flex; flex-direction: column">
+  <header style="display: flex; align-items: center; gap: 10px; padding: 16px">
+    <button aria-label="Open menu" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #262A33; background: #171A21; color: #E6E8EC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+    <h1 style="flex: 1; margin: 0; font-size: 18px; font-weight: 600">Topology</h1>
+    <div role="group" aria-label="View" style="display: flex; border: 1px solid #333844; border-radius: 8px; overflow: hidden">
+      <button style="height: 36px; padding: 0 12px; border: 0; background: #232A44; color: #E6E8EC; font: inherit; font-size: 13px">Tree</button>
+      <button style="height: 36px; padding: 0 12px; border: 0; background: #171A21; color: #9BA1AD; font: inherit; font-size: 13px">Graph</button>
+    </div>
+  </header>
+  <div style="margin: 0 16px 12px; padding: 12px; border-radius: 10px; background: #2A1C1F; border: 1px solid #5A2A30; font-size: 13px; line-height: 1.5">
+    <div style="font-weight: 600">willow is down</div>
+    <div style="color: #E3B9BD">3 dependents expected down · 1 unexpected</div>
+  </div>
+  <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px 0 {{r.pad}}; border-top: 1px solid #1C2028">
+      <span style="color: #5C6270; font-size: 12px; width: 10px">{{r.tw}}</span>
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: {{r.dot}}"></span>
+      <div style="flex: 1; min-width: 0"><div>{{r.name}}</div><div style="font-size: 12px; color: #9BA1AD">{{r.kind}}</div></div>
+      <span style="font-size: 12px; color: {{r.sc}}">{{r.state}}</span>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const G='#3FB68B', R='#E5636B', A='#E0A340', M='#9BA1AD';
+const r=(d,name,kind,dot,state,sc,tw)=>({pad:(16+d*20)+'px',name,kind,dot,state,sc:sc||M,tw:tw||''});
+return { rows: [
+r(0,'willow','Storage · Unraid',R,'down',R,'▾'),
+r(1,'/mnt/data on frigg','Mount',A,'expected',A,'▾'),
+r(2,'baldur','LXC on frigg',A,'expected',A,'▾'),
+r(3,'sonarr','Container',A,'expected',A),
+r(3,'plex scan link','Connection · sonarr → plex',R,'unexpected',R),
+r(0,'maple','Storage · Unraid',G,'up',M,'▸'),
+r(0,'thor','Proxmox host',G,'up',M,'▾'),
+r(1,'freyr','LXC',G,'up',M,'▸'),
+r(0,'loki','Gateway',G,'up',M,'▸'),
+r(0,'mimir','Plex host',G,'up',M,'▸')
+]};
+}
+}
+</script>
+</body>
+</html>
