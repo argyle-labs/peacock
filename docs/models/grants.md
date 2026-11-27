@@ -25,3 +25,12 @@
 - Scopes: mesh ⊇ system ⊇ plugin ⊇ resource, plus **resource groups**.
 - A resource group is a named set of instances (e.g. "4K" = the 4K Sonarr + 4K Radarr; "Regular" = the standard pair). Several instances of the same plugin can sit in different groups.
 - A grant can be scoped to a group: `media.tv-downloader:* @group:<uuid>`.
+
+## Groups are shared
+- Resource groups are one orca object, used for grant scope, Inventory filtering, dashboards, bulk actions and routing (e.g. 4K requests go to the 4K group).
+- One grant can cover several groups: `@group:<uuid>,<uuid>`.
+
+## Area-level grants
+- `media:viewer`: watch and listen across media.
+- `media:admin`: everything in `media:viewer`, plus managing media services.
+- Area-level grants expand to sets of `area.thing:action` grants, and they also accept scopes (`media:viewer @group:<4k>`).
