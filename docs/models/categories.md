@@ -38,3 +38,8 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 - `systems` covers machines and runtimes: `systems.host`, `systems.vm`, `systems.lxc`, `systems.container`, `systems.hypervisor` (Proxmox).
 - Storage belongs to the system it is on: `systems.host.mount`, `systems.host.share`. There is no separate `storage` area.
 - Network services: `network.proxy` (Caddy), `network.dns`, `network.vpn`, `network.firewall`.
+
+## Categories are capabilities
+- A resource (e.g. the Plex LXC) exposes capabilities through its plugin, and each capability is a category orca defines (`media.tv.player`, `media.movies.player`, ...).
+- Orca works with capabilities, not products. Something like "TV players" covers every resource exposing `media.tv.player`, whether that's Plex, Jellyfin or another source.
+- How a given resource appears is not the point. What matters is which capabilities it exposes.
