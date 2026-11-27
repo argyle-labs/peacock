@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Peacock group access editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+a{color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1280px; height: 860px; display: flex; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden; position: relative">
+  <nav aria-label="Main" style="width: 248px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 12px; gap: 2px; box-sizing: border-box">
+    <button aria-label="Switch mesh" style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 10px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; text-align: left">
+      <span style="width: 24px; height: 24px; border-radius: 6px; background: var(--accent)"></span>
+      <span style="flex: 1"><span style="display: block; font-weight: 600">home</span><span style="display: block; font-size: 12px; color: var(--muted)">9 systems · 1 down</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <div>
+        <div style="font-size: 12px; color: var(--muted); padding: 12px 12px 4px; letter-spacing: .04em">{{g.name}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="6">
+          <a href="#" aria-current="{{i.cur}}" style="display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding: 0 12px; border-radius: 8px; background: {{i.bg}}; color: var(--text); text-decoration: none"><span>{{i.n}}</span><span style="font-size: 12px; color: {{i.c}}">{{i.b}}</span></a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--text); text-decoration: none">Account</a>
+    <a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--text); text-decoration: none">Settings</a>
+    <button aria-label="Collapse menu" style="width: 44px; height: 44px; margin-top: 4px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4v16M15 6l-6 6 6 6"></path></svg></button>
+  </nav>
+  <main style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+    <header style="height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 24px">
+      <label for="q" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; max-width: 560px; box-sizing: border-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" placeholder="Search or run a command" aria-label="Search or run a command" style="flex: 1; background: transparent; border: 0; color: var(--text); font: inherit; outline: none">
+        <span style="font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px">Ctrl K</span>
+      </label>
+      <div style="flex: 1"></div>
+      <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); position: relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+        <span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 4px; box-sizing: border-box">3</span>
+      </button>
+      <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; font-weight: 600">SK</button>
+    </header>
+    <section style="padding: 16px 32px 24px; display: flex; flex-direction: column; gap: 16px; flex: 1; overflow: hidden">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <a href="#" aria-label="Back to People" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+        <div style="flex: 1"><h1 style="margin: 0; font-size: 20px; font-weight: 600">Friends</h1><div style="font-size: 12px; color: var(--muted)">Group · 3 members · 3 grants</div></div>
+        <button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600">Save changes</button>
+        <button aria-label="More actions for Friends" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></button>
+      </div>
+      <div style="display: flex; gap: 20px; flex: 1; min-height: 0">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+          <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em">ACCESS</div>
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+            <div style="display: grid; grid-template-columns: 1fr 170px 150px 44px; gap: 12px; padding: 8px 14px; font-size: 12px; color: var(--muted)"><span>What</span><span>Where</span><span>Expires</span><span></span></div>
+            <sc-for list="{{grants}}" as="r" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 1fr 170px 150px 44px; gap: 12px; align-items: center; padding: 6px 14px; border-top: 1px solid var(--border)">
+                <div><div>{{r.what}}</div><div style="font-size: 12px; color: var(--muted)">{{r.sub}}</div></div>
+                <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><path d="{{r.d}}"></path></svg>{{r.scope}}</span>
+                <select aria-label="{{r.expLabel}}" style="min-height: 44px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 13px"><option>{{r.exp}}</option><option>Never</option><option>In 1 month</option><option>Pick a date</option></select>
+                <button aria-label="{{r.rm}}" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+              </div>
+            </sc-for>
+            <div aria-disabled="true" style="display: grid; grid-template-columns: 1fr 170px 150px 44px; gap: 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--border); color: var(--muted)">
+              <div><div>Home control · all rooms</div><div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--warn)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 018 0v3"></path></svg>You can only give access you hold yourself</div></div>
+              <span style="font-size: 13px">Whole mesh</span>
+              <span style="font-size: 13px">Not available</span>
+              <span></span>
+            </div>
+          </div>
+          <div style="background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+            <div style="font-weight: 600">Add access</div>
+            <div style="display: flex; gap: 10px">
+              <label style="flex: 1; font-size: 12px; color: var(--muted)">What<select style="display: block; width: 100%; margin-top: 4px; min-height: 44px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit"><option>Use · Audiobooks</option><option>Use · Music player</option><option>Manage · Media player</option></select></label>
+              <fieldset style="border: 0; margin: 0; padding: 0; flex: 1.4">
+                <legend style="font-size: 12px; color: var(--muted); padding: 0">Where</legend>
+                <div role="radiogroup" style="display: flex; margin-top: 4px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden">
+                  <sc-for list="{{scopes}}" as="s" hint-placeholder-count="3">
+                    <button role="radio" aria-checked="{{s.on}}" style="flex: 1; min-height: 44px; border: 0; background: {{s.bg}}; color: {{s.fg}}; font: inherit; font-size: 13px">{{s.n}}</button>
+                  </sc-for>
+                </div>
+              </fieldset>
+              <label style="flex: 1; font-size: 12px; color: var(--muted)">Resource<select style="display: block; width: 100%; margin-top: 4px; min-height: 44px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit"><option>Audiobookshelf</option><option>Navidrome</option></select></label>
+            </div>
+            <div style="display: flex; gap: 8px"><div style="flex: 1; align-self: center; font-size: 12px; color: var(--muted)">Expires: never</div><button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--accent); font: inherit">Cancel</button><button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit">Add</button></div>
+          </div>
+        </div>
+        <div style="width: 340px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center"><div style="flex: 1; font-size: 12px; color: var(--muted); letter-spacing: .04em">MEMBERS</div><button style="min-height: 44px; padding: 0 10px; border: 0; background: transparent; color: var(--accent); font: inherit">Add member</button></div>
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+            <sc-for list="{{members}}" as="m" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-top: 1px solid var(--border)">
+                <div style="flex: 1"><div>{{m.n}}</div><div style="font-size: 12px; color: var(--muted)">{{m.s}}</div></div>
+                <button aria-label="{{m.rm}}" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em; margin-top: 4px">RECENT CHANGES</div>
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px 14px">
+            <sc-for list="{{audit}}" as="a" hint-placeholder-count="4">
+              <div style="padding: 9px 0; border-top: 1px solid var(--border); font-size: 13px"><div>{{a.t}}</div><div style="font-size: 12px; color: var(--muted)">{{a.w}}</div></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+const i = (n, b, c, on) => ({n, b: b || '', c: c || 'var(--muted)', bg: on ? 'var(--surface-2)' : 'transparent', cur: on ? 'page' : 'false'});
+const D = {mesh: 'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c3 3 3 15 0 18', sys: 'M4 5h16v6H4zM4 13h16v6H4z', res: 'M5 4h14v16H5zM9 8h6M9 12h6'};
+const g = (what, sub, scope, k, exp) => ({what, sub, scope, d: D[k], exp, expLabel: 'Expiry for ' + what, rm: 'Remove ' + what});
+const sc = (n, on) => ({n, on: on ? 'true' : 'false', bg: on ? 'var(--accent)' : 'var(--bg)', fg: on ? 'var(--on-accent)' : 'var(--text)'});
+return {
+groups: [
+{name: 'DASHBOARDS', items: [i('Home control'), i('Media')]},
+{name: 'MANAGE', items: [i('Topology'), i('Inventory'), i('Plugins', '2 updates', 'var(--info)'), i('Backups', '2 gaps', 'var(--warn)'), i('Jobs'), i('People', '', '', true)]},
+{name: 'SHARED', items: [i('Family')]}
+],
+grants: [
+g('Use · Media players', 'Plex, Jellyfin', 'Whole mesh', 'mesh', 'Never'),
+g('Use · Music player', 'Navidrome', 'One resource', 'res', 'Never'),
+g('Request media', 'TV and movie requests', 'One system', 'sys', 'Jan 31, 2027')
+],
+scopes: [sc('Whole mesh'), sc('One system'), sc('One resource', true)],
+members: [
+{n: 'Jordan Lee', s: 'Active · joined Oct 2', rm: 'Remove Jordan Lee'},
+{n: 'Jamie Ortiz', s: 'Invited today', rm: 'Remove Jamie Ortiz'},
+{n: 'Morgan Hale', s: 'Disabled', rm: 'Remove Morgan Hale'}
+],
+audit: [
+{t: 'Scott set Request media to expire Jan 31', w: 'Today 14:08'},
+{t: 'Scott invited Jamie Ortiz', w: 'Today 13:52'},
+{t: 'Alex added Music player access', w: 'Nov 20'},
+{t: 'Scott disabled Morgan Hale', w: 'Nov 3'}
+]
+};
+}
+}
+</script>
+</body>
+</html>

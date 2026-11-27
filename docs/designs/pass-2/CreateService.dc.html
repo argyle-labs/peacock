@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Create service</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+a{color:var(--accent)}
+.chips{display:flex;gap:8px;overflow-x:auto;-webkit-mask-image:linear-gradient(90deg,black 85%,transparent)}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 15px; display: flex; flex-direction: column">
+  <header style="height: 56px; display: flex; align-items: center; gap: 4px; padding: 0 8px; border-bottom: 1px solid var(--border); flex: none">
+    <button aria-label="Back" style="width: 44px; height: 44px; border-radius: 10px; border: 0; background: transparent; color: var(--text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></button>
+    <div style="flex: 1; font-weight: 600; font-size: 16px">New TV downloader</div>
+    <button style="height: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--accent); font: inherit">Cancel</button>
+  </header>
+  <div style="flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; overflow: auto">
+  <ol aria-label="Progress" style="list-style: none; margin: 0; padding: 0; display: flex; gap: 8px">
+    <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+      <li aria-current="{{s.current}}" style="flex: 1; display: flex; flex-direction: column; gap: 6px"><span style="height: 4px; border-radius: 2px; background: {{s.bar}}"></span><span style="font-size: 12px; color: {{s.fg}}">{{s.n}}. {{s.label}}</span></li>
+    </sc-for>
+  </ol>
+    <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em">RUNS ON</div>
+    <button aria-label="Change machine: Media server" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left">
+      <div style="flex: 1"><div style="font-weight: 600">Media server</div><div style="font-size: 13px; color: var(--muted)">Disk 6 GB free · Intel QuickSync</div></div>
+      <span style="font-size: 13px; color: var(--accent)">Change</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+    </button>
+    <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em">STORAGE</div>
+    <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--surface)">
+      <sc-for list="{{mounts}}" as="m" hint-placeholder-count="2">
+        <div style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-bottom: 1px solid var(--border)"><span style="flex: 1">{{m.role}}</span><span style="display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: {{m.color}}">{{m.state}}</span></div>
+      </sc-for>
+      <div style="display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 12px; border-bottom: 1px solid var(--border)">
+        <div style="flex: 1"><div>Anime library</div><div style="display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--err)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg><span>No share found</span></div></div>
+        <button style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px">Create share on a storage system</button>
+      </div>
+      <details style="padding: 0 12px">
+        <summary style="min-height: 44px; display: flex; align-items: center; color: var(--accent); font-size: 14px; cursor: pointer">Show details</summary>
+        <sc-for list="{{chain}}" as="c" hint-placeholder-count="2">
+          <div style="font-size: 12px; color: var(--muted); padding: 0 0 10px; font-family: ui-monospace, monospace">{{c}}</div>
+        </sc-for>
+      </details>
+    </div>
+    <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em">CONNECTIONS</div>
+    <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--surface)">
+      <sc-for list="{{links}}" as="l" hint-placeholder-count="3">
+        <button style="width: 100%; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 12px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; text-align: left"><div style="flex: 1"><div>{{l.role}}</div><div style="font-size: 13px; color: var(--muted)">{{l.who}}</div></div><span style="display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--ok)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg><span>Will connect</span></span></button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="padding: 12px 20px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px">
+    <button style="height: 50px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600">Next: review</button>
+    <button style="height: 44px; border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 500">Back</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+steps: [
+{n:1, label:'Type', bar:'var(--accent)', fg:'var(--muted)', current:'false'},
+{n:2, label:'Setup', bar:'var(--accent)', fg:'var(--text)', current:'step'},
+{n:3, label:'Review', bar:'var(--border)', fg:'var(--muted)', current:'false'},
+{n:4, label:'Create', bar:'var(--border)', fg:'var(--muted)', current:'false'}
+],
+mounts: [
+{role:'TV library', state:'Ready', color:'var(--ok)'},
+{role:'Downloads', state:'Will be set up', color:'var(--info)'}
+],
+chain: [
+'TV library: storage system share tv -> media server /mnt/media/tv -> container /tv',
+'Downloads: new share downloads -> media server /mnt/downloads -> container /downloads'
+],
+links: [
+{role:'Indexer provider', who:'Prowlarr'},
+{role:'Download clients (2)', who:'qBittorrent · SABnzbd'},
+{role:'Media players scan TV (2)', who:'Plex · Jellyfin'}
+]
+};
+}
+}
+</script>
+</body>
+</html>

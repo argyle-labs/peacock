@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Peacock desktop shell</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#A9B4FF}a:hover{color:#C9D0FF}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; display: flex; background: #0F1115; color: #E6E8EC; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <nav aria-label="Main" style="width: 232px; background: #14171D; border-right: 1px solid #262A33; display: flex; flex-direction: column; padding: 16px 12px; gap: 4px; box-sizing: border-box">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px">
+      <div style="width: 24px; height: 24px; border-radius: 6px; background: {{accent}}"></div>
+      <div style="font-weight: 600">orca · home</div>
+    </div>
+    <a href="#" style="display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 6px; background: #1E222B; color: #E6E8EC; text-decoration: none">Search</a>
+    <div style="font-size: 11px; color: #9BA1AD; padding: 12px 8px 4px; letter-spacing: .04em">DASHBOARDS</div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+      <a href="#" style="padding: 8px; border-radius: 6px; color: #C3C8D1; text-decoration: none">{{n}}</a>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <a href="#" style="padding: 8px; border-radius: 6px; color: #C3C8D1; text-decoration: none">Settings</a>
+    <div style="display: flex; gap: 10px; align-items: center; padding: 8px; border-top: 1px solid #262A33; margin-top: 8px; padding-top: 12px">
+      <div style="width: 28px; height: 28px; border-radius: 50%; background: #2A2F3A; display: flex; align-items: center; justify-content: center; font-size: 12px">SK</div>
+      <div><div>Scott</div><div style="font-size: 12px; color: #9BA1AD">scott@example.com</div></div>
+    </div>
+  </nav>
+  <main style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+    <header style="height: 56px; border-bottom: 1px solid #262A33; display: flex; align-items: center; gap: 12px; padding: 0 24px">
+      <label for="q" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 36px; background: #171A21; border: 1px solid #262A33; border-radius: 8px; padding: 0 12px; max-width: 640px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9BA1AD" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" placeholder="Search or run a command" style="flex: 1; background: transparent; border: 0; color: #E6E8EC; font: inherit; outline: none">
+        <span style="font-size: 12px; color: #9BA1AD; border: 1px solid #333844; border-radius: 4px; padding: 1px 6px">⌘K</span>
+      </label>
+      <button aria-label="Notifications" style="width: 36px; height: 36px; border-radius: 8px; background: #171A21; border: 1px solid #262A33; color: #E6E8EC; position: relative">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+        <span style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #E5636B"></span>
+      </button>
+    </header>
+    <section style="padding: 32px 48px; display: flex; flex-direction: column; gap: 24px; overflow: hidden">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
+          <button style="height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid #333844; background: #171A21; color: #C3C8D1; font: inherit; font-size: 13px">{{f}}</button>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+        <div style="background: #171A21; border: 1px solid #262A33; border-radius: 10px; padding: 20px">
+          <div style="font-size: 12px; color: #9BA1AD; margin-bottom: 12px">NEEDS ATTENTION</div>
+          <sc-for list="{{attention}}" as="a" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #22262E">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: {{a.dot}}"></span>
+              <div style="flex: 1"><div>{{a.title}}</div><div style="font-size: 12px; color: #9BA1AD">{{a.sub}}</div></div>
+              <button style="height: 30px; padding: 0 12px; border-radius: 6px; border: 0; background: #262B36; color: #E6E8EC; font: inherit; font-size: 13px">{{a.action}}</button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background: #171A21; border: 1px solid #262A33; border-radius: 10px; padding: 20px">
+          <div style="font-size: 12px; color: #9BA1AD; margin-bottom: 12px">RECENT</div>
+          <sc-for list="{{recent}}" as="r" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #22262E"><span>{{r.name}}</span><span style="color: #9BA1AD; font-size: 12px">{{r.kind}}</span></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: #9BA1AD">Results and actions shown here are limited to your grants.</div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#7C8CFF","options":["#7C8CFF","#3FB68B","#E0A340","#E5636B"]},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+accent: this.props.accent ?? '#7C8CFF',
+nav: ['Topology','Containers & VMs','Services','Media','Home','Plugins','Backups','Notifications'],
+filters: ['All','Systems','Containers & VMs','Services','Media','Home','Actions'],
+attention: [
+{dot:'#E5636B',title:'Mount /mnt/data unreachable on loki',sub:'Storage · fix available · requires approval',action:'Review'},
+{dot:'#E0A340',title:'Certificate expires in 6 days',sub:'mesh · mimir',action:'Renew'},
+{dot:'#E0A340',title:'2 plugin updates available',sub:'stable channel',action:'View'}
+],
+recent: [
+{name:'Plex',kind:'Media player · mimir'},
+{name:'Living room',kind:'Home · 6 devices'},
+{name:'thor',kind:'System · Proxmox host'},
+{name:'Nightly backups',kind:'Backup job'}
+]
+};
+}
+}
+</script>
+</body>
+</html>

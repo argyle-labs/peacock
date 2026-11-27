@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Peacock desktop shell</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+a{color:var(--accent)}
+.chips{scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,var(--bg) 92%,transparent);mask-image:linear-gradient(90deg,var(--bg) 92%,transparent)}
+.chips::-webkit-scrollbar{display:none}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1280px; height: 860px; display: flex; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <nav aria-label="Main" style="width: 248px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 12px; gap: 2px; box-sizing: border-box">
+    <button aria-label="Switch mesh" style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 10px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; text-align: left">
+      <span style="width: 24px; height: 24px; border-radius: 6px; background: var(--accent)"></span>
+      <span style="flex: 1"><span style="display: block; font-weight: 600">{{mesh.name}}</span><span style="display: block; font-size: 12px; color: var(--muted)">{{mesh.sub}}</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <div>
+        <div style="font-size: 12px; color: var(--muted); padding: 12px 12px 4px; letter-spacing: .04em">{{g.name}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="6">
+          <a href="#" aria-current="{{i.cur}}" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 8px; background: {{i.bg}}; color: var(--text); text-decoration: none"><span>{{i.n}}</span><span style="font-size: 12px; color: {{i.c}}">{{i.b}}</span></a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; color: var(--text); text-decoration: none">Account</a>
+    <a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; color: var(--text); text-decoration: none">Settings</a>
+    <button aria-label="Collapse sidebar" style="width: 44px; height: 44px; margin-top: 4px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--muted)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="M15 10l-2 2 2 2"></path></svg>
+    </button>
+  </nav>
+  <main style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+    <header style="height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 24px">
+      <label for="q" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; max-width: 680px; box-sizing: border-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" placeholder="Search or run a command" aria-label="Search or run a command" style="flex: 1; background: transparent; border: 0; color: var(--text); font: inherit; outline: none">
+        <span style="font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px">Ctrl K</span>
+      </label>
+      <div style="flex: 1"></div>
+      <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); position: relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+        <span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 4px; box-sizing: border-box">3</span>
+      </button>
+      <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; font-weight: 600">SK</button>
+    </header>
+    <sc-if value="{{offline}}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 10px 24px; background: var(--surface-2); border-bottom: 1px solid var(--warn); color: var(--text)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" aria-hidden="true"><path d="M2 8.8a15 15 0 0120 0"></path><path d="M5 12.5a10 10 0 0114 0"></path><path d="M8.5 16a5 5 0 017 0"></path><path d="M3 3l18 18"></path></svg>
+        <span style="flex: 1"><span style="font-weight: 600; color: var(--warn)">Offline</span> · Can't reach orca · showing results from 14:02. Actions are off until the connection returns.</span>
+        <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit">Retry now</button>
+      </div>
+    </sc-if>
+    <section style="padding: 24px 40px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; flex: 1">
+      <div class="chips" role="toolbar" aria-label="Filter results" style="display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
+          <button aria-pressed="{{f.on}}" style="flex: none; min-height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid {{f.bd}}; background: {{f.bg}}; color: {{f.fg}}; font: inherit; font-size: 13px">{{f.n}}</button>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px">
+          <div style="display: flex; align-items: center; min-height: 44px; margin-bottom: 8px; font-size: 12px; color: var(--muted); letter-spacing: .04em">NEEDS ATTENTION</div>
+          <sc-for list="{{attention}}" as="a" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border)">
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: {{a.color}}; font-size: 12px; font-weight: 500; flex: none">
+                <sc-if value="{{a.isErr}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg></sc-if>
+                <sc-if value="{{a.isWarn}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v4M12 17v.5"></path></svg></sc-if>
+                <sc-if value="{{a.isInfo}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.5v.5"></path></svg></sc-if>
+                {{a.status}}
+              </span>
+              <div style="flex: 1; min-width: 0"><div>{{a.title}}</div><div style="font-size: 12px; color: var(--muted)">{{a.sub}}</div></div>
+              <sc-if value="{{online}}" hint-placeholder-val="{{ true }}">
+                <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px">{{a.action}}</button>
+              </sc-if>
+              <sc-if value="{{offline}}" hint-placeholder-val="{{ false }}">
+                <button disabled="disabled" aria-disabled="true" style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px">{{a.action}}</button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px">
+          <div style="display: flex; align-items: center; min-height: 44px; margin-bottom: 8px; font-size: 12px; color: var(--muted); letter-spacing: .04em">RECENT<sc-if value="{{offline}}" hint-placeholder-val="{{ false }}"><span style="margin-left: 8px; color: var(--warn); letter-spacing: 0">· stale, from 14:02</span></sc-if></div>
+          <sc-for list="{{recent}}" as="r" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid var(--border)">
+              <a href="#" style="flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; color: var(--text); text-decoration: none"><span>{{r.name}}</span><span style="color: var(--muted); font-size: 12px">{{r.kind}}</span></a>
+              <sc-if value="{{online}}" hint-placeholder-val="{{ true }}">
+                <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 13px">{{r.action}}</button>
+              </sc-if>
+              <sc-if value="{{offline}}" hint-placeholder-val="{{ false }}">
+                <button disabled="disabled" aria-disabled="true" style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 13px">{{r.action}}</button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"offline":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+const offline = !!this.props.offline;
+const i = (n, b, c, cur) => ({n, b: b || '', c: c || 'var(--muted)', cur: cur ? 'page' : 'false', bg: cur ? 'var(--surface-2)' : 'transparent'});
+const chip = (n, on) => ({n, on: on ? 'true' : 'false', bg: on ? 'var(--accent)' : 'var(--surface)', fg: on ? 'var(--on-accent)' : 'var(--text)', bd: on ? 'var(--accent)' : 'var(--border)'});
+const st = (k) => ({isErr: k === 'err', isWarn: k === 'warn', isInfo: k === 'info', color: 'var(--' + k + ')', status: {err: 'Failed', warn: 'Warning', info: 'Info'}[k]});
+return {
+offline,
+online: !offline,
+mesh: {name: 'home', sub: offline ? 'Offline · last seen 14:02' : '9 systems · 1 down'},
+groups: [
+{name: 'DASHBOARDS', items: [i('Home control'), i('Media')]},
+{name: 'MANAGE', items: [i('Topology'), i('Inventory'), i('Plugins', '2 updates', 'var(--info)'), i('Backups', '2 gaps', 'var(--warn)'), i('Jobs'), i('People')]},
+{name: 'SHARED', items: [i('Family')]}
+],
+filters: [chip('All', true), chip('Inventory'), chip('Media'), chip('Home control'), chip('Backups'), chip('Actions')],
+attention: [
+Object.assign(st('err'), {title: 'Shared data storage is unreachable', sub: 'Storage · a fix is available', action: 'Review fix'}),
+Object.assign(st('warn'), {title: 'Mesh certificate expires in 6 days', sub: 'Security', action: 'Review'}),
+Object.assign(st('info'), {title: '2 plugin updates available', sub: 'Plugins · stable channel', action: 'View'})
+],
+recent: [
+{name: 'Media player · Plex', kind: 'Service · running', action: 'Open'},
+{name: 'Living room', kind: 'Home control · 6 devices', action: 'Lights off'},
+{name: 'TV downloader · Sonarr', kind: 'Service · running', action: 'Restart'},
+{name: 'Nightly backups', kind: 'Backup job · last ran 03:00', action: 'Run now'}
+]
+};
+}
+}
+</script>
+</body>
+</html>

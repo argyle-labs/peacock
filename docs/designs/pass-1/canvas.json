@@ -1,0 +1,24 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-11-26T20:00:00Z"},"title":"Peacock Designs","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":1280,"h":800,"title":"Desktop shell · Search landing"},
+"FirstRun.dc.html":{"x":0,"y":1100,"w":390,"h":844,"title":"access · First run"},
+"SignIn.dc.html":{"x":470,"y":1100,"w":390,"h":844,"title":"access · Sign in + TOTP"},
+"Search.dc.html":{"x":940,"y":1100,"w":390,"h":844,"title":"nav · Search landing (phone)"},
+"Drawer.dc.html":{"x":1410,"y":1100,"w":390,"h":844,"title":"nav · Drawer menu"},
+"Topology.dc.html":{"x":0,"y":2170,"w":390,"h":844,"title":"mesh · Topology tree"},
+"CreateService.dc.html":{"x":470,"y":2170,"w":390,"h":844,"title":"workloads · Create service + mounts"},
+"PluginInstall.dc.html":{"x":940,"y":2170,"w":390,"h":844,"title":"plugins · Install plugin"},
+"Approval.dc.html":{"x":1410,"y":2170,"w":390,"h":844,"title":"ops · Notification + approve fix"},
+"SecretReveal.dc.html":{"x":0,"y":3240,"w":390,"h":844,"title":"data · Reveal secret (step-up)"},
+"Request.dc.html":{"x":470,"y":3240,"w":390,"h":844,"title":"enduser · Media request"},
+"MyApps.dc.html":{"x":940,"y":3240,"w":390,"h":844,"title":"enduser · My apps + credentials"}
+},
+"order":["Main.dc.html","FirstRun.dc.html","SignIn.dc.html","Search.dc.html","Drawer.dc.html","Topology.dc.html","CreateService.dc.html","PluginInstall.dc.html","Approval.dc.html","SecretReveal.dc.html","Request.dc.html","MyApps.dc.html"],
+"notes":{
+"t1":{"x":0,"y":-300,"text":"Peacock — first design pass","kind":"title1","maxW":1800},
+"t2":{"x":0,"y":820,"text":"Access & navigation","kind":"title1","maxW":1800},
+"t3":{"x":0,"y":1890,"text":"Mesh, workloads, plugins, ops","kind":"title1","maxW":1800},
+"t4":{"x":0,"y":2960,"text":"Data & end-user","kind":"title1","maxW":1800},
+"s1":{"x":1360,"y":0,"w":420,"text":"Look: quiet, dense, keyboard-first (Linear), themeable (Obsidian), app tiles (Okta), dashboards like Home Assistant but calmer. Every color is a theme token; this pass shows the default dark theme. Mobile-first: drawer menu + search bar that doubles as the command palette.","fill":"blue"}
+},
+"designSystems":[]}
