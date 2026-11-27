@@ -12,3 +12,4 @@ Recorded from the 2026-11-26 interview.
 
 ## Subscriptions
 - The client subscribes only to what the open view shows. Changing views changes the subscriptions, and orca sends updates only for current subscriptions, filtered by the viewer's grants.
+- Every signed-in client also keeps an always-on subscription to its user's notifications and jobs, whatever view is open.
