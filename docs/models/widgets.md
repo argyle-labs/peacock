@@ -14,3 +14,5 @@ Recorded from the 2026-11-26 interview.
 ## Card types
 - Orca core ships the built-in card types.
 - Plugins can also register custom card types, as Home Assistant does. A custom card is registered with orca under its own `type`, and its bindings and actions still go through orca's grants.
+- A custom card may declare a fallback built from built-in card types. Clients that cannot run custom cards (TUI, native mobile) render the fallback.
+- A custom card without a fallback is not offered on those clients.
