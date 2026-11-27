@@ -1,6 +1,6 @@
 # Grants model (decisions)
 
-- Grant names: `area.thing:action` (e.g. `inventory.service:restart`, `secrets:view`, `media:request`). `*` is a wildcard in any segment. `super` matches everything.
+- Grant names: `area.thing:action` (e.g. `media.tv.player:restart`, `secrets:view`, `media.tv.downloader:create`). `*` is a wildcard in any segment. `super` matches everything.
 - Scope: whole mesh, one system, or one resource (from interview).
 - Optional expiry; default indefinite.
 - People get grants through groups. Orca ships default groups, and anyone holding the grant can create more.
@@ -11,8 +11,8 @@
 - Source of grants: ALL grants come from orca generics (core). Plugins never define grants; they map their actions onto the generic grants, the same as everything else in orca.
 
 ## Grants are derived from the category catalog
-- Each orca generic category (e.g. `media.player`, `media.tv-downloader`, `secrets.password-manager`) declares its actions.
-- The grant set IS category × action: `media.player:restart`, `media.player:*`, `super`.
+- Each orca generic category (e.g. `media.tv.player`, `media.tv.downloader`, `secrets.passwords`) declares its actions.
+- The grant set IS category × action: `media.tv.player:restart`, `media.tv:*`, `super`.
 - Defining the generic catalog defines every grant; there is no separate grant registry.
 - Plugins declare which category they implement and map their actions onto that category's actions.
 
@@ -43,7 +43,7 @@
 - Generic, area-level and collection-scoped grants stay as they are.
 
 ## Widget-only widening
-- A widget instance is a principal, like a token, and holds its own grants (e.g. `media.player:restart @resource:<plex>`).
+- A widget instance is a principal, like a token, and holds its own grants (e.g. `media.tv.player:restart @resource:<plex>`).
 - A user acting through that widget gets the union of their own grants and the widget's grants, for that widget's actions only.
 - Only a holder of the grant (grant-and-hold rule) can attach it to a widget. Every action through a widget is audited with both the user and the widget.
 

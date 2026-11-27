@@ -10,7 +10,7 @@ An independent adversarial review of docs/models/*. These items are open until t
    - whether `*` matches one segment or many;
    - whether `super` can be scoped.
 4. DECIDED: area-level grants automatically cover categories added later in their area.
-5. grants.md uses stale category names (`media.player`, `media.tv-downloader`, `inventory.service`).
+5. FIXED: grants.md uses area.kind.role names.
 6. Infrastructure has no category: Proxmox, Docker, VMs, LXC, systems, mounts and shares. "compute" is jargon, and `storage` contradicts the interview.
 7. A resource with many categories needs a rule for showing it once (tags, not duplicate entries).
 8. Widget principals lack rules for the attacher losing the grant, expiry, uninstall, and shared dashboards.
