@@ -8,3 +8,7 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 - A grant on a parent covers its children: `media.tv:*` covers everything for TV.
 - `*` works at any level: `media.*.downloader:*` covers every media downloader.
 - A child inherits its parent's actions and can add its own.
+
+## Plugins implement many categories
+- A plugin declares every category it implements. Plex, for example, is `media.tv.player`, `media.movies.player`, `media.music.player`, and so on.
+- Grants on any of those categories apply to that plugin's matching actions.
