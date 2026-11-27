@@ -23,3 +23,4 @@ Recorded from the 2026-11-26 interview.
 
 ## Theming
 - Each user picks their own theme. Cards use theme tokens only, never raw colours, so every theme applies to every card.
+- Orca core ships a full set of themes, and more themes can be created on top of it. A theme is a set of values for orca's token schema, stored like dashboards and mirrored to git.
