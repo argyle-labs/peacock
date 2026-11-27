@@ -15,7 +15,7 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 
 ## Top-level areas
 - Names are plural where that reads naturally.
-- `media`, `home`, `network`, `storage`, `compute`, `backups`, `secrets`, `identity`, `notifications`, `security`, `dev`, `models`.
+- `media`, `home`, `network`, `systems`, `backups`, `secrets`, `identity`, `notifications`, `security`, `dev`, `models`.
 
 ## Actions
 - Orca core defines one standard set of verbs shared by every category: `view`, `create`, `update`, `delete`, `start`, `stop`, `restart`, `backup`, `restore`, `upgrade`, `logs`, `exec`.
@@ -33,3 +33,13 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 - The user picks the target when they act: adding a show, downloading an episode or a movie routes to one instance, the other, or both.
 - One command can target several instances. For example, adding a movie in 4K and 1080p at once adds it to both, and each is tracked separately.
 - These are all valid: 4K only, 1080p only, or both. A grant on `media.movies.downloader` scoped to a collection (e.g. 4K) limits which instances the user can route to.
+
+## Infrastructure
+- `systems` covers machines and runtimes: `systems.host`, `systems.vm`, `systems.lxc`, `systems.container`, `systems.hypervisor` (Proxmox).
+- Storage belongs to the system it is on: `systems.host.mount`, `systems.host.share`. There is no separate `storage` area.
+- Network services: `network.proxy` (Caddy), `network.dns`, `network.vpn`, `network.firewall`.
+
+## Categories are capabilities
+- A resource (e.g. the Plex LXC) exposes capabilities through its plugin, and each capability is a category orca defines (`media.tv.player`, `media.movies.player`, ...).
+- Orca works with capabilities, not products. Something like "TV players" covers every resource exposing `media.tv.player`, whether that's Plex, Jellyfin or another source.
+- How a given resource appears is not the point. What matters is which capabilities it exposes.
