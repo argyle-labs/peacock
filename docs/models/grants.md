@@ -17,8 +17,9 @@
 - Plugins declare which category they implement and map their actions onto that category's actions.
 
 ## Plugin-specific grants (dynamic)
-- Grants can target a specific plugin: generic grants scoped to a plugin (`media.player:restart @plugin:<uuid>`), plus actions only that plugin has (`plugin.<name>:<action>`).
-- The grant set is dynamic: orca core registers a plugin's grants at runtime when the plugin is installed and declares them, and removes them when it is uninstalled. Nothing is compiled in per plugin.
+- Every action fits a standard verb on a core category. Plugins never add actions or grants of their own.
+- A grant targets a specific plugin by scope: `media.tv.player:restart @plugin:<uuid>`.
+- The set of grantable targets is dynamic: when a plugin is installed, the categories it implements become grantable for it, and they are removed when it is uninstalled.
 - The grant model, matching and enforcement stay in orca core; plugins only declare their actions.
 
 ## Resource groups
@@ -37,7 +38,7 @@
 - Orca core defines what each area-level grant contains. It is the same on every install and not editable per mesh.
 
 ## Plugin uninstall
-- Orca removes only that plugin's grants: its `plugin.<name>:*` actions and any grant scoped `@plugin:<uuid>` or to its resources.
+- Orca removes only grants scoped to that plugin (`@plugin:<uuid>`) or to its resources.
 - Generic, area-level and group grants stay as they are.
 
 ## Widget-only widening
