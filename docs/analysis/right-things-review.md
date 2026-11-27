@@ -19,7 +19,7 @@
 
 ## Unknown
 - A12 Does orca have an OIDC provider? (needed for SSO app launch)
-- A14 Is TOTP mandatory for the first (super) account?
+- A14 RESOLVED: optional at first run; an admin can require 2FA later only if they have 2FA enabled.
 
 ## Day-one journey
 First-run and join OK; plugin install needs a manifest permission model; first dashboard and first invite break on A1/A2/A5 and missing default channel + VPN ordering.
