@@ -123,3 +123,4 @@ Answers from the user, recorded as given.
 - **Peacock deployment:** peacock is a plugin installed by default on every orca system, so it is reachable whenever any orca system is up (with automatic failover between them).
 - **Viewer offline** (viewer's device has no network, or every orca system is down): search shows cached results marked stale, actions disabled.
 - **Design principle:** simple, clean UX and UI. Never duplicate screens, entry points or controls where one will do.
+- **Inventory (supersedes separate Containers & VMs / Services screens):** one unified Inventory list. Deploying something is one flow; if the deployment has a service, its functionality appears on the same item.

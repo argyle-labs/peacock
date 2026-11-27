@@ -11,7 +11,7 @@
 - A9 Client-side logic in designs: needs-attention ranking, dashboard undo/autosave, chip relevance, status normalization, expected-down propagation, wiring/delete previews, widened-access diff. Each needs a named orca operation or field.
 
 ## Non-blocking
-- A8 Inventory groups by runtime kind; interview says Containers & VMs and Services are separate default screens with generic grouping.
+- A8 RESOLVED: user chose one unified Inventory; a deployed item shows its service functionality on the same item.
 - A10 Pending-update Approve in Plugins duplicates the Issue approve path.
 - A11 No flow for admin "require 2FA".
 - A13 Schedules, Security findings, Certificates, Adopt trace only to API gaps, not to the interview.
