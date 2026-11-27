@@ -10,3 +10,7 @@ Recorded from the 2026-11-26 interview.
 - The schema is orca's own and does not depend on any outside format.
 - It is modelled on Home Assistant's dashboard config: a dashboard holds views, a view holds sections or a grid, and sections hold cards.
 - Each card has a `type`, entity-style bindings (orca UUIDs), and tap/hold actions (orca actions, each grant-checked).
+
+## Card types
+- Orca core ships the built-in card types.
+- Plugins can also register custom card types, as Home Assistant does. A custom card is registered with orca under its own `type`, and its bindings and actions still go through orca's grants.
