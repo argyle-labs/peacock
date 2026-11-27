@@ -9,3 +9,6 @@ Recorded from the 2026-11-26 interview.
 
 ## Internal transport
 - WebSocket is only for clients. Real-time data between orca components uses an internal Rust transport, which does not have to be WebSocket: a Unix socket on the same machine, or the existing mesh channel between machines. The internal design is still open.
+
+## Subscriptions
+- The client subscribes only to what the open view shows. Changing views changes the subscriptions, and orca sends updates only for current subscriptions, filtered by the viewer's grants.
