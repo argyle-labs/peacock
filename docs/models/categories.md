@@ -3,6 +3,8 @@
 Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins declare which category they implement, and grants are category × action (see grants.md).
 
 ## Structure
-- Categories always allow nesting, to any depth: `media` → `media.downloader` → `media.downloader` with type `tv` (written `media.downloader.tv`).
-- A grant on a parent category covers its children: `media.downloader:*` covers TV, movie and book downloaders.
+- Path order is area, then the kind of thing, then its role: `media.tv.downloader`, `media.movies.downloader`, `media.audiobooks.downloader`, `media.tv.library`.
+- Categories always allow nesting, to any depth.
+- A grant on a parent covers its children: `media.tv:*` covers everything for TV.
+- `*` works at any level: `media.*.downloader:*` covers every media downloader.
 - A child inherits its parent's actions and can add its own.
