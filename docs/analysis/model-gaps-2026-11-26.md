@@ -11,7 +11,7 @@ An independent adversarial review of docs/models/*. These items are open until t
    - whether `super` can be scoped.
 4. DECIDED: area-level grants automatically cover categories added later in their area.
 5. FIXED: grants.md uses area.kind.role names.
-6. Infrastructure has no category: Proxmox, Docker, VMs, LXC, systems, mounts and shares. "compute" is jargon, and `storage` contradicts the interview.
+6. DECIDED: `systems` area (host, vm, lxc, container, hypervisor; mounts and shares under host); Caddy under `network.proxy`; no storage area.
 7. A resource with many categories needs a rule for showing it once (tags, not duplicate entries).
 8. Widget principals lack rules for the attacher losing the grant, expiry, uninstall, and shared dashboards.
 9. Push needs rules for grant revocation mid-subscription, backpressure, and who authorizes relayed data.
