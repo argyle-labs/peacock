@@ -20,3 +20,6 @@ Recorded from the 2026-11-26 interview.
 ## Storage
 - Dashboards are stored in orca's database and mirrored to git through the holistic two-way git sync (git wins by default).
 - Shared and per-user dashboards both mirror to git.
+
+## Theming
+- Each user picks their own theme. Cards use theme tokens only, never raw colours, so every theme applies to every card.
