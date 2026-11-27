@@ -19,3 +19,4 @@ Recorded from the 2026-11-26 interview.
 
 ## Storage
 - Dashboards are stored in orca's database and mirrored to git through the holistic two-way git sync (git wins by default).
+- Only shared dashboards mirror to git. Per-user dashboards stay in the database only.
