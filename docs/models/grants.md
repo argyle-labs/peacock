@@ -9,3 +9,9 @@
 - A widget can widen access for its viewers, applying only through that widget.
 - Fixed roles and namespaces are removed.
 - Source of grants: ALL grants come from orca generics (core). Plugins never define grants; they map their actions onto the generic grants, the same as everything else in orca.
+
+## Grants are derived from the category catalog
+- Each orca generic category (e.g. `media.player`, `media.tv-downloader`, `secrets.password-manager`) declares its actions.
+- The grant set IS category × action: `media.player:restart`, `media.player:*`, `super`.
+- Defining the generic catalog defines every grant; there is no separate grant registry.
+- Plugins declare which category they implement and map their actions onto that category's actions.
