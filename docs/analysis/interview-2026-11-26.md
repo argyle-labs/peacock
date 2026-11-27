@@ -1,0 +1,120 @@
+# Product interview, 2026-11-26
+
+Answers from the user, recorded as given.
+
+- **What orca is:** a configuration and remediation manager. Connect one or many orca systems to manage a homelab through one unified experience: management, deployment, configuration, remediation.
+- **An orca system:** a single machine running orca. Each can join the mesh and act on one or many systems in a unified way.
+- **Who it's for:** everyone. Admins, plus non-admin users who request media or other non-admin functionality (write permissions, accounts on services like Home Assistant).
+- **Onboarding users:** admin invites, or self sign-up that waits for approval/permissions.
+- **App grants:** admins grant apps to users, Okta-style, with single sign-on.
+  - orca creates the account in the app and lets the user rotate credentials.
+  - orca acts as a proper SSO provider so users know one password.
+  - Apps with discrete accounts that can't use SSO: orca shows a separate managed password and lets the user rotate it in orca.
+  - Apps without per-user accounts (e.g. Radarr): orca UI provides a unified search/request experience.
+- **Request experience:** search and request, see request status, see what's already in the library, report a problem.
+- **Request approval:** set per user by admins: auto-approve or manual. Manual is the default.
+- **Admin landing:** an editable dashboard (drag-and-drop canvas with widgets). Admins can fully manage, provision and diagnose every subsystem.
+- **Widgets:** plugins contribute their own. Peacock implements a generic renderer; widgets are described in JSON or another platform-agnostic format so iOS and Android can render them later.
+- **User dashboards:** every user has one or many dashboards they arrange themselves. Admins can create shared dashboards anyone can use; regular users can view shared dashboards read-only.
+- **Widget permissions:** widgets respect permissions 100%. Each widget defines whether it is shown at all to people without permission, and who can control it (admin only, all users, granted users, etc.).
+  - The plugin ships default visibility/control rules; the admin can override them.
+  - An admin override can widen access beyond the user's existing permissions.
+  - A widened grant applies only through that widget, nowhere else.
+- **App admin grant:** an admin can opt a regular user into admin permissions for one app, allowing all of that app's functionality.
+- **Problem alerts:** delivered as orca notifications through the notifications domain, one unified path. Notification channels are plugins orca registers; each user decides how they are notified.
+- **Remediation policy:** each plugin defines per fix whether it is auto-approvable, requires input, etc. A user can make a rule stricter (e.g. auto-approve -> require input).
+  - An admin can also loosen a rule (require input -> auto-approve).
+  - Issues with no known fix take a notify-only path.
+- **Roles:** remove the fixed super-admin / admin / user roles; move to OIDC-style grants.
+  - Fine-grained access grants. A "super" grant allows everything; the first user receives the super grant.
+  - Grants bundle into reusable groups. Default groups exist that plugins can reference. Users with the right permission can create their own groups.
+  - To grant access to others, a user needs both the permission to grant AND the access itself.
+- **Multiple meshes:** peacock is mesh-agnostic; one peacock can connect to more than one separate mesh.
+  - Optional unified view across multiple meshes.
+  - Identity is per mesh: a person has one user account on each mesh.
+- **First run:** peacock asks the person to create the first account (super grant). Setup logs print a one-time access code that must be entered to do so.
+- **Joining machines:** peacock uses orca's existing pairing (`system.join`): `join` (dial an inviter directly with addr + token), `offer` (push an offer to a joiner discovered via mDNS, showing a pairing code), `accept` (complete an offer by its 6-char code).
+- **Default screens:** many default screens, all configurable.
+  - Containers and VMs are one thing, one screen.
+  - Services.
+  - Storage is per orca system (or passed through), not its own domain.
+  - Plugins tab listing every plugin from every plugin source; plugins are suggested from what is detected on the network.
+  - A quick way to show what is relevant right now, e.g. the whole mesh topology with parent/child relationships. Topology is a tree/graph.
+- **TODO:** interview about visual design direction.
+  - Storage is tied to a system: either orca mounting network storage, or a system presenting its own disks.
+  - Passthrough chains: e.g. frigg (Proxmox) mounts willow or maple, passes it into an LXC (baldur), which passes it into a docker container. The UI must set up and pass storage through to whichever subsystems need it.
+  - At service creation (e.g. Plex, Radarr) the user selects the mounts it needs, and orca builds the whole chain itself when the prerequisites exist (correct SMB permissions and paths). Examples: data/media/tv for Sonarr, data/media/movies for Radarr, downloads for both, tv/movies for Plex and Jellyfin.
+  - If a share does not exist, the user can register or create the SMB share on a storage system (e.g. Unraid) from orca and then use it across the mesh.
+- **Deployment target:** the user picks it from what is available, informed by each system's capabilities (NVIDIA GPU, Intel GPU/QuickSync, etc.). Every orca system reports this information.
+- **Service wiring automations:** orca wires related services at creation, through generic roles/seams, never named apps. E.g. a TV downloader registers with an indexer provider, points at one or more download clients, and media players (Plex, Jellyfin, Navidrome) watch/scan that folder periodically.
+  - Service connections are part of the full topology tree, including what affects what. A broken link (e.g. Sonarr -> Plex scanning) is shown and orca offers to repair it.
+- **Backups:** see what is and isn't backed up, set schedules and destinations, verify backups, restore a whole service, a single file, or a whole machine.
+  - Migrate a system or service using backup/restore, across any runtime (VM, LXC, Docker, Podman, Apple containers), wherever the plugin's deployment registers support.
+- **Secrets:** only holders of a view-secrets grant can see values. Even with the grant, viewing requires re-entering the password or 2FA. Secrets are as protected as possible.
+- **Step-up re-auth:** each plugin marks its own high-risk actions that require credential re-entry.
+- **Second factors:** support all of TOTP authenticator codes, passkeys/WebAuthn, push approval to the orca mobile app, and email codes. Start with TOTP.
+- **Audit log:** records elevated-permission actions; visible only with a specific grant. Raises notifications and warnings on anomalies (e.g. elevated actions outside the user's known sessions).
+  - Only elevated actions go in the audit log. Every user can see their own action history to audit it.
+- **Plugin sources and install:**
+  - Users register plugin sources (many allowed). Publisher/signature trust is shown when adding a source.
+  - Installing a plugin from a trusted source shows as much as possible: permissions, access, what it connects to or changes, etc.
+  - The user selects which machine or machines the plugin is installed on.
+- **Principle:** peacock is a UI only; all logic lives in orca. Peacock behaves the same as the CLI, MCP, etc.
+- **Updates:** manual by default (admin updates). Admins can switch to automatic, or notify-and-approve.
+  - Policy can be set per plugin, per system, per plugin-on-one-system, and per channel (stable/beta). As robust as possible.
+- **Clients, in order:** web first, then TUI, then iOS and Android.
+- **Plugin screens:** a plugin (e.g. Proxmox) defines its own dashboard or grouped dashboards, built from plugin widgets, identical to any other dashboard. No custom plugin pages.
+- **Widget kinds:** all of: status tiles, charts, tables with row actions, forms that run actions, live log streams, terminal/VM console, topology graph.
+  - A generic JSON object renders in any environment. Each UI implements the widget kinds; plugins declare what a widget does and how it looks.
+- **Visual design:** modern, simple, clean. Theme as much as possible.
+  - Any combination of theme colors must work with the UI.
+  - Users define their own custom theme(s) and choose a default theme that applies across experiences (web, TUI, mobile).
+  - References: Home Assistant dashboards but cleaner; Okta (app access); Obsidian (theming); Linear (quiet, dense, keyboard-first) with some elements of Grafana. Must not become visually busy.
+- **Navigation:** command palette. Design mobile-first with mobile-friendly patterns.
+  - Mobile and web: a slide-out drawer menu (collapsible on web) plus a search bar that acts as the command palette.
+- **Home control:** Home Assistant entities are exposed as widgets on their own dashboards and can be added to any dashboard (e.g. living-room lights with the Apple TV). Goal: control the whole home and homelab from orca as one unified experience.
+- **Generics first:** domains (network, DNS, etc.) are added one by one as we go. orca default dashboards present generic categories, e.g. 1Password and Vaultwarden are both "password managers"; Plex, Jellyfin and Navidrome are all "media players". Plugins declare how they map onto generics. Plugin-specific dashboards are optional, never the default.
+- **AI/agents (long-term):** chat to ask orca in plain language, agents that investigate and propose fixes through normal approvals, model/agent backend management, and exposing that functionality to Home Assistant voice for voice and text LLM interactions. Far down the road.
+- **Offline/disconnected:** show the last known state, controls disabled until it returns, no queued actions. Alert if down for an extended period.
+- **Connection failover:** peacock automatically switches to another machine in the mesh if its current one goes down; the UI doesn't care which machine it's connected to.
+- **Remote access:** through Tailscale or another VPN only. VPN setup is built into orca by default via plugins (Tailscale, OpenVPN, or equivalent).
+  - Inviting a user triggers VPN access through the VPN service: orca creates the invite link (e.g. via Tailscale) and sends it to the user, as part of the invite.
+- **Invite delivery / orca cloud:** a deployed orca cloud server acts as a notification plugin (paid access) that delivers invites and other messages to people outside the mesh.
+  - Long-term, orca cloud grows into more paid services: remote relay without VPN, push delivery to mobile apps, off-site backup, etc. Down the road.
+  - Invites go out as an external notification; peacock neither knows nor cares how it is delivered.
+  - The first (default) notification channel returns the invite content for the admin to copy and paste to the friend.
+  - Accepting an invite automatically provisions the invited user (accounts, grants, VPN) on join, since orca handles provisioning.
+  - The admin can attach groups/grants to an invite so the user is provisioned and granted automatically on join, or attach nothing and assign later.
+- **Offboarding:** removing a user disables everything orca provisioned (app accounts, VPN access, sessions) for a retention period before deletion. The admin sees a preview of what will be removed.
+- **Account page (regular user):** password and second factors, active sessions/devices, per-app credentials (view and rotate), notification preferences, themes, request access to more apps. No API tokens.
+- **API tokens:** created by whoever holds the grant to do so.
+  - A token is granted access like any other principal; its creator assigns its grants (bounded by the grant-and-hold rule).
+- **User problem reports:** handled per problem type under admin settings: notify an admin, let an admin approve an auto-fix, or auto-fix.
+  - The reporter can follow the report's status (received, being fixed, fixed) and is notified when it is resolved.
+- **Accessibility:** best effort for now.
+- **Languages:** English now; other languages later.
+- **Long-running jobs:** live step-by-step progress, cancel partway, a jobs list (running and recently finished), notification on finish or failure. Backup-success notifications are off by default.
+  - Cancelling a job stops it and rolls back completed work to the prior state.
+- **Concurrent edits:** orca locks an item while someone is writing to it.
+  - The lock starts when someone opens the item for editing; others see "being edited by X" and cannot start a change.
+  - Locks time out after inactivity; nothing stays locked indefinitely.
+- **Git sync:** holistic and automatic in both directions.
+  - A change made in orca is pushed to the git source after a settle/timeout period.
+  - A change in the git source is detected and pulled; other writes are blocked while the pull runs.
+  - On conflict, git wins by default. A setting lets the user resolve conflicts themselves instead.
+- **Namespaces:** removed; grants handle access separation.
+- **Grant scope:** grants can target the whole mesh, one machine, or one specific resource/instance.
+  - Grants can optionally expire (e.g. a month of Plex, an hour of elevated access); default is indefinite.
+- **Access requests:** go to whoever holds the grant to receive requests; the super grant has it by default.
+- **Metrics history:** shown in peacock; retention is a setting. Stored as metrics outside the orca DB, in a central data store or a path on the orca machine. Any machine can answer an API call with its metrics over time.
+- **Logs:** same model as metrics. Live and past logs for any container, service or machine; search across the whole mesh; stored centrally or on-machine with a retention setting.
+- **Deleting a service:** ask each time what happens to its data (config, DB, managed media). Take a backup only if the user approves one; nothing by default.
+- **File browser:** yes (browse shares, container config folders, upload/download).
+- **RULE:** "who can do X" is ALWAYS answered by "whoever holds the appropriate grant". Every capability is grant-gated.
+- **Default landing:** search, for everyone. What else a user sees is purely what their grants allow: no grants means very little, all grants means everything.
+- **Default dashboards:** "everything" is the set of orca default dashboards, defined in orca as orca JSON dashboards and rendered by peacock. Together they represent all of orca's capabilities. This set must be defined.
+- **Search:** searches everything, with filters to narrow down. Results and their actions are limited by grants (e.g. media-only users search media; users with home grants also search Home Assistant; super finds and does anything). Plugins expose what they make searchable and actionable through generics.
+- **Display/kiosk mode:** a dashboard full-screen and always on (wall tablet, TV), signed in as a limited device account rather than a person.
+  - Device sign-in: short code, QR code, or approval from peacock via a notification.
+- **TUI:** renders the same JSON dashboards/widgets as web and mobile wherever possible; one UI definition for every platform.
+- **Rendering contract:** plugins expose WHAT they want rendered; each UI decides HOW, full stop. TUI, peacock (web) and iOS/Android each define exactly how they render what they are sent, fallbacks included. Agnostic.
