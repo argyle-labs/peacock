@@ -118,3 +118,5 @@ Answers from the user, recorded as given.
   - Device sign-in: short code, QR code, or approval from peacock via a notification.
 - **TUI:** renders the same JSON dashboards/widgets as web and mobile wherever possible; one UI definition for every platform.
 - **Rendering contract:** plugins expose WHAT they want rendered; each UI decides HOW, full stop. TUI, peacock (web) and iOS/Android each define exactly how they render what they are sent, fallbacks included. Agnostic.
+- **Step-up for own app credentials:** copying or rotating your own app password requires re-auth, same as admin secrets. Use the authenticator code only if the user has 2FA set; otherwise re-enter the password.
+- **2FA is optional** per user, unless an admin requires it.

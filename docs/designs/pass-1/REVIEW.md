@@ -36,5 +36,5 @@ Every screen lacks loading/empty/error/offline/limited views; per-screen list in
 AppHeader, NavModel/Drawer, SearchPalette, StatusBadge, ListRow, NotificationItem + NeedsAttention, StepUpSheet/ActionConfirm, OtpInput, ConnectionBanner + disabled controls, StateFrame, PrimaryActionBar, CredentialCard, WizardStepper, DetailsDisclosure (grant-gated), FilterChip, theme tokens.
 
 ## Open decisions
-1. Does a user's own app password need step-up to copy/rotate?
+1. RESOLVED: yes; TOTP when set, else password. 2FA optional unless admin requires it.
 2. Does search run against the offline cache?
