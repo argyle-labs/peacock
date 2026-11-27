@@ -20,3 +20,8 @@
 - Grants can target a specific plugin: generic grants scoped to a plugin (`media.player:restart @plugin:<uuid>`), plus actions only that plugin has (`plugin.<name>:<action>`).
 - The grant set is dynamic: orca core registers a plugin's grants at runtime when the plugin is installed and declares them, and removes them when it is uninstalled. Nothing is compiled in per plugin.
 - The grant model, matching and enforcement stay in orca core; plugins only declare their actions.
+
+## Resource groups
+- Scopes: mesh ⊇ system ⊇ plugin ⊇ resource, plus **resource groups**.
+- A resource group is a named set of instances (e.g. "4K" = the 4K Sonarr + 4K Radarr; "Regular" = the standard pair). Several instances of the same plugin can sit in different groups.
+- A grant can be scoped to a group: `media.tv-downloader:* @group:<uuid>`.
