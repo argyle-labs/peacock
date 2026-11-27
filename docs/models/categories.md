@@ -26,3 +26,4 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 ## Risk
 - The plugin declares each action's risk when that action is performed, so risk can depend on context (e.g. restarting an idle service vs one that is streaming).
 - Orca core enforces whatever the plugin declares: a high-risk action needs step-up and is audited.
+- Orca core sets a minimum risk for certain areas that no plugin can lower. `secrets` is always high-risk. Everything else uses the risk the plugin declares.
