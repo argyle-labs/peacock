@@ -120,3 +120,4 @@ Answers from the user, recorded as given.
 - **Rendering contract:** plugins expose WHAT they want rendered; each UI decides HOW, full stop. TUI, peacock (web) and iOS/Android each define exactly how they render what they are sent, fallbacks included. Agnostic.
 - **Step-up for own app credentials:** copying or rotating your own app password requires re-auth, same as admin secrets. Use the authenticator code only if the user has 2FA set; otherwise re-enter the password.
 - **2FA is optional** per user, unless an admin requires it.
+- **Peacock deployment:** peacock is a plugin installed by default on every orca system, so it is reachable whenever any orca system is up (with automatic failover between them).
