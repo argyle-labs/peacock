@@ -36,6 +36,7 @@
 - `media:admin`: everything in `media:viewer`, plus managing media services.
 - Area-level grants expand to sets of `area.thing:action` grants, and they also accept scopes (`media:viewer @collection:<4k>`).
 - Orca core defines what each area-level grant contains. It is the same on every install and not editable per mesh.
+- Area-level grants are rules over verbs, not fixed lists, so they automatically cover categories added later in their area. For example, a new `media.photos.player` is covered by `media:viewer` as soon as it is installed.
 
 ## Plugin uninstall
 - Orca removes only grants scoped to that plugin (`@plugin:<uuid>`) or to its resources.

@@ -9,7 +9,7 @@ An independent adversarial review of docs/models/*. These items are open until t
    - how scopes combine;
    - whether `*` matches one segment or many;
    - whether `super` can be scoped.
-4. The contents of `media:viewer` and `media:admin` are undefined, including whether they automatically cover new media categories.
+4. DECIDED: area-level grants automatically cover categories added later in their area.
 5. grants.md uses stale category names (`media.player`, `media.tv-downloader`, `inventory.service`).
 6. Infrastructure has no category: Proxmox, Docker, VMs, LXC, systems, mounts and shares. "compute" is jargon, and `storage` contradicts the interview.
 7. A resource with many categories needs a rule for showing it once (tags, not duplicate entries).
