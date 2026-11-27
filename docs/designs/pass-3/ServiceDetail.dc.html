@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Service detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+a{color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1280px; height: 860px; display: flex; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <nav aria-label="Main" style="width: 248px; flex: none; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 12px; gap: 2px; box-sizing: border-box">
+    <button aria-label="Switch mesh" style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 10px; margin-bottom: 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; text-align: left">
+      <span style="width: 24px; height: 24px; border-radius: 6px; background: var(--accent); flex: none"></span>
+      <span style="flex: 1"><span style="display: block; font-weight: 600">home</span><span style="display: block; font-size: 12px; color: var(--muted)">9 systems · 1 down</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <div>
+        <div style="font-size: 12px; color: var(--muted); padding: 10px 12px 4px; letter-spacing: .04em">{{g.name}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="4">
+          <a href="#" aria-current="{{i.cur}}" style="display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding: 0 12px; border-radius: 8px; background: {{i.bg}}; color: var(--text); text-decoration: none"><span>{{i.n}}</span><span style="font-size: 12px; color: {{i.c}}">{{i.b}}</span></a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <sc-for list="{{footer}}" as="i" hint-placeholder-count="2">
+      <a href="#" aria-current="{{i.cur}}" style="display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; background: {{i.bg}}; color: var(--text); text-decoration: none">{{i.n}}</a>
+    </sc-for>
+    <button aria-label="Collapse sidebar" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 8px; border: 0; background: transparent; color: var(--muted); font: inherit; text-align: left">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="M15 10l-2 2 2 2"></path></svg>
+      <span>Collapse</span>
+    </button>
+  </nav>
+  <main style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+    <header style="height: 64px; flex: none; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 24px">
+      <label for="q" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; max-width: 680px; box-sizing: border-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" placeholder="Search or run a command" aria-label="Search or run a command" style="flex: 1; background: transparent; border: 0; color: var(--text); font: inherit; outline: none">
+        <span style="font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px">Ctrl K</span>
+      </label>
+      <div style="flex: 1"></div>
+      <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); position: relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+        <span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 4px; box-sizing: border-box">3</span>
+      </button>
+      <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; font-weight: 600">SK</button>
+    </header>
+    <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 16px 24px 8px">
+      <a href="#" aria-label="Back to Inventory" style="width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>
+      </a>
+      <div style="flex: 1; min-width: 0">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 600">TV downloader · Sonarr</h1>
+          <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: var(--ok); font-size: 12px; font-weight: 500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg>Healthy</span>
+        </div>
+        <div style="font-size: 12px; color: var(--muted)">Service on baldur · frigg · Docker · up 6 days</div>
+      </div>
+      <button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600">Open</button>
+      <button aria-label="More actions for Sonarr" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+      </button>
+    </div>
+    <div role="tablist" aria-label="Service sections" style="flex: none; display: flex; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--border)">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="7">
+        <button role="tab" aria-selected="{{t.sel}}" style="min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid {{t.bd}}; background: transparent; color: {{t.fg}}; font: inherit; font-size: 13px">{{t.n}}</button>
+      </sc-for>
+    </div>
+    <section role="tabpanel" aria-label="Overview" style="flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; overflow: hidden">
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px 16px">
+        <sc-for list="{{attention}}" as="a" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 12px; min-height: 52px; border-top: {{a.bt}}">
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: {{a.sb.color}}; font-size: 12px; font-weight: 500">
+              <sc-if value="{{a.sb.ok}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg></sc-if>
+              <sc-if value="{{a.sb.warn}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v4M12 17v.5"></path></svg></sc-if>
+              <sc-if value="{{a.sb.err}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9 9l6 6M15 9l-6 6"></path></svg></sc-if>
+              <sc-if value="{{a.sb.info}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.5v.5"></path></svg></sc-if>
+              {{a.sb.label}}
+            </span>
+            <span style="flex: 1">{{a.msg}}</span>
+            <button style="min-height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 13px">{{a.fix}}</button>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <sc-for list="{{tiles}}" as="t" hint-placeholder-count="4">
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+            <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em">{{t.label}}</div>
+            <div style="font-size: 18px; font-weight: 600">{{t.value}}</div>
+            <div style="font-size: 12px; color: var(--muted)">{{t.sub}}</div>
+            <span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; background: var(--surface-2); color: {{t.sb.color}}; font-size: 12px; font-weight: 500">
+              <sc-if value="{{t.sb.ok}}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg></sc-if>
+              <sc-if value="{{t.sb.warn}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v4M12 17v.5"></path></svg></sc-if>
+              <sc-if value="{{t.sb.err}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9 9l6 6M15 9l-6 6"></path></svg></sc-if>
+              <sc-if value="{{t.sb.info}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 7.5v.5"></path></svg></sc-if>
+              {{t.sb.label}}
+            </span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px">
+        <div style="font-size: 12px; color: var(--muted); letter-spacing: .04em; min-height: 28px">DETAILS</div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px">
+          <sc-for list="{{caps}}" as="c" hint-placeholder-count="6">
+            <div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-top: 1px solid var(--border)">
+              <span style="width: 64px; font-size: 12px; color: var(--muted); flex: none">{{c.n}}</span>
+              <span style="flex: 1; min-width: 0"><span style="display: block">{{c.v}}</span><span style="display: block; font-size: 12px; color: var(--muted)">{{c.sub}}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+const i = (n, cur, b, c) => ({n, b: b || '', c: c || 'var(--muted)', cur: cur ? 'page' : 'false', bg: cur ? 'var(--surface-2)' : 'transparent'});
+const SB = {Healthy: 'var(--ok)', Warning: 'var(--warn)', Failed: 'var(--err)', Info: 'var(--info)', Idle: 'var(--muted)', Planned: 'var(--muted)'};
+const sb = (label) => ({label, color: SB[label], ok: label === 'Healthy', warn: label === 'Warning', err: label === 'Failed', info: label === 'Info', idle: label === 'Idle', plan: label === 'Planned'});
+const tab = (n, sel) => ({n, sel: sel ? 'true' : 'false', bd: sel ? 'var(--accent)' : 'transparent', fg: sel ? 'var(--text)' : 'var(--muted)'});
+return {
+groups: [
+{name: 'DASHBOARDS', items: [i('Home control'), i('Media')]},
+{name: 'MANAGE', items: [i('Topology'), i('Inventory', true), i('Plugins', false, '2 updates', 'var(--info)'), i('Backups', false, '2 gaps', 'var(--warn)'), i('Jobs'), i('People')]},
+{name: 'SHARED', items: [i('Family')]}
+],
+footer: [i('Account'), i('Settings')],
+tabs: [tab('Overview', true), tab('Connections'), tab('Storage'), tab('Logs'), tab('Metrics'), tab('Backups'), tab('Settings')],
+attention: [
+{sb: sb('Failed'), msg: 'Media player · Jellyfin: scan failed, library path not found', fix: 'Repair', bt: '0'},
+{sb: sb('Info'), msg: 'Update 4.0.11 available', fix: 'Update', bt: '1px solid var(--border)'}
+],
+tiles: [
+{label: 'CONNECTIONS', value: '5', sub: '4 connected · 1 broken', sb: sb('Failed')},
+{label: 'STORAGE', value: '2 mounts', sub: 'TV library · Downloads', sb: sb('Healthy')},
+{label: 'RESOURCES', value: '3% CPU', sub: '412 MB memory · 24h', sb: sb('Healthy')},
+{label: 'BACKUPS', value: 'Today 03:00', sub: 'Nightly services · verified', sb: sb('Healthy')}
+],
+caps: [
+{n: 'Role', v: 'TV downloader', sub: 'Sonarr 4.0.10'},
+{n: 'Host', v: 'baldur', sub: 'LXC on frigg'},
+{n: 'Runtime', v: 'Docker', sub: 'up 6 days'},
+{n: 'Indexers', v: 'Prowlarr', sub: '6 indexers'},
+{n: 'Clients', v: 'qBittorrent, SABnzbd', sub: 'category tv'},
+{n: 'Players', v: 'Plex, Jellyfin', sub: 'scan after import'}
+]
+};
+}
+}
+</script>
+</body>
+</html>

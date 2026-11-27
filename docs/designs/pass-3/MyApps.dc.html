@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My apps</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+button{font:inherit;cursor:pointer}
+a[aria-disabled="true"]{cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <header style="display: flex; align-items: center; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border)">
+    <button aria-label="Open menu" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+    <h1 style="flex: 1; margin: 0; font-size: 17px; font-weight: 600">My apps</h1>
+    <button aria-label="Search" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></button>
+    <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text); position: relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg><span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 4px; box-sizing: border-box">3</span></button>
+    <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 13px; font-weight: 600">SK</button>
+  </header>
+  <main style="flex: 1; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 20px">
+    <section aria-labelledby="apps-h">
+      <h2 id="apps-h" style="margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">APPS</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{apps}}" as="a" hint-placeholder-count="5">
+          <a href="#" aria-disabled="{{a.disabled}}" style="min-height: 96px; display: flex; flex-direction: column; gap: 6px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text); text-decoration: none">
+            <div aria-hidden="true" style="width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2)"></div>
+            <span style="font-weight: 500">{{a.name}}</span>
+            <sc-if value="{{a.ok}}" hint-placeholder-val="{{ true }}">
+              <span style="font-size: 12px; color: var(--muted)">{{a.kind}}</span>
+            </sc-if>
+            <sc-if value="{{a.down}}" hint-placeholder-val="{{ false }}">
+              <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--surface-2); color: var(--err); font-size: 12px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>Failed</span>
+            </sc-if>
+          </a>
+        </sc-for>
+        <a href="#" style="min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 1px dashed var(--border); border-radius: 12px; color: var(--accent); text-decoration: none; font-weight: 500">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Request access
+        </a>
+      </div>
+    </section>
+    <section aria-labelledby="cred-h">
+      <h2 id="cred-h" style="margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">APP PASSWORDS</h2>
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+        <sc-for list="{{creds}}" as="c" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 4px; min-height: 56px; padding: 6px 6px 6px 14px; border-top: 1px solid var(--border)">
+            <div style="flex: 1; min-width: 0"><div style="font-weight: 500">{{c.app}}</div><div style="font-size: 12px; color: var(--muted)">{{c.user}} · <span style="letter-spacing: 2px">••••••••</span> · changed {{c.changed}}</div></div>
+            <button aria-label="{{c.copy}}" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--text)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 011-1h9"></path></svg></button>
+            <button aria-label="{{c.rotate}}" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--text)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 12a8 8 0 11-2.3-5.7"></path><path d="M20 4v5h-5"></path></svg></button>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin: 8px 0 0; font-size: 12px; color: var(--muted)">Copying or rotating asks you to confirm it's you.</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const app = (name, kind) => ({name, kind, ok: true, down: false, disabled: 'false'});
+const cred = (a, user, changed) => ({app: a, user, changed, copy: 'Copy ' + a + ' password', rotate: 'Rotate ' + a + ' password'});
+return {
+apps: [
+app('Media requests', 'Sign in with orca'),
+app('Plex', 'App password'),
+app('Home Assistant', 'In orca'),
+app('Files · Nextcloud', 'App password'),
+{name: 'Photos · Immich', kind: '', ok: false, down: true, disabled: 'true'}
+],
+creds: [
+cred('Plex', 'scott', '3 months ago'),
+cred('Files · Nextcloud', 'scott', '2 weeks ago')
+]
+};
+}
+}
+</script>
+</body>
+</html>

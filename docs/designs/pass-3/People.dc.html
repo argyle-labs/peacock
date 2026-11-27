@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Peacock people and groups</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+a{color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1280px; height: 860px; display: flex; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden; position: relative">
+  <nav aria-label="Main" style="width: 248px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 12px; gap: 2px; box-sizing: border-box">
+    <button aria-label="Switch mesh" style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 10px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; text-align: left">
+      <span style="width: 24px; height: 24px; border-radius: 6px; background: var(--accent)"></span>
+      <span style="flex: 1"><span style="display: block; font-weight: 600">home</span><span style="display: block; font-size: 12px; color: var(--muted)">9 systems · 1 down</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+    </button>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <div>
+        <div style="font-size: 12px; color: var(--muted); padding: 12px 12px 4px; letter-spacing: .04em">{{g.name}}</div>
+        <sc-for list="{{g.items}}" as="i" hint-placeholder-count="6">
+          <a href="#" aria-current="{{i.cur}}" style="display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding: 0 12px; border-radius: 8px; background: {{i.bg}}; color: var(--text); text-decoration: none"><span>{{i.n}}</span><span style="font-size: 12px; color: {{i.c}}">{{i.b}}</span></a>
+        </sc-for>
+      </div>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--text); text-decoration: none">Account</a>
+    <a href="#" style="display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--text); text-decoration: none">Settings</a>
+    <button aria-label="Collapse menu" style="width: 44px; height: 44px; margin-top: 4px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4v16M15 6l-6 6 6 6"></path></svg></button>
+  </nav>
+  <main style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+    <header style="height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 24px">
+      <label for="q" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; max-width: 560px; box-sizing: border-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input id="q" placeholder="Search or run a command" aria-label="Search or run a command" style="flex: 1; background: transparent; border: 0; color: var(--text); font: inherit; outline: none">
+        <span style="font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px">Ctrl K</span>
+      </label>
+      <div style="flex: 1"></div>
+      <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); position: relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+        <span style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 4px; box-sizing: border-box">3</span>
+      </button>
+      <button aria-label="Account menu" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; font-weight: 600">SK</button>
+    </header>
+    <section style="padding: 24px 32px; display: flex; flex-direction: column; gap: 18px; flex: 1; overflow: hidden; padding-right: 452px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <h1 style="margin: 0; font-size: 20px; font-weight: 600; flex: 1">People</h1>
+        <button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600">Invite</button>
+      </div>
+      <div role="tablist" aria-label="People sections" style="display: flex; gap: 4px; border-bottom: 1px solid var(--border)">
+        <button role="tab" aria-selected="true" style="min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid var(--accent); background: transparent; color: var(--text); font: inherit">People · 7</button>
+        <button role="tab" aria-selected="false" style="min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: var(--muted); font: inherit">Groups · 4</button>
+      </div>
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+        <sc-for list="{{people}}" as="p" hint-placeholder-count="7">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--border)">
+            <span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex: none">{{p.ini}}</span>
+            <a href="#" style="flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; color: var(--text); text-decoration: none"><span>{{p.name}}</span><span style="font-size: 12px; color: var(--muted)">{{p.groups}}{{p.note}}</span></a>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: {{p.c}}; font-size: 13px; flex: none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="{{p.d}}"></path></svg>{{p.status}}
+            </span>
+            <sc-if value="{{p.hasAction}}" hint-placeholder-val="{{ false }}">
+              <button style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 13px">{{p.action}}</button>
+            </sc-if>
+            <button aria-label="{{p.more}}" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+            </button>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+  <aside role="dialog" aria-modal="false" aria-labelledby="inv-t" style="position: absolute; top: 0; right: 0; bottom: 0; width: 428px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; box-sizing: border-box">
+    <div style="display: flex; align-items: center; height: 64px; padding: 0 12px 0 20px; border-bottom: 1px solid var(--border)">
+      <h2 id="inv-t" style="margin: 0; flex: 1; font-size: 16px; font-weight: 600">Invite someone</h2>
+      <button aria-label="Close" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    </div>
+    <div style="flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+      <label for="em" style="font-size: 12px; color: var(--muted)">Email</label>
+      <input id="em" type="email" value="jamie@example.com" style="margin-top: -8px; min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit">
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px">
+        <legend style="font-size: 12px; color: var(--muted); padding: 0; margin-bottom: 6px">Groups on join</legend>
+        <sc-for list="{{inviteGroups}}" as="o" hint-placeholder-count="4">
+          <label style="display: flex; align-items: center; gap: 10px; min-height: 40px"><sc-if value="{{o.on}}" hint-placeholder-val="{{ true }}"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; accent-color: var(--accent)"></sc-if><sc-if value="{{o.off}}" hint-placeholder-val="{{ false }}"><input type="checkbox" style="width: 18px; height: 18px; accent-color: var(--accent)"></sc-if><span style="flex: 1">{{o.n}}</span><span style="font-size: 12px; color: var(--muted)">{{o.s}}</span></label>
+        </sc-for>
+      </fieldset>
+      <label for="exp" style="font-size: 12px; color: var(--muted)">Access expires</label>
+      <select id="exp" style="margin-top: -8px; min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit">
+        <option selected="selected">Never</option><option>In 1 week</option><option>In 1 month</option><option>Pick a date</option>
+      </select>
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 48px">
+        <div style="flex: 1"><div id="vpn-l">VPN access via Tailscale</div><div style="font-size: 12px; color: var(--muted)">Sends a join link so they can reach the mesh away from home</div></div>
+        <button role="switch" aria-checked="true" aria-labelledby="vpn-l" style="width: 52px; height: 44px; border: 0; background: transparent; padding: 0"><span style="display: block; width: 44px; height: 26px; border-radius: 13px; background: var(--accent); position: relative"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--on-accent)"></span></span></button>
+      </div>
+      <div style="border: 1px solid var(--border); border-radius: 10px; background: var(--bg); padding: 12px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--ok); font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>Invite created · send it to Jamie</div>
+        <pre aria-label="Invite message" style="margin: 0; white-space: pre-wrap; font-family: inherit; font-size: 13px; color: var(--text)">{{inviteText}}</pre>
+        <div style="display: flex; gap: 8px">
+          <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit">Copy message</button>
+          <div style="flex: 1"></div>
+          <div style="align-self: center; font-size: 12px; color: var(--muted)">Link works for 7 days</div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border)">
+      <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--accent); font: inherit">Cancel</button>
+      <div style="flex: 1"></div>
+      <button style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600">Done</button>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+const i = (n, b, c, on) => ({n, b: b || '', c: c || 'var(--muted)', bg: on ? 'var(--surface-2)' : 'transparent', cur: on ? 'page' : 'false'});
+const S = {
+active: {status: 'Healthy', c: 'var(--ok)', d: 'M5 12l5 5L20 7', note: ''},
+invited: {status: 'Info', c: 'var(--info)', d: 'M12 11v6M12 7v.5M3 12a9 9 0 1018 0 9 9 0 00-18 0', note: ' · invited'},
+pending: {status: 'Warning', c: 'var(--warn)', d: 'M12 3l10 18H2L12 3zM12 10v4M12 17v.5', note: ' · pending approval'},
+disabled: {status: 'Idle', c: 'var(--muted)', d: 'M9 7v10M15 7v10', note: ' · disabled, deletes in 23 days'}
+};
+const p = (name, ini, groups, k, action) => Object.assign({name, ini, groups, hasAction: !!action, action: action || '', more: 'More actions for ' + name}, S[k]);
+return {
+groups: [
+{name: 'DASHBOARDS', items: [i('Home control'), i('Media')]},
+{name: 'MANAGE', items: [i('Topology'), i('Inventory'), i('Plugins', '2 updates', 'var(--info)'), i('Backups', '2 gaps', 'var(--warn)'), i('Jobs'), i('People', '', '', true)]},
+{name: 'SHARED', items: [i('Family')]}
+],
+people: [
+p('Scott Key', 'SK', 'Everything · you', 'active'),
+p('Alex Key', 'AK', 'Household', 'active'),
+p('Sam Key', 'SA', 'Household · Kids', 'active'),
+p('Jordan Lee', 'JL', 'Friends · Plex until Jan 31', 'active'),
+p('Jamie Ortiz', 'JO', 'Friends · invite sent today', 'invited', 'Resend'),
+p('Riley Chen', 'RC', 'Signed up · no groups yet', 'pending', 'Review'),
+p('Morgan Hale', 'MH', 'Friends', 'disabled', 'Restore')
+],
+inviteGroups: [
+{n: 'Friends', s: 'Media players', on: true, off: false},
+{n: 'Household', s: 'Media, home control', on: false, off: true},
+{n: 'Kids', s: 'Media, bedtime lights', on: false, off: true},
+{n: 'None, assign later', s: '', on: false, off: true}
+],
+inviteText: 'Scott invited you to the home media server.\n1. Join the network: https://login.tailscale.com/admin/invite/k3J9xQ\n2. Accept your invite: https://peacock.home/join/7HF2-QK4M'
+};
+}
+}
+</script>
+</body>
+</html>

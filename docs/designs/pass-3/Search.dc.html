@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+button{font:inherit;cursor:pointer}
+button[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <header style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border)">
+    <button aria-label="Open menu" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text); display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+    <label for="q" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; box-sizing: border-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="q" aria-label="Search or run a command" value="{{query}}" placeholder="Search or run a command" style="flex: 1; min-width: 0; background: transparent; border: 0; color: var(--text); font: inherit; outline: none">
+    </label>
+    <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text); position: relative; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+      <span style="position: absolute; top: 6px; right: 4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">3</span>
+    </button>
+    <button aria-label="Account" style="width: 44px; height: 44px; border-radius: 50%; background: var(--surface-2); border: 0; color: var(--text); font-size: 13px">SK</button>
+  </header>
+  <sc-if value="{{offline}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); color: var(--warn); font-size: 13px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 8.8a15 15 0 0120 0M5 12.5a10 10 0 0114 0M8.5 16a5 5 0 017 0"></path><path d="M3 3l18 18"></path></svg>
+      <span style="flex: 1">Offline · showing results from {{staleAt}}. Actions return when you reconnect.</span>
+    </div>
+  </sc-if>
+  <div class="chips" role="tablist" aria-label="Filters" style="padding: 12px 16px">
+    <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+      <button role="tab" aria-selected="{{f.on}}" style="flex: none; height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; font-size: 13px">{{f.label}}</button>
+    </sc-for>
+    <button aria-label="More filters" style="flex: none; height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; display: flex; align-items: center; gap: 4px">More<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+  </div>
+  <sc-if value="{{isAll}}" hint-placeholder-val="{{ true }}">
+    <main style="flex: 1; overflow-y: auto; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 20px">
+      <section aria-labelledby="res-h">
+        <h2 id="res-h" style="margin: 4px 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">RESULTS{{staleTag}}</h2>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px">
+          <sc-for list="{{results}}" as="r" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 4px; border-top: 1px solid var(--border)">
+              <a href="#" style="flex: 1; min-width: 0; min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 8px; color: var(--text); text-decoration: none">
+                <span style="flex: 1; min-width: 0">
+                  <span style="display: block; font-weight: 500">{{r.title}}</span>
+                  <span style="display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 12px; color: {{r.statusColor}}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="{{r.statusIcon}}"></path></svg>
+                    <span>{{r.status}}</span><span style="color: var(--muted)">· {{r.sub}}</span>
+                  </span>
+                </span>
+              </a>
+              <button aria-disabled="{{offline}}" style="height: 44px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--surface-2); color: var(--text); font-size: 13px">{{r.action}}</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      <section aria-labelledby="act-h">
+        <h2 id="act-h" style="margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">ACTIONS</h2>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px">
+          <sc-for list="{{actions}}" as="a" hint-placeholder-count="3">
+            <button aria-disabled="{{offline}}" style="width: 100%; min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--text); text-align: left">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><path d="M13 3L4 14h7l-1 7 9-11h-7z"></path></svg>
+              <span style="flex: 1">{{a.label}}</span><span style="font-size: 12px; color: var(--muted)">{{a.hint}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+    </main>
+  </sc-if>
+  <sc-if value="{{isMedia}}" hint-placeholder-val="{{ false }}">
+    <main style="flex: 1; overflow-y: auto; padding: 0 16px 96px; display: flex; flex-direction: column; gap: 20px">
+      <section aria-labelledby="lib-h">
+        <h2 id="lib-h" style="margin: 4px 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">IN YOUR LIBRARY{{staleTag}}</h2>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px">
+          <sc-for list="{{library}}" as="m" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-top: 1px solid var(--border)">
+              <div aria-hidden="true" style="width: 40px; height: 60px; border-radius: 6px; background: var(--surface-2); flex: none"></div>
+              <a href="#" style="flex: 1; min-width: 0; min-height: 52px; display: flex; flex-direction: column; justify-content: center; color: var(--text); text-decoration: none">
+                <span style="font-weight: 500">{{m.title}}</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ok)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>Healthy<span style="color: var(--muted)">· {{m.sub}}</span>
+                </span>
+              </a>
+              <button aria-disabled="{{offline}}" style="height: 44px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--surface-2); color: var(--text); display: flex; align-items: center; gap: 6px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>Play
+              </button>
+              <button aria-label="More for {{m.title}}: Open in media player, Report a problem" style="width: 44px; height: 44px; border-radius: 10px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      <section aria-labelledby="req-h">
+        <h2 id="req-h" style="margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">AVAILABLE TO REQUEST</h2>
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px">
+          <sc-for list="{{requestable}}" as="m" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-top: 1px solid var(--border)">
+              <div aria-hidden="true" style="width: 40px; height: 60px; border-radius: 6px; background: var(--surface-2); flex: none"></div>
+              <a href="#" style="flex: 1; min-width: 0; min-height: 52px; display: flex; flex-direction: column; justify-content: center; color: var(--text); text-decoration: none">
+                <span style="font-weight: 500">{{m.title}}</span>
+                <span style="font-size: 12px; color: var(--muted)">{{m.sub}}</span>
+              </a>
+              <button aria-disabled="{{m.disabled}}" style="height: 44px; padding: 0 16px; border-radius: 10px; border: 0; background: {{m.bg}}; color: {{m.fg}}; font-weight: 500">{{m.action}}</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </main>
+    <sc-if value="{{showToast}}" hint-placeholder-val="{{ true }}">
+      <div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 24px; display: flex; align-items: center; gap: 12px; padding: 12px 8px 12px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{toastColor}}" stroke-width="2.5" aria-hidden="true"><path d="{{toastIcon}}"></path></svg>
+        <div style="flex: 1; min-width: 0"><div style="font-weight: 500">{{toastTitle}}</div><div style="font-size: 12px; color: var(--muted)">{{toastBody}}</div></div>
+        <button aria-label="Dismiss" style="width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+    </sc-if>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"filter":{"editor":"enum","default":"all","options":["all","media"]},"approval":{"editor":"enum","default":"manual","options":["manual","auto"]},"offline":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const offline = this.props.offline ?? false;
+const media = (this.props.filter ?? 'all') === 'media';
+const manual = (this.props.approval ?? 'manual') === 'manual';
+const ok = {statusColor:'var(--ok)',statusIcon:'M5 12l5 5L20 7',status:'Healthy'};
+const warn = {statusColor:'var(--warn)',statusIcon:'M12 8v5M12 17h.01',status:'Warning'};
+const chip = (label,on) => ({label,on:on?'true':'false',bg:on?'var(--accent)':'var(--surface)',fg:on?'var(--on-accent)':'var(--text)',border:on?'var(--accent)':'var(--border)'});
+const req = {action:'Request',bg:'var(--accent)',fg:'var(--on-accent)',disabled:offline?'true':'false'};
+return {
+offline,
+isAll: !media,
+isMedia: media,
+query: media ? 'dune' : 'media',
+staleAt: '14 min ago',
+staleTag: offline ? ' · STALE' : '',
+filters: [chip('All',!media),chip('Media',media),chip('Home'),chip('Systems')],
+results: [
+{...ok,title:'Media player · 2 instances',sub:'Plex, Jellyfin',action:'Open'},
+{...ok,title:'TV downloader · Sonarr',sub:'3 in queue',action:'Open'},
+{...warn,title:'Movie downloader · Radarr',sub:'Library folder not found',action:'Fix'},
+{...ok,title:'Media requests',sub:'2 pending',action:'Open'}
+],
+actions: [
+{label:'Restart media player',hint:'Choose instance'},
+{label:'Scan media library',hint:'All players'}
+],
+library: [
+{title:'Dune',sub:'Movie · 2021'},
+{title:'Dune: Prophecy',sub:'Show · Season 1'}
+],
+requestable: [
+{...req,title:'Dune: Part Two',sub:'Movie · 2024'},
+{title:'Dune (1984)',sub:'Movie · Requested just now',action:'Requested',bg:'var(--surface-2)',fg:'var(--muted)',disabled:'true'},
+{...req,title:'Children of Dune',sub:'Show · 2003'}
+],
+showToast: !offline,
+toastColor: manual ? 'var(--info)' : 'var(--ok)',
+toastIcon: manual ? 'M12 7v5l3 3' : 'M5 12l5 5L20 7',
+toastTitle: manual ? 'Request sent for review' : 'Request approved',
+toastBody: manual ? "Dune (1984) · we'll notify you when it's approved." : "Dune (1984) · downloading now, we'll notify you when it's ready."
+};
+}
+}
+</script>
+</body>
+</html>
