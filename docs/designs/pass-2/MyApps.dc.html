@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My apps</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+button{font:inherit;cursor:pointer}
+button[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,black 85%,transparent)}
+.chips::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <header style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border)">
+    <button aria-label="Back" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+    <h1 style="flex: 1; margin: 0; font-size: 17px; font-weight: 600">My apps</h1>
+    <button aria-label="More options" style="width: 44px; height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--text)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+  </header>
+  <main style="flex: 1; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 20px">
+    <section aria-labelledby="apps-h">
+      <div style="display: flex; align-items: center; margin-bottom: 8px">
+        <h2 id="apps-h" style="flex: 1; margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">APPS</h2>
+        <a href="#" style="min-height: 44px; display: flex; align-items: center; color: var(--accent); text-decoration: none; font-size: 13px">My requests · 1</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{apps}}" as="a" hint-placeholder-count="5">
+          <a href="#" aria-disabled="{{a.disabled}}" style="min-height: 104px; display: flex; flex-direction: column; gap: 6px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text); text-decoration: none; opacity: {{a.opacity}}">
+            <div aria-hidden="true" style="width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2)"></div>
+            <span style="font-weight: 500">{{a.name}}</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: {{a.color}}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="{{a.icon}}"></path></svg>{{a.label}}
+            </span>
+          </a>
+        </sc-for>
+        <a href="#" style="min-height: 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 1px dashed var(--border); border-radius: 12px; color: var(--accent); text-decoration: none; font-weight: 500">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Request access
+        </a>
+      </div>
+    </section>
+    <section aria-labelledby="cred-h">
+      <h2 id="cred-h" style="margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em">SEPARATE PASSWORDS</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <sc-for list="{{creds}}" as="c" hint-placeholder-count="2">
+          <article aria-label="{{c.app}} password" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px">
+            <div style="display: flex; align-items: baseline; gap: 8px"><span style="flex: 1; font-weight: 500">{{c.app}}</span><span style="font-size: 12px; color: var(--muted)">Changed {{c.changed}}</span></div>
+            <div style="margin-top: 4px; font-size: 13px; color: var(--muted)">{{c.user}} · ••••••••••</div>
+            <div style="display: flex; gap: 8px; margin-top: 12px">
+              <button style="flex: 1; height: 44px; border-radius: 10px; border: 0; background: var(--surface-2); color: var(--text)">Copy password</button>
+              <button style="flex: 1; height: 44px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text)">Rotate</button>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+      <p style="margin: 8px 0 0; font-size: 12px; color: var(--muted)">Copying or rotating asks you to confirm it's you.</p>
+    </section>
+  </main>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: var(--bg); opacity: .7"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="sheet-h" style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; padding: 8px 16px 24px">
+    <div aria-hidden="true" style="width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 4px"></div>
+    <div style="display: flex; align-items: center">
+      <h2 id="sheet-h" style="flex: 1; margin: 0; font-size: 17px; font-weight: 600">Rotate Plex password?</h2>
+      <button aria-label="Close" style="width: 44px; height: 44px; border-radius: 10px; border: 0; background: transparent; color: var(--muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 8px; padding: 12px; background: var(--surface-2); border-radius: 10px; color: var(--warn); font-size: 13px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="flex: none"><path d="M12 3l10 18H2z"></path><path d="M12 10v4M12 18h.01"></path></svg>
+      <span style="color: var(--text)">Plex will sign out on your devices. Sign in again with the new password.</span>
+    </div>
+    <label for="step" style="display: block; margin-top: 16px; font-size: 13px; color: var(--muted)">{{stepLabel}}</label>
+    <input id="step" type="{{stepType}}" inputmode="{{stepMode}}" autocomplete="{{stepAuto}}" placeholder="{{stepHint}}" style="width: 100%; box-sizing: border-box; height: 48px; margin-top: 6px; padding: 0 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font: inherit">
+    <div style="display: flex; gap: 8px; margin-top: 20px">
+      <button style="flex: 1; height: 48px; border-radius: 10px; border: 0; background: transparent; color: var(--text)">Cancel</button>
+      <button style="flex: 1; height: 48px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 600">Rotate password</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"hasTotp":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const totp = this.props.hasTotp ?? true;
+const sso = {label:'Sign in with orca',color:'var(--ok)',icon:'M5 12l5 5L20 7',opacity:1,disabled:'false'};
+const sep = {label:'Separate password',color:'var(--info)',icon:'M7 11V8a5 5 0 0110 0v3M5 11h14v10H5z',opacity:1,disabled:'false'};
+const inorca = {label:'In orca',color:'var(--accent)',icon:'M4 5h16v14H4zM4 9h16',opacity:1,disabled:'false'};
+return {
+apps: [
+{...sso,name:'Media requests'},
+{...sep,name:'Plex'},
+{...inorca,name:'Home Assistant'},
+{...sep,name:'Files · Nextcloud'},
+{name:'Photos · Immich',label:'Unavailable right now',color:'var(--err)',icon:'M12 8v5M12 17h.01',opacity:.6,disabled:'true'}
+],
+creds: [
+{app:'Plex',user:'scott',changed:'3 months ago'},
+{app:'Files · Nextcloud',user:'scott',changed:'2 weeks ago'}
+],
+stepLabel: totp ? 'Authenticator code' : 'Your orca password',
+stepType: totp ? 'text' : 'password',
+stepMode: totp ? 'numeric' : 'text',
+stepAuto: totp ? 'one-time-code' : 'current-password',
+stepHint: totp ? '6-digit code' : 'Password'
+};
+}
+}
+</script>
+</body>
+</html>

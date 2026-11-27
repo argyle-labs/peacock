@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Topology</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+button{font:inherit;cursor:pointer}
+.chips::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <header style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border)">
+    <button aria-label="Open menu" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--text); display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+    <label for="q" style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; box-sizing: border-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="q" placeholder="Search or run a command" style="flex: 1; min-width: 0; background: transparent; border: 0; color: var(--text); font: inherit; outline: none">
+    </label>
+    <button aria-label="Notifications, 3 unread" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--text); position: relative; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 004 0"></path></svg>
+      <span style="position: absolute; top: 6px; right: 4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--err); color: var(--on-accent); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; padding: 0 4px; box-sizing: border-box">3</span>
+    </button>
+    <button aria-label="Account" style="width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--text); font-size: 13px; font-weight: 600">SK</button>
+  </header>
+
+  <div role="alert" style="margin: 12px 16px 0; padding: 12px; background: var(--surface); border: 1px solid var(--err); border-radius: 10px; display: flex; align-items: center; gap: 12px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-weight: 600">{{banner.title}}</div>
+      <div style="font-size: 12px; color: var(--muted)">{{banner.sub}}</div>
+    </div>
+    <button style="height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 600">Review fix</button>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px">
+    <h1 style="margin: 0; font-size: 20px; font-weight: 600">Topology</h1>
+    <div role="tablist" aria-label="View" style="display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 2px">
+      <button role="tab" aria-selected="true" style="height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: var(--surface-2); color: var(--text)">Tree</button>
+      <button role="tab" aria-selected="false" style="height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)">Graph</button>
+    </div>
+  </div>
+
+  <div class="chips" style="display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 8px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, black 85%, transparent)">
+    <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
+      <button style="flex: none; height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface); color: var(--text)">{{f}}</button>
+    </sc-for>
+  </div>
+
+  <div style="flex: 1; overflow-y: auto; padding: 0 16px 16px">
+    <div style="font-size: 12px; color: var(--muted); padding: 8px 0; letter-spacing: .04em">SYSTEMS</div>
+    <sc-for list="{{systems}}" as="s" hint-placeholder-count="3">
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px">
+        <div style="display: flex; align-items: center">
+          <button aria-label="{{s.toggleLabel}}" aria-expanded="{{s.open}}" style="width: 44px; height: 56px; border: 0; background: transparent; color: var(--muted); display: flex; align-items: center; justify-content: center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="{{s.chevron}}"></path></svg>
+          </button>
+          <button style="flex: 1; min-width: 0; min-height: 56px; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--text); text-align: left; padding: 0 12px 0 0">
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 500">{{s.name}}</span><span style="display: block; font-size: 12px; color: var(--muted)">{{s.role}}</span></span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: {{s.status.color}}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="{{s.status.icon}}"></path></svg>{{s.status.text}}
+            </span>
+          </button>
+        </div>
+        <sc-if value="{{s.open}}" hint-placeholder-value="true">
+          <div style="border-top: 1px solid var(--border)">
+            <sc-for list="{{s.children}}" as="c" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 8px; padding-left: 44px; border-top: 1px solid var(--border)">
+                <button style="flex: 1; min-width: 0; min-height: 52px; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--text); text-align: left; padding: 0">
+                  <span style="flex: 1; min-width: 0"><span style="display: block">{{c.role}}</span><span style="display: block; font-size: 12px; color: var(--muted)">{{c.app}}</span></span>
+                  <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: {{c.status.color}}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="{{c.status.icon}}"></path></svg>{{c.status.text}}
+                  </span>
+                </button>
+                <span style="width: 12px"></span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+
+    <div style="font-size: 12px; color: var(--muted); padding: 12px 0 8px; letter-spacing: .04em">LINKS</div>
+    <sc-for list="{{links}}" as="l" hint-placeholder-count="3">
+      <div style="display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; padding-right: 8px">
+        <button style="flex: 1; min-width: 0; min-height: 56px; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--text); text-align: left; padding: 0 0 0 12px">
+          <span style="flex: 1; min-width: 0"><span style="display: block">{{l.name}}</span><span style="display: block; font-size: 12px; color: var(--muted)">{{l.sub}}</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: {{l.status.color}}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="{{l.status.icon}}"></path></svg>{{l.status.text}}
+          </span>
+        </button>
+        <sc-if value="{{l.broken}}" hint-placeholder-value="false">
+          <button style="height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-weight: 500">Repair</button>
+        </sc-if>
+      </div>
+    </sc-for>
+
+    <details style="margin-top: 8px">
+      <summary style="min-height: 44px; display: flex; align-items: center; color: var(--accent); cursor: pointer">Show details</summary>
+      <div style="font-size: 12px; color: var(--muted); padding: 4px 0; line-height: 1.6">
+        <sc-for list="{{details}}" as="d" hint-placeholder-count="3"><div>{{d}}</div></sc-for>
+      </div>
+    </details>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const ok = {color:'var(--ok)', icon:'M5 12l5 5L20 7', text:'Healthy'};
+const down = {color:'var(--err)', icon:'M6 6l12 12M18 6L6 18', text:'Down'};
+const warn = {color:'var(--warn)', icon:'M12 7v6M12 16.5v.5', text:'Degraded'};
+const broken = {color:'var(--err)', icon:'M6 6l12 12M18 6L6 18', text:'Broken'};
+const open = 'M6 9l6 6 6-6';
+const closed = 'M9 6l6 6-6 6';
+return {
+banner: {title:'willow is down', sub:'Main storage server · a fix is ready to review'},
+filters: ['All','Systems','Containers & VMs','Services','Storage','Network'],
+systems: [
+{name:'willow', role:'Storage server', status:down, open:false, chevron:closed, toggleLabel:'Expand willow', children:[]},
+{name:'thor', role:'Virtualization host', status:warn, open:true, chevron:open, toggleLabel:'Collapse thor', children:[
+{role:'TV downloader', app:'Sonarr', status:warn},
+{role:'Movie downloader', app:'Radarr', status:ok},
+{role:'Media player', app:'Plex', status:ok}
+]},
+{name:'maple', role:'Storage server · standby', status:ok, open:false, chevron:closed, toggleLabel:'Expand maple', children:[]}
+],
+links: [
+{name:'TV scanning', sub:'Media player to TV library', status:broken, broken:true},
+{name:'Downloads storage', sub:'Downloaders to storage', status:warn, broken:false},
+{name:'Movie scanning', sub:'Media player to movie library', status:ok, broken:false}
+],
+details: ['willow · last heartbeat 14 min ago','TV library share: unreachable from thor','Fix proposes switching shares to maple']
+};
+}
+}
+</script>
+</body>
+</html>

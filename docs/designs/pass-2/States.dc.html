@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Peacock shared states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+:root{--bg:#0F1115;--surface:#171A21;--surface-2:#1E222B;--border:#262A33;--text:#E6E8EC;--muted:#9BA1AD;--accent:#7C8CFF;--on-accent:#0F1115;--ok:#3FB68B;--warn:#E0A340;--err:#E5636B;--info:#6FA8FF}
+body{margin:0}
+a{color:var(--accent)}
+button{font:inherit}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.sk{background:var(--surface-2);border-radius:6px;animation:pulse 1.4s ease-in-out infinite}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1400px; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; font-size: 14px; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; overflow: hidden">
+  <header style="display: flex; align-items: baseline; gap: 16px">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 600">Shared states</h1>
+    <div style="color: var(--muted)">StateFrame variants, StatusBadge set and theme tokens used by every screen</div>
+  </header>
+
+  <section aria-label="Tokens and status badges" style="display: flex; gap: 24px">
+    <div style="flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px">
+      <div style="font-size: 12px; color: var(--muted); margin-bottom: 10px; letter-spacing: .04em">THEME TOKENS</div>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{tokens}}" as="t" hint-placeholder-count="12">
+          <div style="display: flex; flex-direction: column; gap: 4px; align-items: center; width: 52px">
+            <div style="width: 40px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: {{t.v}}"></div>
+            <div style="font-size: 10px; color: var(--muted)">{{t.n}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="width: 500px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px">
+      <div style="font-size: 12px; color: var(--muted); margin-bottom: 10px; letter-spacing: .04em">STATUSBADGE</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{badges}}" as="b" hint-placeholder-count="6">
+          <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: {{b.c}}; font-size: 13px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="{{b.d}}"></path></svg>
+            <span>{{b.t}}</span>
+          </span>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="StateFrame variants" style="display: grid; grid-template-columns: repeat(3, 390px); gap: 24px 24px; justify-content: space-between">
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">1 · LOADING SKELETON</figcaption>
+      <div aria-busy="true" aria-label="Loading" style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+        <div class="sk" style="height: 20px; width: 55%"></div>
+        <sc-for list="{{skRows}}" as="r" hint-placeholder-count="4">
+          <div style="display: flex; gap: 12px; align-items: center">
+            <div class="sk" style="width: 40px; height: 40px; border-radius: 10px"></div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 6px"><div class="sk" style="height: 12px; width: {{r.w}}"></div><div class="sk" style="height: 10px; width: 40%"></div></div>
+          </div>
+        </sc-for>
+        <div style="font-size: 12px; color: var(--muted)">Loading services…</div>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">2 · EMPTY</figcaption>
+      <div style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--ok)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>
+        </div>
+        <div style="font-size: 17px; font-weight: 600">All clear</div>
+        <div style="color: var(--muted); max-width: 280px">Nothing needs your attention. New issues will show up here and in notifications.</div>
+        <button style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text)">View recent activity</button>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">3 · ERROR WITH RETRY</figcaption>
+      <div role="alert" style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--err)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>
+        </div>
+        <div style="font-size: 17px; font-weight: 600">Couldn't load backups</div>
+        <div style="color: var(--muted); max-width: 280px">The request didn't finish. Your data is unchanged.</div>
+        <button style="min-height: 44px; padding: 0 20px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 600">Retry</button>
+        <details style="font-size: 12px; color: var(--muted)"><summary style="cursor: pointer; min-height: 44px; display: flex; align-items: center; justify-content: center">Show details</summary><div>Request timed out after 10 s · ref 4f2a</div></details>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">4 · OFFLINE · STALE</figcaption>
+      <div style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden">
+        <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); color: var(--warn)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 8.5a15 15 0 0120 0M5 12a10 10 0 0114 0M8.5 15.5a5 5 0 017 0M12 19h.01M3 3l18 18"></path></svg>
+          <div style="flex: 1; font-size: 13px"><div style="font-weight: 600">You're offline</div><div style="color: var(--muted)">Showing saved results from 14:02 · actions paused</div></div>
+        </div>
+        <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="flex: 1"><div>TV downloader · Sonarr</div><div style="font-size: 12px; color: var(--muted)">Last known 14:02</div></div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: var(--muted); font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Stale</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="flex: 1"><div>Media player · Plex</div><div style="font-size: 12px; color: var(--muted)">Last known 14:02</div></div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: var(--muted); font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Stale</span>
+          </div>
+          <div style="flex: 1"></div>
+          <button disabled="disabled" aria-disabled="true" style="min-height: 44px; border-radius: 8px; border: 0; background: var(--surface-2); color: var(--muted); cursor: not-allowed">Restart · unavailable offline</button>
+        </div>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">5 · LIMITED</figcaption>
+      <div style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1">Media player · Plex</div><span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: var(--ok); font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>Running</span></div>
+        <div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1">Audiobooks · Audiobookshelf</div><span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: var(--ok); font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>Running</span></div>
+        <div style="flex: 1"></div>
+        <div style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 10px; background: var(--surface-2); color: var(--info)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 018 0v3"></path></svg>
+          <div style="flex: 1; color: var(--text)"><div style="font-weight: 600">Some items are hidden</div><div style="font-size: 13px; color: var(--muted)">You can see 2 of 9 services. Ask for access to see more.</div></div>
+        </div>
+        <button style="min-height: 44px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text)">Request access</button>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">6 · BEING EDITED</figcaption>
+      <div style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden">
+        <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border)">
+          <div aria-hidden="true" style="width: 28px; height: 28px; border-radius: 50%; background: var(--info); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">AL</div>
+          <div style="flex: 1; font-size: 13px"><div style="font-weight: 600">Being edited by Alex · until 14:20</div><div style="color: var(--muted)">You can view, but changes are paused until Alex finishes.</div></div>
+        </div>
+        <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1">
+          <label style="font-size: 12px; color: var(--muted)">Name<input value="Nightly backups" disabled="disabled" style="display: block; width: 100%; box-sizing: border-box; margin-top: 4px; min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font: inherit"></label>
+          <label style="font-size: 12px; color: var(--muted)">Schedule<input value="Every day at 02:00" disabled="disabled" style="display: block; width: 100%; box-sizing: border-box; margin-top: 4px; min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font: inherit"></label>
+          <div style="flex: 1"></div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--accent)">Notify me when free</button>
+            <div style="flex: 1"></div>
+            <button disabled="disabled" aria-disabled="true" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 0; background: var(--surface-2); color: var(--muted); cursor: not-allowed">Edit</button>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">7 · JOB PROGRESS · RUNNING AND ROLLING BACK</figcaption>
+      <div style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: center; gap: 10px"><div style="flex: 1; font-weight: 600">Fix storage mount</div><span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--surface-2); color: var(--info); font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"></path></svg>Step 2 of 4</span></div>
+        <div role="progressbar" aria-label="Fix storage mount progress" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="height: 6px; border-radius: 3px; background: var(--surface-2)"><div style="width: 45%; height: 6px; border-radius: 3px; background: var(--accent)"></div></div>
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{s.c}}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="{{s.d}}"></path></svg>
+            <span>{{s.t}}</span>
+          </div>
+        </sc-for>
+        <div style="flex: 1"></div>
+        <div style="display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 10px; background: var(--surface-2); color: var(--warn); font-size: 13px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 103-6.7M3 4v5h5"></path></svg>
+          <div style="color: var(--text)"><div style="font-weight: 600">Rolling back · 1 of 2</div><div style="color: var(--muted)">Cancelled at 14:11. Restoring the previous state.</div></div>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--accent)">Run in background</button>
+          <div style="flex: 1"></div>
+          <button style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid var(--err); background: transparent; color: var(--err)">Cancel job</button>
+        </div>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">8a · STEP-UP · AUTHENTICATOR (2FA SET)</figcaption>
+      <div role="dialog" aria-modal="true" aria-labelledby="su1" style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 12px 12px; padding: 14px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center"><div id="su1" style="flex: 1; font-size: 16px; font-weight: 600">Confirm it's you</div>
+          <button aria-label="Close" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <div style="color: var(--muted); font-size: 13px">Rotating the password for Media player · Plex signs out apps using the old one. Enter the 6-digit code from your authenticator app.</div>
+        <label for="otp" style="font-size: 12px; color: var(--muted)">Authenticator code</label>
+        <input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="min-height: 48px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--bg); color: var(--text); font: inherit; font-size: 20px; letter-spacing: .4em">
+        <div style="flex: 1"></div>
+        <div style="display: flex; gap: 8px">
+          <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--accent)">Cancel</button>
+          <div style="flex: 1"></div>
+          <button style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 600">Verify and rotate</button>
+        </div>
+      </div>
+    </figure>
+
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+      <figcaption style="font-size: 12px; color: var(--muted); letter-spacing: .04em">8b · STEP-UP · PASSWORD (NO 2FA)</figcaption>
+      <div role="dialog" aria-modal="true" aria-labelledby="su2" style="height: 330px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 12px 12px; padding: 14px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center"><div id="su2" style="flex: 1; font-size: 16px; font-weight: 600">Confirm it's you</div>
+          <button aria-label="Close" style="width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <div style="color: var(--muted); font-size: 13px">Copying the password for Media player · Plex. Re-enter your account password to continue.</div>
+        <label for="pw" style="font-size: 12px; color: var(--muted)">Password</label>
+        <div style="display: flex; gap: 6px">
+          <input id="pw" type="password" autocomplete="current-password" style="flex: 1; min-height: 48px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--bg); color: var(--text); font: inherit">
+          <button aria-label="Show password" style="width: 48px; height: 48px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+        </div>
+        <div style="flex: 1"></div>
+        <div style="display: flex; gap: 8px">
+          <button style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 0; background: transparent; color: var(--accent)">Cancel</button>
+          <div style="flex: 1"></div>
+          <button style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 0; background: var(--accent); color: var(--on-accent); font-weight: 600">Verify and copy</button>
+        </div>
+      </div>
+    </figure>
+
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+tokens: [
+{n:'bg',v:'var(--bg)'},{n:'surface',v:'var(--surface)'},{n:'surface-2',v:'var(--surface-2)'},{n:'border',v:'var(--border)'},
+{n:'text',v:'var(--text)'},{n:'muted',v:'var(--muted)'},{n:'accent',v:'var(--accent)'},{n:'on-accent',v:'var(--on-accent)'},
+{n:'ok',v:'var(--ok)'},{n:'warn',v:'var(--warn)'},{n:'err',v:'var(--err)'},{n:'info',v:'var(--info)'}
+],
+badges: [
+{t:'Healthy',c:'var(--ok)',d:'M5 12l5 5L20 7'},
+{t:'Warning',c:'var(--warn)',d:'M12 3l10 18H2L12 3zM12 10v4M12 17v.5'},
+{t:'Failed',c:'var(--err)',d:'M6 6l12 12M18 6L6 18'},
+{t:'Info',c:'var(--info)',d:'M12 11v6M12 7v.5M3 12a9 9 0 1018 0 9 9 0 00-18 0'},
+{t:'Idle',c:'var(--muted)',d:'M9 7v10M15 7v10'},
+{t:'Planned',c:'var(--accent)',d:'M4 6h16v14H4zM4 10h16M9 3v4M15 3v4'}
+],
+skRows: [{w:'70%'},{w:'55%'},{w:'80%'},{w:'60%'}],
+steps: [
+{t:'Check storage server',c:'var(--ok)',d:'M5 12l5 5L20 7'},
+{t:'Release old mount',c:'var(--ok)',d:'M5 12l5 5L20 7'},
+{t:'Attach new mount',c:'var(--info)',d:'M21 12a9 9 0 11-3-6.7'},
+{t:'Restart affected apps',c:'var(--muted)',d:'M8 12h8'}
+]
+};
+}
+}
+</script>
+</body>
+</html>
