@@ -27,3 +27,9 @@ Recorded from the 2026-11-26 interview. Orca core defines the catalog. Plugins d
 - The plugin declares each action's risk when that action is performed, so risk can depend on context (e.g. restarting an idle service vs one that is streaming).
 - Orca core enforces whatever the plugin declares: a high-risk action needs step-up and is audited.
 - Orca core sets a high-risk minimum that no plugin can lower, for: all of `secrets`; `identity` changes (grants, users, 2FA); `exec`; `restore`; and `delete` of data. Everything else uses the risk the plugin declares.
+
+## Quality variants are instances, not categories
+- 4K and 1080p are not separate categories. `media.tv.downloader` covers every TV downloader instance, both 4K and regular, and the same goes for movies.
+- The user picks the target when they act: adding a show, downloading an episode or a movie routes to one instance, the other, or both.
+- One command can target several instances. For example, adding a movie in 4K and 1080p at once adds it to both, and each is tracked separately.
+- These are all valid: 4K only, 1080p only, or both. A grant on `media.movies.downloader` scoped to a collection (e.g. 4K) limits which instances the user can route to.
