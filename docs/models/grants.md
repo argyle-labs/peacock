@@ -15,3 +15,8 @@
 - The grant set IS category × action: `media.player:restart`, `media.player:*`, `super`.
 - Defining the generic catalog defines every grant; there is no separate grant registry.
 - Plugins declare which category they implement and map their actions onto that category's actions.
+
+## Plugin-specific grants (dynamic)
+- Grants can target a specific plugin: generic grants scoped to a plugin (`media.player:restart @plugin:<uuid>`), plus actions only that plugin has (`plugin.<name>:<action>`).
+- The grant set is dynamic: orca core registers a plugin's grants at runtime when the plugin is installed and declares them, and removes them when it is uninstalled. Nothing is compiled in per plugin.
+- The grant model, matching and enforcement stay in orca core; plugins only declare their actions.
