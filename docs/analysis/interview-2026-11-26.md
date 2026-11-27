@@ -121,3 +121,4 @@ Answers from the user, recorded as given.
 - **Step-up for own app credentials:** copying or rotating your own app password requires re-auth, same as admin secrets. Use the authenticator code only if the user has 2FA set; otherwise re-enter the password.
 - **2FA is optional** per user, unless an admin requires it.
 - **Peacock deployment:** peacock is a plugin installed by default on every orca system, so it is reachable whenever any orca system is up (with automatic failover between them).
+- **Viewer offline** (viewer's device has no network, or every orca system is down): search shows cached results marked stale, actions disabled.

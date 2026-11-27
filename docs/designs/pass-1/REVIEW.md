@@ -37,4 +37,4 @@ AppHeader, NavModel/Drawer, SearchPalette, StatusBadge, ListRow, NotificationIte
 
 ## Open decisions
 1. RESOLVED: yes; TOTP when set, else password. 2FA optional unless admin requires it.
-2. Does search run against the offline cache?
+2. RESOLVED: yes, cached results marked stale, actions disabled.
