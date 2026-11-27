@@ -39,3 +39,8 @@
 ## Plugin uninstall
 - Orca removes only that plugin's grants: its `plugin.<name>:*` actions and any grant scoped `@plugin:<uuid>` or to its resources.
 - Generic, area-level and group grants stay as they are.
+
+## Widget-only widening
+- A widget instance is a principal, like a token, and holds its own grants (e.g. `media.player:restart @resource:<plex>`).
+- A user acting through that widget gets the union of their own grants and the widget's grants, for that widget's actions only.
+- Only a holder of the grant (grant-and-hold rule) can attach it to a widget. Every action through a widget is audited with both the user and the widget.
